@@ -121,7 +121,7 @@ function EventDetail() {
         Historical Echoes
       </h2>
       <div className="space-y-3">
-        {event.historicalEchoes.map((h, i) => (
+        {event.historicalEchoes.map((h: HistoricalEcho, i: number) => (
           <div
             key={i}
             className="rounded-xl border border-border/70 bg-card/60 p-4"
@@ -143,7 +143,7 @@ function EventDetail() {
                   </tr>
                 </thead>
                 <tbody>
-                  {h.outcomes.map((o, j) => (
+                  {h.outcomes.map((o: HistoricalEcho["outcomes"][number], j: number) => (
                     <tr key={j} className="border-t border-border/40">
                       <td className="py-1.5 pr-2">{o.sector}</td>
                       <PctCell v={o.d1} />
