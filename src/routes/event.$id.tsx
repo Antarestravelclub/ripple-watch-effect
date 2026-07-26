@@ -5,7 +5,9 @@ import { EVENTS, type ExposureSector, type HistoricalEcho } from "@/lib/ripple-d
 import { CategoryBadge, StrengthPill } from "@/components/badges";
 import { TickerChip } from "@/components/ticker-chip";
 import { EventSignals } from "@/components/event-signals";
-import { ArrowLeft, TrendingUp, TrendingDown, Target, ShieldAlert } from "lucide-react";
+import { SimilarEvents } from "@/components/similar-events";
+import { categoryToArchetypes } from "@/lib/analogue-mapping";
+import { ArrowLeft, TrendingUp, TrendingDown, Target, ShieldAlert, History } from "lucide-react";
 import { REGIONS, eventRegions, eventTopPicks } from "@/lib/ripple-regions";
 
 export const Route = createFileRoute("/event/$id")({
@@ -129,6 +131,21 @@ function EventDetail() {
       </div>
 
       <TopPicks id={event.id} />
+
+      <section className="rounded-xl border border-border/70 bg-card/60 p-4 mb-6">
+        <div className="flex items-center gap-2 mb-1">
+          <History className="w-4 h-4 text-primary" />
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-primary">
+            Similar events in the past
+          </h2>
+        </div>
+        <p className="text-[11px] text-muted-foreground mb-3">
+          How markets moved in past events of the same archetype. Historical — not
+          a prediction. Note the window and whether the move reverted.
+        </p>
+        <SimilarEvents archetypes={categoryToArchetypes(event.category)} limit={4} />
+      </section>
+
 
 
       <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">
