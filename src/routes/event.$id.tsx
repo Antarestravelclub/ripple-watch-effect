@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { SiteShell } from "@/components/site-shell";
-import { EVENTS, type ExposureSector } from "@/lib/ripple-data";
+import { EVENTS, type ExposureSector, type HistoricalEcho } from "@/lib/ripple-data";
 import { CategoryBadge, StrengthPill } from "@/components/badges";
 import { TickerChip } from "@/components/ticker-chip";
 import { ArrowLeft, TrendingUp, TrendingDown } from "lucide-react";
