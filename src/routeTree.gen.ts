@@ -10,12 +10,26 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WatchlistRouteImport } from './routes/watchlist'
+import { Route as TrackerRouteImport } from './routes/tracker'
+import { Route as ScorecardRouteImport } from './routes/scorecard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SignalIdRouteImport } from './routes/signal.$id'
 import { Route as EventIdRouteImport } from './routes/event.$id'
+import { Route as ApiPublicHooksFetchPricesRouteImport } from './routes/api/public/hooks/fetch-prices'
 
 const WatchlistRoute = WatchlistRouteImport.update({
   id: '/watchlist',
   path: '/watchlist',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrackerRoute = TrackerRouteImport.update({
+  id: '/tracker',
+  path: '/tracker',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScorecardRoute = ScorecardRouteImport.update({
+  id: '/scorecard',
+  path: '/scorecard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -23,40 +37,89 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SignalIdRoute = SignalIdRouteImport.update({
+  id: '/signal/$id',
+  path: '/signal/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EventIdRoute = EventIdRouteImport.update({
   id: '/event/$id',
   path: '/event/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksFetchPricesRoute =
+  ApiPublicHooksFetchPricesRouteImport.update({
+    id: '/api/public/hooks/fetch-prices',
+    path: '/api/public/hooks/fetch-prices',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/scorecard': typeof ScorecardRoute
+  '/tracker': typeof TrackerRoute
   '/watchlist': typeof WatchlistRoute
   '/event/$id': typeof EventIdRoute
+  '/signal/$id': typeof SignalIdRoute
+  '/api/public/hooks/fetch-prices': typeof ApiPublicHooksFetchPricesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/scorecard': typeof ScorecardRoute
+  '/tracker': typeof TrackerRoute
   '/watchlist': typeof WatchlistRoute
   '/event/$id': typeof EventIdRoute
+  '/signal/$id': typeof SignalIdRoute
+  '/api/public/hooks/fetch-prices': typeof ApiPublicHooksFetchPricesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/scorecard': typeof ScorecardRoute
+  '/tracker': typeof TrackerRoute
   '/watchlist': typeof WatchlistRoute
   '/event/$id': typeof EventIdRoute
+  '/signal/$id': typeof SignalIdRoute
+  '/api/public/hooks/fetch-prices': typeof ApiPublicHooksFetchPricesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/watchlist' | '/event/$id'
+  fullPaths:
+    | '/'
+    | '/scorecard'
+    | '/tracker'
+    | '/watchlist'
+    | '/event/$id'
+    | '/signal/$id'
+    | '/api/public/hooks/fetch-prices'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/watchlist' | '/event/$id'
-  id: '__root__' | '/' | '/watchlist' | '/event/$id'
+  to:
+    | '/'
+    | '/scorecard'
+    | '/tracker'
+    | '/watchlist'
+    | '/event/$id'
+    | '/signal/$id'
+    | '/api/public/hooks/fetch-prices'
+  id:
+    | '__root__'
+    | '/'
+    | '/scorecard'
+    | '/tracker'
+    | '/watchlist'
+    | '/event/$id'
+    | '/signal/$id'
+    | '/api/public/hooks/fetch-prices'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ScorecardRoute: typeof ScorecardRoute
+  TrackerRoute: typeof TrackerRoute
   WatchlistRoute: typeof WatchlistRoute
   EventIdRoute: typeof EventIdRoute
+  SignalIdRoute: typeof SignalIdRoute
+  ApiPublicHooksFetchPricesRoute: typeof ApiPublicHooksFetchPricesRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -68,11 +131,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WatchlistRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tracker': {
+      id: '/tracker'
+      path: '/tracker'
+      fullPath: '/tracker'
+      preLoaderRoute: typeof TrackerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scorecard': {
+      id: '/scorecard'
+      path: '/scorecard'
+      fullPath: '/scorecard'
+      preLoaderRoute: typeof ScorecardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signal/$id': {
+      id: '/signal/$id'
+      path: '/signal/$id'
+      fullPath: '/signal/$id'
+      preLoaderRoute: typeof SignalIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/event/$id': {
@@ -82,13 +166,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EventIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/fetch-prices': {
+      id: '/api/public/hooks/fetch-prices'
+      path: '/api/public/hooks/fetch-prices'
+      fullPath: '/api/public/hooks/fetch-prices'
+      preLoaderRoute: typeof ApiPublicHooksFetchPricesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ScorecardRoute: ScorecardRoute,
+  TrackerRoute: TrackerRoute,
   WatchlistRoute: WatchlistRoute,
   EventIdRoute: EventIdRoute,
+  SignalIdRoute: SignalIdRoute,
+  ApiPublicHooksFetchPricesRoute: ApiPublicHooksFetchPricesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
