@@ -9,38 +9,65 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WatchlistRouteImport } from './routes/watchlist'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as EventIdRouteImport } from './routes/event.$id'
 
+const WatchlistRoute = WatchlistRouteImport.update({
+  id: '/watchlist',
+  path: '/watchlist',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EventIdRoute = EventIdRouteImport.update({
+  id: '/event/$id',
+  path: '/event/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/watchlist': typeof WatchlistRoute
+  '/event/$id': typeof EventIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/watchlist': typeof WatchlistRoute
+  '/event/$id': typeof EventIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/watchlist': typeof WatchlistRoute
+  '/event/$id': typeof EventIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/watchlist' | '/event/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/watchlist' | '/event/$id'
+  id: '__root__' | '/' | '/watchlist' | '/event/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  WatchlistRoute: typeof WatchlistRoute
+  EventIdRoute: typeof EventIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/watchlist': {
+      id: '/watchlist'
+      path: '/watchlist'
+      fullPath: '/watchlist'
+      preLoaderRoute: typeof WatchlistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +75,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/event/$id': {
+      id: '/event/$id'
+      path: '/event/$id'
+      fullPath: '/event/$id'
+      preLoaderRoute: typeof EventIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  WatchlistRoute: WatchlistRoute,
+  EventIdRoute: EventIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
