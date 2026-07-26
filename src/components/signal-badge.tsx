@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import type { SignalRow } from "@/lib/signal-metrics";
 import { fmtPct, pctTone } from "@/lib/signal-metrics";
 
@@ -9,6 +9,7 @@ export function SignalBadge({
   signal: SignalRow;
   currentPrice: number | null;
 }) {
+  const navigate = useNavigate();
   const sp = signal.signal_price;
   let pct: number | null = null;
   if (sp && currentPrice != null) {
@@ -21,10 +22,13 @@ export function SignalBadge({
       ? "bg-tailwind/15 text-tailwind border-tailwind/30"
       : "bg-headwind/15 text-headwind border-headwind/30";
   return (
-    <Link
-      to="/signal/$id"
-      params={{ id: signal.id }}
-      onClick={(e) => e.stopPropagation()}
+    <button
+      type="button"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        navigate({ to: "/signal/$id", params: { id: signal.id } });
+      }}
       className="inline-flex items-center gap-1.5 text-[11px] font-mono px-2 py-0.5 rounded-md border border-border/60 bg-background/50 hover:bg-background transition-colors"
       title="View tracked signal"
     >
@@ -36,6 +40,6 @@ export function SignalBadge({
           · {signal.close_reason ?? "closed"}
         </span>
       )}
-    </Link>
+    </button>
   );
 }
