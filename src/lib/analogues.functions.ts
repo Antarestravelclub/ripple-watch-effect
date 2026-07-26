@@ -80,7 +80,7 @@ export const listAnalogues = createServerFn({ method: "GET" })
     const supabase = await getClient();
     let q = supabase.from("historical_events").select("*").order("event_date", { ascending: false });
     if (data.archetypes && data.archetypes.length > 0) {
-      q = q.in("archetype", data.archetypes);
+      q = q.in("archetype", data.archetypes as Archetype[]);
     }
     if (data.region) q = q.eq("region", data.region);
     if (data.limit) q = q.limit(data.limit);
