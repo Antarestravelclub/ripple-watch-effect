@@ -74,23 +74,20 @@ export const ensureSignals = createServerFn({ method: "POST" }).handler(async ()
           const key = `${ev.id}|${ticker}|${dir}|ripple-v1`;
           if (seen.has(key)) continue;
           const price = await getPrice(ticker);
-          const row: Record<string, unknown> = {
-            event_id: ev.id,
-            ticker,
-            direction: dir,
-            conviction: strength,
-            rationale: g.mechanism,
-            generated_by: "ripple-v1",
-            signal_price: price,
-          };
-          if (price != null) {
-            const lv = derivedLevels(price, dir);
-            row.target_price = lv.target;
-            row.invalidation_price = lv.invalidation;
-          }
+          const lv = price != null ? derivedLevels(price, dir) : null;
           const { data, error } = await supabaseAdmin
             .from("signals")
-            .insert(row)
+            .insert({
+              event_id: ev.id,
+              ticker,
+              direction: dir,
+              conviction: strength,
+              rationale: g.mechanism,
+              generated_by: "ripple-v1",
+              signal_price: price,
+              target_price: lv?.target ?? null,
+              invalidation_price: lv?.invalidation ?? null,
+            })
             .select("id")
             .maybeSingle();
           if (!error && data && price != null) {
