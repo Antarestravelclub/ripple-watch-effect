@@ -32,6 +32,8 @@ export function SiteShell({ children }: { children: ReactNode }) {
           </Link>
           <nav className="flex items-center gap-1">
             <NavLink to="/">Today</NavLink>
+            <NavLink to="/tracker">Tracker</NavLink>
+            <NavLink to="/scorecard">Scorecard</NavLink>
             <NavLink to="/watchlist">Watchlist</NavLink>
           </nav>
         </div>
@@ -47,9 +49,13 @@ export function SiteShell({ children }: { children: ReactNode }) {
       </div>
 
       <footer className="border-t border-border/60 mt-8">
-        <div className="mx-auto max-w-7xl px-4 py-5 text-xs text-muted-foreground text-center">
-          The Ripple Effect provides educational information about market
-          exposure, not investment advice or price predictions.
+        <div className="mx-auto max-w-7xl px-4 py-5 text-[11px] text-muted-foreground text-center space-y-1">
+          <p>
+            The Ripple Effect is an <span className="text-foreground">educational research tool</span>,
+            not investment advice. Signals shown are hypothetical historical correlations —
+            never a recommendation to buy or sell.
+          </p>
+          <p className="opacity-70">Prices are delayed. Past behaviour does not predict future prices.</p>
         </div>
       </footer>
     </div>

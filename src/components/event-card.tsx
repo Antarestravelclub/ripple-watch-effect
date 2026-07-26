@@ -1,9 +1,11 @@
 import { Link } from "@tanstack/react-router";
+import { Suspense } from "react";
 import type { RippleEvent } from "@/lib/ripple-data";
 import { eventTouchesTicker } from "@/lib/ripple-data";
 import { useWatchlist } from "@/lib/watchlist-store";
 import { CategoryBadge, StrengthPill } from "./badges";
 import { REGIONS, eventRegions } from "@/lib/ripple-regions";
+import { EventSignals } from "./event-signals";
 
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -59,6 +61,9 @@ export function EventCard({ event }: { event: RippleEvent }) {
           tickers
         </span>
       </div>
+      <Suspense fallback={null}>
+        <EventSignals eventId={event.id} />
+      </Suspense>
     </Link>
   );
 }

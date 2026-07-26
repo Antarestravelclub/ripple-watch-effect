@@ -46,7 +46,7 @@ export function Sparkline({
     .map((s) => `${x(new Date(s.captured_at).getTime())},${y(s.price)}`)
     .join(" ");
 
-  const lineColor = direction === "long" ? "hsl(var(--tailwind))" : "hsl(var(--headwind))";
+  const lineColor = direction === "long" ? "var(--tailwind)" : "var(--headwind)";
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto">
@@ -96,10 +96,10 @@ function RefLine({
 }) {
   const stroke =
     tone === "tailwind"
-      ? "hsl(var(--tailwind))"
+      ? "var(--tailwind)"
       : tone === "headwind"
-      ? "hsl(var(--headwind))"
-      : "hsl(var(--muted-foreground))";
+      ? "var(--headwind)"
+      : "var(--muted-foreground)";
   return (
     <g>
       <line
