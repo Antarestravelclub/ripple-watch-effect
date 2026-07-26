@@ -3,6 +3,7 @@ import type { RippleEvent } from "@/lib/ripple-data";
 import { eventTouchesTicker } from "@/lib/ripple-data";
 import { useWatchlist } from "@/lib/watchlist-store";
 import { CategoryBadge, StrengthPill } from "./badges";
+import { REGIONS, eventRegions } from "@/lib/ripple-regions";
 
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -25,6 +26,12 @@ export function EventCard({ event }: { event: RippleEvent }) {
       <div className="flex items-center gap-2 flex-wrap">
         <CategoryBadge category={event.category} />
         <StrengthPill strength={event.strength} />
+        <span className="inline-flex items-center gap-0.5 text-sm leading-none" title="Regions">
+          {eventRegions(event.id).map((code) => {
+            const r = REGIONS.find((x) => x.code === code);
+            return r ? <span key={code} title={r.label}>{r.flag}</span> : null;
+          })}
+        </span>
         {hit && (
           <span className="text-[10px] font-medium uppercase tracking-wider px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/30">
             Ripples your holdings • {hit}

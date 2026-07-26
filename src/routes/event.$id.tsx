@@ -3,7 +3,8 @@ import { SiteShell } from "@/components/site-shell";
 import { EVENTS, type ExposureSector, type HistoricalEcho } from "@/lib/ripple-data";
 import { CategoryBadge, StrengthPill } from "@/components/badges";
 import { TickerChip } from "@/components/ticker-chip";
-import { ArrowLeft, TrendingUp, TrendingDown } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, Target, ShieldAlert } from "lucide-react";
+import { REGIONS, eventRegions, eventTopPicks } from "@/lib/ripple-regions";
 
 export const Route = createFileRoute("/event/$id")({
   loader: ({ params }) => {
@@ -89,6 +90,21 @@ function EventDetail() {
         <div className="flex items-center gap-2 flex-wrap">
           <CategoryBadge category={event.category} />
           <StrengthPill strength={event.strength} />
+          <span className="inline-flex items-center gap-1 flex-wrap">
+            {eventRegions(event.id).map((code) => {
+              const r = REGIONS.find((x) => x.code === code);
+              if (!r) return null;
+              return (
+                <span
+                  key={code}
+                  className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border border-border/60 bg-background/60 text-muted-foreground"
+                >
+                  <span className="text-sm leading-none">{r.flag}</span>
+                  {r.label}
+                </span>
+              );
+            })}
+          </span>
           <span className="ml-auto text-xs text-muted-foreground">
             {event.source}
           </span>
@@ -100,6 +116,8 @@ function EventDetail() {
           {event.whyMarketsCare}
         </p>
       </div>
+
+      <TopPicks id={event.id} />
 
       <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">
         Exposure Map
@@ -175,3 +193,61 @@ function PctCell({ v }: { v: number }) {
     </td>
   );
 }
+
+function TopPicks({ id }: { id: string }) {
+  const picks = eventTopPicks(id);
+  if (picks.length === 0) return null;
+  const longs = picks.filter((p) => p.side === "long");
+  const avoids = picks.filter((p) => p.side === "avoid");
+
+  return (
+    <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 mb-6">
+      <div className="flex items-center gap-2 mb-1">
+        <Target className="w-4 h-4 text-primary" />
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-primary">
+          Top stock plays
+        </h2>
+      </div>
+      <p className="text-[11px] text-muted-foreground mb-3">
+        Best-positioned names based on the mechanical exposure of this event.
+        Educational context, not a recommendation to buy or sell.
+      </p>
+      <div className="grid gap-2">
+        {longs.map((p) => (
+          <PickRow key={p.ticker} pick={p} tone="tailwind" />
+        ))}
+        {avoids.length > 0 && (
+          <div className="mt-2 pt-2 border-t border-border/50">
+            <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-headwind mb-2">
+              <ShieldAlert className="w-3.5 h-3.5" />
+              At risk — consider trimming or avoiding
+            </div>
+            <div className="grid gap-2">
+              {avoids.map((p) => (
+                <PickRow key={p.ticker} pick={p} tone="headwind" />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function PickRow({
+  pick,
+  tone,
+}: {
+  pick: { ticker: string; thesis: string };
+  tone: "tailwind" | "headwind";
+}) {
+  return (
+    <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-background/40 p-2.5">
+      <TickerChip ticker={pick.ticker} tone={tone} />
+      <p className="text-xs text-muted-foreground leading-relaxed flex-1 pt-1">
+        {pick.thesis}
+      </p>
+    </div>
+  );
+}
+
