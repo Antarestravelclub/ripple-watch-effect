@@ -1,8 +1,10 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { Suspense } from "react";
 import { SiteShell } from "@/components/site-shell";
 import { EVENTS, type ExposureSector, type HistoricalEcho } from "@/lib/ripple-data";
 import { CategoryBadge, StrengthPill } from "@/components/badges";
 import { TickerChip } from "@/components/ticker-chip";
+import { EventSignals } from "@/components/event-signals";
 import { ArrowLeft, TrendingUp, TrendingDown, Target, ShieldAlert } from "lucide-react";
 import { REGIONS, eventRegions, eventTopPicks } from "@/lib/ripple-regions";
 
@@ -117,7 +119,17 @@ function EventDetail() {
         </p>
       </div>
 
+      <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 mb-6">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-primary mb-2">
+          Tracked signals for this event
+        </h2>
+        <Suspense fallback={<div className="text-xs text-muted-foreground">Loading signals…</div>}>
+          <EventSignals eventId={event.id} />
+        </Suspense>
+      </div>
+
       <TopPicks id={event.id} />
+
 
       <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">
         Exposure Map
