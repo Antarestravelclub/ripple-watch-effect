@@ -14,7 +14,101 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      price_snapshots: {
+        Row: {
+          captured_at: string
+          id: number
+          price: number
+          signal_id: string
+          ticker: string
+        }
+        Insert: {
+          captured_at?: string
+          id?: number
+          price: number
+          signal_id: string
+          ticker: string
+        }
+        Update: {
+          captured_at?: string
+          id?: number
+          price?: number
+          signal_id?: string
+          ticker?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_snapshots_signal_id_fkey"
+            columns: ["signal_id"]
+            isOneToOne: false
+            referencedRelation: "signals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      signals: {
+        Row: {
+          close_reason: string | null
+          closed_at: string | null
+          closed_price: number | null
+          company_name: string | null
+          conviction: number
+          created_at: string
+          direction: string
+          event_id: string
+          exchange: string | null
+          generated_by: string
+          id: string
+          invalidation_price: number | null
+          rationale: string | null
+          signal_price: number | null
+          signal_timestamp: string
+          status: string
+          target_price: number | null
+          ticker: string
+        }
+        Insert: {
+          close_reason?: string | null
+          closed_at?: string | null
+          closed_price?: number | null
+          company_name?: string | null
+          conviction?: number
+          created_at?: string
+          direction: string
+          event_id: string
+          exchange?: string | null
+          generated_by?: string
+          id?: string
+          invalidation_price?: number | null
+          rationale?: string | null
+          signal_price?: number | null
+          signal_timestamp?: string
+          status?: string
+          target_price?: number | null
+          ticker: string
+        }
+        Update: {
+          close_reason?: string | null
+          closed_at?: string | null
+          closed_price?: number | null
+          company_name?: string | null
+          conviction?: number
+          created_at?: string
+          direction?: string
+          event_id?: string
+          exchange?: string | null
+          generated_by?: string
+          id?: string
+          invalidation_price?: number | null
+          rationale?: string | null
+          signal_price?: number | null
+          signal_timestamp?: string
+          status?: string
+          target_price?: number | null
+          ticker?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
