@@ -30,10 +30,12 @@ export function SiteShell({ children }: { children: ReactNode }) {
           <Link to="/" className="flex items-center">
             <RippleLogo />
           </Link>
-          <nav className="flex items-center gap-1">
+          <nav className="flex items-center gap-1 flex-wrap">
             <NavLink to="/">Today</NavLink>
             <NavLink to="/tracker">Tracker</NavLink>
             <NavLink to="/scorecard">Scorecard</NavLink>
+            <NavLink to="/analogues">Analogues</NavLink>
+            <NavLink to="/playbooks">Playbooks</NavLink>
             <NavLink to="/watchlist">Watchlist</NavLink>
           </nav>
         </div>

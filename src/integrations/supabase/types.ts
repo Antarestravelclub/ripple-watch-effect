@@ -14,6 +14,143 @@ export type Database = {
   }
   public: {
     Tables: {
+      archetype_playbooks: {
+        Row: {
+          archetype: Database["public"]["Enums"]["event_archetype"]
+          channel: string
+          confidence: number
+          created_at: string
+          id: string
+          typical_duration: string | null
+          typical_losers: string[]
+          typical_magnitude_range: string | null
+          typical_winners: string[]
+        }
+        Insert: {
+          archetype: Database["public"]["Enums"]["event_archetype"]
+          channel: string
+          confidence?: number
+          created_at?: string
+          id?: string
+          typical_duration?: string | null
+          typical_losers?: string[]
+          typical_magnitude_range?: string | null
+          typical_winners?: string[]
+        }
+        Update: {
+          archetype?: Database["public"]["Enums"]["event_archetype"]
+          channel?: string
+          confidence?: number
+          created_at?: string
+          id?: string
+          typical_duration?: string | null
+          typical_losers?: string[]
+          typical_magnitude_range?: string | null
+          typical_winners?: string[]
+        }
+        Relationships: []
+      }
+      historical_events: {
+        Row: {
+          archetype: Database["public"]["Enums"]["event_archetype"]
+          country: string | null
+          created_at: string
+          event_date: string
+          id: string
+          region: string | null
+          source_url: string | null
+          summary: string
+          title: string
+          transmission_channel: string
+        }
+        Insert: {
+          archetype: Database["public"]["Enums"]["event_archetype"]
+          country?: string | null
+          created_at?: string
+          event_date: string
+          id?: string
+          region?: string | null
+          source_url?: string | null
+          summary: string
+          title: string
+          transmission_channel: string
+        }
+        Update: {
+          archetype?: Database["public"]["Enums"]["event_archetype"]
+          country?: string | null
+          created_at?: string
+          event_date?: string
+          id?: string
+          region?: string | null
+          source_url?: string | null
+          summary?: string
+          title?: string
+          transmission_channel?: string
+        }
+        Relationships: []
+      }
+      historical_reactions: {
+        Row: {
+          company_name: string | null
+          created_at: string
+          days_to_revert: number | null
+          direction: Database["public"]["Enums"]["reaction_direction"]
+          exchange: string | null
+          historical_event_id: string
+          id: string
+          notes: string | null
+          pct_move: number
+          peak_pct_move: number | null
+          reverted: boolean
+          role: Database["public"]["Enums"]["reaction_role"]
+          sector: string | null
+          ticker: string
+          window_days: number
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string
+          days_to_revert?: number | null
+          direction: Database["public"]["Enums"]["reaction_direction"]
+          exchange?: string | null
+          historical_event_id: string
+          id?: string
+          notes?: string | null
+          pct_move: number
+          peak_pct_move?: number | null
+          reverted?: boolean
+          role: Database["public"]["Enums"]["reaction_role"]
+          sector?: string | null
+          ticker: string
+          window_days: number
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string
+          days_to_revert?: number | null
+          direction?: Database["public"]["Enums"]["reaction_direction"]
+          exchange?: string | null
+          historical_event_id?: string
+          id?: string
+          notes?: string | null
+          pct_move?: number
+          peak_pct_move?: number | null
+          reverted?: boolean
+          role?: Database["public"]["Enums"]["reaction_role"]
+          sector?: string | null
+          ticker?: string
+          window_days?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historical_reactions_historical_event_id_fkey"
+            columns: ["historical_event_id"]
+            isOneToOne: false
+            referencedRelation: "historical_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       price_snapshots: {
         Row: {
           captured_at: string
@@ -117,7 +254,24 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      event_archetype:
+        | "armed_conflict"
+        | "terror_attack"
+        | "natural_disaster"
+        | "industrial_accident"
+        | "regulatory_action"
+        | "supply_chain_disruption"
+        | "political_instability"
+        | "pandemic_health"
+        | "cyber_attack"
+        | "commodity_shock"
+      reaction_direction: "up" | "down"
+      reaction_role:
+        | "direct_loser"
+        | "direct_winner"
+        | "substitute_winner"
+        | "second_order_winner"
+        | "second_order_loser"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -244,6 +398,27 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      event_archetype: [
+        "armed_conflict",
+        "terror_attack",
+        "natural_disaster",
+        "industrial_accident",
+        "regulatory_action",
+        "supply_chain_disruption",
+        "political_instability",
+        "pandemic_health",
+        "cyber_attack",
+        "commodity_shock",
+      ],
+      reaction_direction: ["up", "down"],
+      reaction_role: [
+        "direct_loser",
+        "direct_winner",
+        "substitute_winner",
+        "second_order_winner",
+        "second_order_loser",
+      ],
+    },
   },
 } as const
