@@ -1,24 +1,49 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { SiteShell } from "@/components/site-shell";
+import { EventCard } from "@/components/event-card";
+import { EVENTS } from "@/lib/ripple-data";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      { title: "Today's Ripples — The Ripple Effect" },
+      {
+        name: "description",
+        content:
+          "A daily map of world events and the stocks and sectors they mechanically affect. Educational market exposure, not investment advice.",
+      },
+      { property: "og:title", content: "Today's Ripples — The Ripple Effect" },
+      {
+        property: "og:description",
+        content:
+          "Map world events to the sectors and tickers they touch. Exposure and historical context, not price predictions.",
+      },
+    ],
+  }),
+  component: TodayPage,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+function TodayPage() {
+  const events = [...EVENTS].sort(
+    (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
+  );
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <SiteShell>
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+          Today's Ripples
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          World events, mapped to the sectors and tickers they mechanically
+          touch.
+        </p>
+      </div>
+      <div className="grid gap-3">
+        {events.map((e) => (
+          <EventCard key={e.id} event={e} />
+        ))}
+      </div>
+    </SiteShell>
   );
 }
