@@ -48,11 +48,17 @@ export const Route = createFileRoute("/api/public/hooks/fetch-prices")({
           if (p != null) priceByTicker.set(t, p);
         }
 
+        type SignalPatch = {
+          signal_price?: number;
+          target_price?: number;
+          invalidation_price?: number;
+          status?: string;
+          closed_price?: number;
+          closed_at?: string;
+          close_reason?: string;
+        };
         const inserts: Array<{ signal_id: string; ticker: string; price: number }> = [];
-        const updates: Array<{
-          id: string;
-          patch: Record<string, unknown>;
-        }> = [];
+        const updates: Array<{ id: string; patch: SignalPatch }> = [];
         for (const s of openSignals ?? []) {
           const price = priceByTicker.get(s.ticker);
           if (price == null) continue;
