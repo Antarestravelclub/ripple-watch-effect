@@ -3,7 +3,8 @@ import { SiteShell } from "@/components/site-shell";
 import { EVENTS, type ExposureSector, type HistoricalEcho } from "@/lib/ripple-data";
 import { CategoryBadge, StrengthPill } from "@/components/badges";
 import { TickerChip } from "@/components/ticker-chip";
-import { ArrowLeft, TrendingUp, TrendingDown } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, Target, ShieldAlert } from "lucide-react";
+import { REGIONS, eventRegions, eventTopPicks } from "@/lib/ripple-regions";
 
 export const Route = createFileRoute("/event/$id")({
   loader: ({ params }) => {
@@ -89,6 +90,21 @@ function EventDetail() {
         <div className="flex items-center gap-2 flex-wrap">
           <CategoryBadge category={event.category} />
           <StrengthPill strength={event.strength} />
+          <span className="inline-flex items-center gap-1 flex-wrap">
+            {eventRegions(event.id).map((code) => {
+              const r = REGIONS.find((x) => x.code === code);
+              if (!r) return null;
+              return (
+                <span
+                  key={code}
+                  className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border border-border/60 bg-background/60 text-muted-foreground"
+                >
+                  <span className="text-sm leading-none">{r.flag}</span>
+                  {r.label}
+                </span>
+              );
+            })}
+          </span>
           <span className="ml-auto text-xs text-muted-foreground">
             {event.source}
           </span>
@@ -100,6 +116,8 @@ function EventDetail() {
           {event.whyMarketsCare}
         </p>
       </div>
+
+      <TopPicks id={event.id} />
 
       <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">
         Exposure Map
