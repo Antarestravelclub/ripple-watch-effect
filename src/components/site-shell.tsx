@@ -3,6 +3,7 @@ import { RippleLogo } from "./ripple-logo";
 import type { ReactNode } from "react";
 import { SectorHeat } from "./sector-heat";
 import { EVENTS } from "@/lib/ripple-data";
+import { OperonBadge } from "./operon-badge";
 
 function NavLink({ to, children }: { to: string; children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
