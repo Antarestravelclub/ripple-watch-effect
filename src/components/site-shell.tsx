@@ -3,6 +3,7 @@ import { RippleLogo } from "./ripple-logo";
 import type { ReactNode } from "react";
 import { SectorHeat } from "./sector-heat";
 import { EVENTS } from "@/lib/ripple-data";
+import { OperonBadge } from "./operon-badge";
 
 function NavLink({ to, children }: { to: string; children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -51,13 +52,16 @@ export function SiteShell({ children }: { children: ReactNode }) {
       </div>
 
       <footer className="border-t border-border/60 mt-8">
-        <div className="mx-auto max-w-7xl px-4 py-5 text-[11px] text-muted-foreground text-center space-y-1">
+        <div className="mx-auto max-w-7xl px-4 py-5 text-[11px] text-muted-foreground text-center space-y-3">
           <p>
             The Ripple Effect is an <span className="text-foreground">educational research tool</span>,
             not investment advice. Signals shown are hypothetical historical correlations —
             never a recommendation to buy or sell.
           </p>
           <p className="opacity-70">Prices are delayed. Past behaviour does not predict future prices.</p>
+          <div className="pt-1 flex justify-center">
+            <OperonBadge />
+          </div>
         </div>
       </footer>
     </div>
