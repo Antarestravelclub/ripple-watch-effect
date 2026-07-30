@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo } from "react";
 import { SiteShell } from "@/components/site-shell";
-import { listSignals } from "@/lib/signals.functions";
+import { listSignals, evaluateSignals } from "@/lib/signals.functions";
 import { computeMetrics, fmtPct, pctTone } from "@/lib/signal-metrics";
 import { EVENTS } from "@/lib/ripple-data";
 
@@ -26,10 +26,33 @@ export const Route = createFileRoute("/scorecard")({
   component: Scorecard,
 });
 
+function daysToResolution(signalTs: string, closedAt: string | null): number | null {
+  if (!closedAt) return null;
+  const d = (new Date(closedAt).getTime() - new Date(signalTs).getTime()) / 86_400_000;
+  return Math.max(0, Math.round(d));
+}
+
+function median(nums: number[]): number | null {
+  if (nums.length === 0) return null;
+  const s = [...nums].sort((a, b) => a - b);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+}
+
 function Scorecard() {
   const list = useServerFn(listSignals);
+  const evaluate = useServerFn(evaluateSignals);
+
+  // Evaluate open signals on page load (at most once every 10 minutes).
+  const evalQuery = useQuery({
+    queryKey: ["signals", "evaluate"],
+    queryFn: () => evaluate(),
+    staleTime: 600_000,
+    refetchOnWindowFocus: false,
+  });
+
   const { data } = useSuspenseQuery({
-    queryKey: ["signals", "all"],
+    queryKey: ["signals", "all", evalQuery.dataUpdatedAt],
     queryFn: () => list(),
     staleTime: 30_000,
   });
@@ -50,15 +73,24 @@ function Scorecard() {
   );
 
   const totalTracked = enriched.length;
-  const closed = enriched.filter((r) => r.signal.status === "closed");
-  const targetHits = closed.filter((r) => r.signal.close_reason === "target").length;
-  const invalidated = closed.filter((r) => r.signal.close_reason === "invalidation").length;
-  const hitRate = closed.length > 0 ? (targetHits / closed.length) * 100 : null;
+  const targetHits = enriched.filter((r) => r.signal.close_reason === "target").length;
+  const invalidated = enriched.filter(
+    (r) => r.signal.close_reason === "invalidation",
+  ).length;
+  const expired = enriched.filter((r) => r.signal.close_reason === "expired").length;
+  const resolved = targetHits + invalidated + expired;
+  const hitRate = resolved > 0 ? (targetHits / resolved) * 100 : null;
+
   const withMove = enriched.filter((r) => r.metrics.currentPct != null);
   const avgMove =
     withMove.length > 0
       ? withMove.reduce((a, b) => a + (b.metrics.currentPct ?? 0), 0) / withMove.length
       : null;
+
+  const allDays = enriched
+    .map((r) => daysToResolution(r.signal.signal_timestamp, r.signal.closed_at))
+    .filter((d): d is number => d != null);
+  const medianDays = median(allDays);
 
   const sortedByMove = [...withMove].sort(
     (a, b) => (b.metrics.currentPct ?? 0) - (a.metrics.currentPct ?? 0),
@@ -69,15 +101,27 @@ function Scorecard() {
   // By category
   const catMap = new Map<
     string,
-    { total: number; targets: number; invalidated: number; moves: number[] }
+    {
+      total: number;
+      targets: number;
+      invalidated: number;
+      expired: number;
+      moves: number[];
+      days: number[];
+    }
   >();
   for (const r of enriched) {
     const cat = r.event?.category ?? "Unknown";
-    const rec = catMap.get(cat) ?? { total: 0, targets: 0, invalidated: 0, moves: [] };
+    const rec =
+      catMap.get(cat) ??
+      { total: 0, targets: 0, invalidated: 0, expired: 0, moves: [], days: [] };
     rec.total++;
     if (r.signal.close_reason === "target") rec.targets++;
     if (r.signal.close_reason === "invalidation") rec.invalidated++;
+    if (r.signal.close_reason === "expired") rec.expired++;
     if (r.metrics.currentPct != null) rec.moves.push(r.metrics.currentPct);
+    const d = daysToResolution(r.signal.signal_timestamp, r.signal.closed_at);
+    if (d != null) rec.days.push(d);
     catMap.set(cat, rec);
   }
 
@@ -89,14 +133,23 @@ function Scorecard() {
           Observed historical behaviour of ripple signals. Educational research
           only — past behaviour does not predict future prices.
         </p>
+        <p className="text-[11px] text-muted-foreground mt-1">
+          {evalQuery.isFetching
+            ? "Evaluating open signals against target and invalidation levels…"
+            : "Signals resolve on target, invalidation, or after 10 trading days (expired). Delayed prices."}
+        </p>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        <Kpi label="Signals tracked" value={String(totalTracked)} />
+        <Kpi
+          label="Signals tracked"
+          value={String(totalTracked)}
+          sub={`${enriched.length - resolved} still open`}
+        />
         <Kpi
           label="Target-hit rate"
           value={hitRate == null ? "—" : hitRate.toFixed(0) + "%"}
-          sub={`${targetHits} target / ${invalidated} invalidated`}
+          sub={`${targetHits} target / ${invalidated} invalidated / ${expired} expired`}
         />
         <Kpi
           label="Avg move (in favour)"
@@ -104,8 +157,9 @@ function Scorecard() {
           tone={pctTone(avgMove)}
         />
         <Kpi
-          label="Open signals"
-          value={String(enriched.filter((r) => r.signal.status === "open").length)}
+          label="Median days to resolution"
+          value={medianDays == null ? "—" : String(medianDays)}
+          sub={`${resolved} resolved`}
         />
       </div>
 
@@ -122,27 +176,37 @@ function Scorecard() {
               <th className="text-right p-2">Signals</th>
               <th className="text-right p-2">Target hits</th>
               <th className="text-right p-2">Invalidated</th>
+              <th className="text-right p-2">Expired</th>
               <th className="text-right p-2">Hit rate</th>
+              <th className="text-right p-2">Median days</th>
               <th className="text-right p-2">Avg move</th>
             </tr>
           </thead>
           <tbody>
             {Array.from(catMap.entries()).map(([cat, rec]) => {
-              const closedN = rec.targets + rec.invalidated;
+              const closedN = rec.targets + rec.invalidated + rec.expired;
               const hr = closedN > 0 ? (rec.targets / closedN) * 100 : null;
               const avg =
                 rec.moves.length > 0
                   ? rec.moves.reduce((a, b) => a + b, 0) / rec.moves.length
                   : null;
+              const md = median(rec.days);
               return (
                 <tr key={cat} className="border-b border-border/40 last:border-b-0">
                   <td className="p-2">{cat}</td>
                   <td className="p-2 text-right tabular-nums">{rec.total}</td>
                   <td className="p-2 text-right tabular-nums text-tailwind">{rec.targets}</td>
                   <td className="p-2 text-right tabular-nums text-headwind">{rec.invalidated}</td>
-                  <td className="p-2 text-right tabular-nums">
-                    {hr == null ? "—" : hr.toFixed(0) + "%"}
+                  <td className="p-2 text-right tabular-nums text-muted-foreground">
+                    {rec.expired}
                   </td>
+                  <td className="p-2 text-right tabular-nums">
+                    <div>{hr == null ? "—" : hr.toFixed(0) + "%"}</div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {rec.targets}/{closedN} resolved
+                    </div>
+                  </td>
+                  <td className="p-2 text-right tabular-nums">{md == null ? "—" : md}</td>
                   <td className={"p-2 text-right tabular-nums " + pctTone(avg)}>
                     {fmtPct(avg)}
                   </td>
@@ -151,7 +215,7 @@ function Scorecard() {
             })}
             {catMap.size === 0 && (
               <tr>
-                <td colSpan={6} className="p-6 text-center text-muted-foreground">
+                <td colSpan={8} className="p-6 text-center text-muted-foreground">
                   No signals tracked yet. Visit the{" "}
                   <Link to="/tracker" className="text-primary hover:underline">
                     Tracker

@@ -13,9 +13,8 @@ function convictionFromStrength(s: "Low" | "Medium" | "High"): number {
 /** Idempotently seed signals for every event in EVENTS, with a snapshot price. */
 export const ensureSignals = createServerFn({ method: "POST" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { fetchQuoteWithRetry, derivedLevels, sleep } = await import(
-    "./signal-prices.server"
-  );
+  const { fetchQuoteWithRetry, sleep } = await import("./signal-prices.server");
+  const { levelsFor } = await import("./signal-levels");
   const apiKey = process.env.FINNHUB_API_KEY ?? "";
 
   const { data: existing } = await supabaseAdmin
@@ -60,7 +59,8 @@ export const ensureSignals = createServerFn({ method: "POST" }).handler(async ()
           const out = await getPrice(meta.quote);
           if (out.status !== "ok")
             failures.push({ ticker, status: out.status, message: out.message });
-          const lv = out.price != null ? derivedLevels(out.price, dir) : null;
+          const lv =
+            out.price != null ? levelsFor(out.price, dir, ev.strength) : null;
           const { data, error } = await supabaseAdmin
             .from("signals")
             .insert({
@@ -100,9 +100,9 @@ export const ensureSignals = createServerFn({ method: "POST" }).handler(async ()
  */
 export const repairSignalPrices = createServerFn({ method: "POST" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { fetchQuoteWithRetry, derivedLevels, sleep } = await import(
-    "./signal-prices.server"
-  );
+  const { fetchQuoteWithRetry, sleep } = await import("./signal-prices.server");
+  const { levelsFor } = await import("./signal-levels");
+  const magnitudeByEvent = new Map(EVENTS.map((e) => [e.id, e.strength]));
   const apiKey = process.env.FINNHUB_API_KEY ?? "";
   if (!apiKey)
     return {
@@ -113,7 +113,7 @@ export const repairSignalPrices = createServerFn({ method: "POST" }).handler(asy
 
   const { data: rows, error } = await supabaseAdmin
     .from("signals")
-    .select("id,ticker,direction")
+    .select("id,ticker,direction,event_id")
     .is("signal_price", null);
   if (error) throw new Error(error.message);
 
@@ -160,7 +160,11 @@ export const repairSignalPrices = createServerFn({ method: "POST" }).handler(asy
       continue;
     }
 
-    const lv = derivedLevels(out.price, s.direction as "long" | "short");
+    const lv = levelsFor(
+      out.price,
+      s.direction as "long" | "short",
+      magnitudeByEvent.get(s.event_id) ?? "Medium",
+    );
     await supabaseAdmin
       .from("signals")
       .update({
@@ -305,3 +309,12 @@ export const getSignal = createServerFn({ method: "GET" })
       })) as SnapshotRow[],
     };
   });
+
+/**
+ * Daily evaluation job: re-levels open signals from their event magnitude,
+ * refreshes prices, and resolves each into target / invalidation / expired.
+ */
+export const evaluateSignals = createServerFn({ method: "POST" }).handler(async () => {
+  const { runEvaluation } = await import("./signal-eval.server");
+  return runEvaluation();
+});
