@@ -1,8 +1,9 @@
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, Link } from "@tanstack/react-router";
 import type { SignalRow } from "@/lib/signal-metrics";
 import { fmtPct, pctTone } from "@/lib/signal-metrics";
 import { NoDataBadge, TickerLabel } from "./ticker-meta-chips";
 import { isMoveCaptured, expectedMovePct } from "@/lib/event-freshness";
+import { CONFLICT_NOTE } from "@/lib/ticker-rollup";
 import type { RippleStrength } from "@/lib/ripple-data";
 
 export function SignalBadge({
