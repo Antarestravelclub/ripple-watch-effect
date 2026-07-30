@@ -41,6 +41,7 @@ export function SignalBadge({
       ? "bg-tailwind/15 text-tailwind border-tailwind/30"
       : "bg-headwind/15 text-headwind border-headwind/30";
   return (
+    <span className="inline-flex items-center">
     <button
       type="button"
       onClick={(e) => {
