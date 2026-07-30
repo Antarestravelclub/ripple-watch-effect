@@ -57,7 +57,10 @@ function TodayPage() {
         <TickerSearch query={query} onChange={setQuery} />
       </div>
 
+      {query.trim().length > 0 && <QuoteCard ticker={query} />}
+
       <MarketMovers />
+
 
       <div className="mb-5">
         <RegionFilter selected={regions} onChange={setRegions} />
