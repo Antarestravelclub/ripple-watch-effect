@@ -101,11 +101,11 @@ function TodayPage() {
                 </span>
                 <ChevronDown
                   className={
-                    "h-4 w-4 transition-transform " + (showOlder ? "rotate-180" : "")
+                    "h-4 w-4 transition-transform " + (showOlder || fresh.length === 0 ? "rotate-180" : "")
                   }
                 />
               </button>
-              {showOlder && (
+              {(showOlder || fresh.length === 0) && (
                 <div className="grid gap-3 mt-3">
                   {older.map((e) => (
                     <EventCard key={e.id} event={e} stale />

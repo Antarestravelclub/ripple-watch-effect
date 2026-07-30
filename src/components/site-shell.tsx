@@ -28,12 +28,10 @@ export function SiteShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col bg-background gradient-radial">
       <header className="sticky top-0 z-30 border-b border-border/60 backdrop-blur bg-background/70">
-        <div className="mx-auto max-w-7xl px-4 h-14 flex items-center justify-between">
+        <div className="mx-auto max-w-7xl px-4 min-h-14 py-1.5 flex items-center justify-between gap-3 flex-wrap">
           <Link to="/" className="flex items-center">
             <RippleLogo />
           </Link>
-          <div className="flex items-center gap-3 flex-wrap justify-end">
-          <DataRefreshStamp />
           <nav className="flex items-center gap-1 flex-wrap">
             <NavLink to="/">Today</NavLink>
             <NavLink to="/calendar">Calendar</NavLink>
@@ -46,7 +44,9 @@ export function SiteShell({ children }: { children: ReactNode }) {
             <NavLink to="/playbooks">Playbooks</NavLink>
             <NavLink to="/watchlist">Watchlist</NavLink>
           </nav>
-          </div>
+        </div>
+        <div className="mx-auto max-w-7xl px-4 pb-1.5 flex justify-end">
+          <DataRefreshStamp />
         </div>
       </header>
 
