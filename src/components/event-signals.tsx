@@ -33,9 +33,9 @@ export function EventSignals({ eventId }: { eventId: string }) {
         />
       ))}
 
-      {signals.length > 8 && (
+      {(data.signals ?? []).filter((s) => !s.needs_review).length > 8 && (
         <span className="text-[11px] text-muted-foreground self-center">
-          +{signals.length - 8} more
+          +{(data.signals ?? []).filter((s) => !s.needs_review).length - 8} more
         </span>
       )}
     </div>
