@@ -31,13 +31,15 @@ export const Route = createFileRoute("/")({
 
 function TodayPage() {
   const [regions, setRegions] = useState<RegionCode[]>([]);
+  const [query, setQuery] = useState("");
 
   const events = [...EVENTS]
     .sort(
       (a, b) =>
         new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
     )
-    .filter((e) => eventMatchesRegions(e.id, regions));
+    .filter((e) => eventMatchesRegions(e.id, regions))
+    .filter((e) => eventTouchesTicker(e, query));
 
   return (
     <SiteShell>
@@ -51,13 +53,20 @@ function TodayPage() {
         </p>
       </div>
 
+      <div className="mb-4">
+        <TickerSearch query={query} onChange={setQuery} />
+      </div>
+
+      <MarketMovers />
+
       <div className="mb-5">
         <RegionFilter selected={regions} onChange={setRegions} />
       </div>
 
       {events.length === 0 ? (
         <div className="rounded-xl border border-border/70 bg-card/60 p-8 text-center text-sm text-muted-foreground">
-          No events match the selected regions.
+          No events match the selected filters.
+
         </div>
       ) : (
         <div className="grid gap-3">
