@@ -9,6 +9,7 @@ import {
 import { EventCard } from "@/components/event-card";
 import { useState } from "react";
 import { X } from "lucide-react";
+import { WatchlistQuotes } from "@/components/watchlist-quotes";
 
 export const Route = createFileRoute("/watchlist")({
   head: () => ({
@@ -92,6 +93,10 @@ function WatchlistPage() {
           ))}
         </div>
       )}
+
+      <WatchlistQuotes tickers={watchlist} />
+
+
 
       {watchlist.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
