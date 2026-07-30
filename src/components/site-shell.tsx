@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { SectorHeat } from "./sector-heat";
 import { EVENTS } from "@/lib/ripple-data";
 import { OperonBadge } from "./operon-badge";
+import { DataRefreshStamp } from "./data-refresh-stamp";
 
 function NavLink({ to, children }: { to: string; children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -31,6 +32,8 @@ export function SiteShell({ children }: { children: ReactNode }) {
           <Link to="/" className="flex items-center">
             <RippleLogo />
           </Link>
+          <div className="flex items-center gap-3 flex-wrap justify-end">
+          <DataRefreshStamp />
           <nav className="flex items-center gap-1 flex-wrap">
             <NavLink to="/">Today</NavLink>
             <NavLink to="/calendar">Calendar</NavLink>
@@ -43,6 +46,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
             <NavLink to="/playbooks">Playbooks</NavLink>
             <NavLink to="/watchlist">Watchlist</NavLink>
           </nav>
+          </div>
         </div>
       </header>
 
