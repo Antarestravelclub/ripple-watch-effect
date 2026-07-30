@@ -4,6 +4,7 @@ import { listSignalsForEvent } from "@/lib/signals.functions";
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
 import { tickerMeta } from "@/lib/ticker-registry";
 import { SignalBadge } from "./signal-badge";
+import { useConflictedTickers } from "@/hooks/use-ticker-rollups";
 import type { RippleStrength } from "@/lib/ripple-data";
 
 export function EventSignals({
@@ -22,6 +23,7 @@ export function EventSignals({
   // Flagged tickers (unquotable / not publicly traded) are held back for review.
   const signals = (data.signals ?? []).filter((s) => !s.needs_review).slice(0, 8);
   // Current price comes from the live feed; the stored snapshot is only a fallback.
+  const conflicted = useConflictedTickers();
   const { quotes } = useLiveQuotes(
     signals.map((s) => s.quote_symbol || tickerMeta(s.ticker).quote),
   );
@@ -33,6 +35,7 @@ export function EventSignals({
           key={s.id}
           signal={s}
           strength={strength}
+          conflicted={conflicted.has(s.ticker)}
           currentPrice={
             quotes[s.quote_symbol || tickerMeta(s.ticker).quote]?.price ??
             data.latest[s.id]?.price ??
