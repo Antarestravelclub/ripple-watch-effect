@@ -584,3 +584,30 @@ export function eventTouchesTicker(evt: RippleEvent, ticker: string): boolean {
     g.tickers.map((x) => x.toUpperCase()).includes(t),
   );
 }
+
+export interface SectorPressure {
+  sector: (typeof GICS_SECTORS)[number];
+  tailwind: number; // count of tailwind ticker signals
+  headwind: number; // count of headwind ticker signals
+  net: number;
+}
+
+// Net directional pressure per GICS sector: tailwind ticker signals minus headwind ticker signals.
+export function sectorPressure(events: RippleEvent[]): SectorPressure[] {
+  const map = new Map<string, { tailwind: number; headwind: number }>();
+  for (const s of GICS_SECTORS) map.set(s, { tailwind: 0, headwind: 0 });
+  for (const e of events) {
+    for (const grp of e.tailwinds) {
+      const g = classifyGics(grp.sector);
+      if (g) map.get(g)!.tailwind += grp.tickers.length;
+    }
+    for (const grp of e.headwinds) {
+      const g = classifyGics(grp.sector);
+      if (g) map.get(g)!.headwind += grp.tickers.length;
+    }
+  }
+  return GICS_SECTORS.map((s) => {
+    const v = map.get(s)!;
+    return { sector: s, tailwind: v.tailwind, headwind: v.headwind, net: v.tailwind - v.headwind };
+  });
+}
