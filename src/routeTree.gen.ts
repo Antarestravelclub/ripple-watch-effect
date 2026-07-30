@@ -13,6 +13,7 @@ import { Route as WatchlistRouteImport } from './routes/watchlist'
 import { Route as TrackerRouteImport } from './routes/tracker'
 import { Route as ScorecardRouteImport } from './routes/scorecard'
 import { Route as PlaybooksRouteImport } from './routes/playbooks'
+import { Route as AnalyzeRouteImport } from './routes/analyze'
 import { Route as AnaloguesRouteImport } from './routes/analogues'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SignalIdRouteImport } from './routes/signal.$id'
@@ -37,6 +38,11 @@ const ScorecardRoute = ScorecardRouteImport.update({
 const PlaybooksRoute = PlaybooksRouteImport.update({
   id: '/playbooks',
   path: '/playbooks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AnalyzeRoute = AnalyzeRouteImport.update({
+  id: '/analyze',
+  path: '/analyze',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AnaloguesRoute = AnaloguesRouteImport.update({
@@ -69,6 +75,7 @@ const ApiPublicHooksFetchPricesRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/analogues': typeof AnaloguesRoute
+  '/analyze': typeof AnalyzeRoute
   '/playbooks': typeof PlaybooksRoute
   '/scorecard': typeof ScorecardRoute
   '/tracker': typeof TrackerRoute
@@ -80,6 +87,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analogues': typeof AnaloguesRoute
+  '/analyze': typeof AnalyzeRoute
   '/playbooks': typeof PlaybooksRoute
   '/scorecard': typeof ScorecardRoute
   '/tracker': typeof TrackerRoute
@@ -92,6 +100,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/analogues': typeof AnaloguesRoute
+  '/analyze': typeof AnalyzeRoute
   '/playbooks': typeof PlaybooksRoute
   '/scorecard': typeof ScorecardRoute
   '/tracker': typeof TrackerRoute
@@ -105,6 +114,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/analogues'
+    | '/analyze'
     | '/playbooks'
     | '/scorecard'
     | '/tracker'
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/analogues'
+    | '/analyze'
     | '/playbooks'
     | '/scorecard'
     | '/tracker'
@@ -127,6 +138,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/analogues'
+    | '/analyze'
     | '/playbooks'
     | '/scorecard'
     | '/tracker'
@@ -139,6 +151,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnaloguesRoute: typeof AnaloguesRoute
+  AnalyzeRoute: typeof AnalyzeRoute
   PlaybooksRoute: typeof PlaybooksRoute
   ScorecardRoute: typeof ScorecardRoute
   TrackerRoute: typeof TrackerRoute
@@ -176,6 +189,13 @@ declare module '@tanstack/react-router' {
       path: '/playbooks'
       fullPath: '/playbooks'
       preLoaderRoute: typeof PlaybooksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/analyze': {
+      id: '/analyze'
+      path: '/analyze'
+      fullPath: '/analyze'
+      preLoaderRoute: typeof AnalyzeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/analogues': {
@@ -219,6 +239,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnaloguesRoute: AnaloguesRoute,
+  AnalyzeRoute: AnalyzeRoute,
   PlaybooksRoute: PlaybooksRoute,
   ScorecardRoute: ScorecardRoute,
   TrackerRoute: TrackerRoute,
