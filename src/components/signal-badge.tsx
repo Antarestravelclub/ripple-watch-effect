@@ -73,5 +73,18 @@ export function SignalBadge({
         </span>
       )}
     </button>
+    {conflicted && (
+      <Link
+        to="/tickers/$symbol"
+        params={{ symbol: signal.ticker }}
+        onClick={(e) => e.stopPropagation()}
+        title={CONFLICT_NOTE + " View this ticker's rollup."}
+        aria-label={`${signal.ticker}: ${CONFLICT_NOTE}`}
+        className="ml-1 text-[11px] leading-none text-muted-foreground hover:text-foreground"
+      >
+        ⚠
+      </Link>
+    )}
+    </span>
   );
 }
