@@ -3,42 +3,19 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { EVENTS } from "./ripple-data";
+import { tickerMeta } from "./ticker-registry";
 import type { SignalRow, SnapshotRow } from "./signal-metrics";
 
 function convictionFromStrength(s: "Low" | "Medium" | "High"): number {
   return s === "High" ? 5 : s === "Medium" ? 3 : 2;
 }
 
-async function fetchFinnhubQuote(
-  ticker: string,
-  apiKey: string,
-): Promise<number | null> {
-  try {
-    const res = await fetch(
-      `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(ticker)}&token=${apiKey}`,
-    );
-    if (!res.ok) return null;
-    const j = (await res.json()) as { c?: number };
-    if (typeof j.c === "number" && j.c > 0) return j.c;
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-function derivedLevels(
-  price: number,
-  direction: "long" | "short",
-): { target: number; invalidation: number } {
-  if (direction === "long") {
-    return { target: +(price * 1.1).toFixed(4), invalidation: +(price * 0.92).toFixed(4) };
-  }
-  return { target: +(price * 0.9).toFixed(4), invalidation: +(price * 1.08).toFixed(4) };
-}
-
-/** Idempotently seed signals for every event in EVENTS. Also fetches an initial price. */
+/** Idempotently seed signals for every event in EVENTS, with a snapshot price. */
 export const ensureSignals = createServerFn({ method: "POST" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { fetchQuoteWithRetry, derivedLevels, sleep } = await import(
+    "./signal-prices.server"
+  );
   const apiKey = process.env.FINNHUB_API_KEY ?? "";
 
   const { data: existing } = await supabaseAdmin
@@ -50,31 +27,40 @@ export const ensureSignals = createServerFn({ method: "POST" }).handler(async ()
     ),
   );
 
-  const priceCache = new Map<string, number | null>();
-  async function getPrice(t: string): Promise<number | null> {
-    if (priceCache.has(t)) return priceCache.get(t)!;
-    const p = apiKey ? await fetchFinnhubQuote(t, apiKey) : null;
-    priceCache.set(t, p);
-    return p;
+  type Outcome = Awaited<ReturnType<typeof fetchQuoteWithRetry>>;
+  const cache = new Map<string, Outcome>();
+  async function getPrice(symbol: string): Promise<Outcome> {
+    if (cache.has(symbol)) return cache.get(symbol)!;
+    const r = await fetchQuoteWithRetry(symbol, apiKey);
+    cache.set(symbol, r);
+    await sleep(250);
+    return r;
   }
 
   let inserted = 0;
+  const skipped: Array<{ ticker: string; reason: string }> = [];
+  const failures: Array<{ ticker: string; status: string; message: string | null }> = [];
+
   for (const ev of EVENTS) {
     const strength = convictionFromStrength(ev.strength);
-    const groups: Array<{
-      dir: "long" | "short";
-      groups: typeof ev.tailwinds;
-    }> = [
+    const groups: Array<{ dir: "long" | "short"; groups: typeof ev.tailwinds }> = [
       { dir: "long", groups: ev.tailwinds },
       { dir: "short", groups: ev.headwinds },
     ];
     for (const { dir, groups: gs } of groups) {
       for (const g of gs) {
         for (const ticker of g.tickers) {
+          const meta = tickerMeta(ticker);
+          if (!meta.tradable) {
+            skipped.push({ ticker, reason: meta.note ?? "Not publicly traded" });
+            continue;
+          }
           const key = `${ev.id}|${ticker}|${dir}|ripple-v1`;
           if (seen.has(key)) continue;
-          const price = await getPrice(ticker);
-          const lv = price != null ? derivedLevels(price, dir) : null;
+          const out = await getPrice(meta.quote);
+          if (out.status !== "ok")
+            failures.push({ ticker, status: out.status, message: out.message });
+          const lv = out.price != null ? derivedLevels(out.price, dir) : null;
           const { data, error } = await supabaseAdmin
             .from("signals")
             .insert({
@@ -84,27 +70,157 @@ export const ensureSignals = createServerFn({ method: "POST" }).handler(async ()
               conviction: strength,
               rationale: g.mechanism,
               generated_by: "ripple-v1",
-              signal_price: price,
+              signal_price: out.price,
+              quote_symbol: meta.quote,
+              price_status: out.status,
+              price_error: out.message,
+              needs_review: out.status === "unsupported_symbol",
               target_price: lv?.target ?? null,
               invalidation_price: lv?.invalidation ?? null,
             })
             .select("id")
             .maybeSingle();
-          if (!error && data && price != null) {
+          if (!error && data && out.price != null) {
             await supabaseAdmin
               .from("price_snapshots")
-              .insert({ signal_id: data.id, ticker, price });
-            inserted++;
-          } else if (!error) {
-            inserted++;
+              .insert({ signal_id: data.id, ticker, price: out.price });
           }
+          if (!error) inserted++;
           seen.add(key);
         }
       }
     }
   }
-  return { inserted };
+  return { inserted, skipped, failures };
 });
+
+/**
+ * Backfills a snapshot price for every signal missing one, and records the
+ * exact reason when the market feed can't price a symbol.
+ */
+export const repairSignalPrices = createServerFn({ method: "POST" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { fetchQuoteWithRetry, derivedLevels, sleep } = await import(
+    "./signal-prices.server"
+  );
+  const apiKey = process.env.FINNHUB_API_KEY ?? "";
+  if (!apiKey)
+    return {
+      repaired: 0,
+      flagged: 0,
+      report: [{ ticker: "*", status: "no_key", message: "Market feed key not configured" }],
+    };
+
+  const { data: rows, error } = await supabaseAdmin
+    .from("signals")
+    .select("id,ticker,direction")
+    .is("signal_price", null);
+  if (error) throw new Error(error.message);
+
+  const report: Array<{ ticker: string; status: string; message: string | null }> = [];
+  const cache = new Map<string, Awaited<ReturnType<typeof fetchQuoteWithRetry>>>();
+  let repaired = 0;
+  let flagged = 0;
+
+  for (const s of rows ?? []) {
+    const meta = tickerMeta(s.ticker);
+    if (!meta.tradable) {
+      await supabaseAdmin
+        .from("signals")
+        .update({
+          price_status: "not_tradable",
+          price_error: meta.note ?? "Not publicly traded",
+          needs_review: true,
+          quote_symbol: null,
+        })
+        .eq("id", s.id);
+      flagged++;
+      report.push({ ticker: s.ticker, status: "not_tradable", message: meta.note ?? null });
+      continue;
+    }
+    let out = cache.get(meta.quote);
+    if (!out) {
+      out = await fetchQuoteWithRetry(meta.quote, apiKey);
+      cache.set(meta.quote, out);
+      await sleep(250);
+    }
+    report.push({ ticker: s.ticker, status: out.status, message: out.message });
+
+    if (out.price == null) {
+      await supabaseAdmin
+        .from("signals")
+        .update({
+          price_status: out.status,
+          price_error: out.message,
+          quote_symbol: meta.quote,
+          needs_review: out.status === "unsupported_symbol",
+        })
+        .eq("id", s.id);
+      if (out.status === "unsupported_symbol") flagged++;
+      continue;
+    }
+
+    const lv = derivedLevels(out.price, s.direction as "long" | "short");
+    await supabaseAdmin
+      .from("signals")
+      .update({
+        signal_price: out.price,
+        target_price: lv.target,
+        invalidation_price: lv.invalidation,
+        quote_symbol: meta.quote,
+        price_status: "ok",
+        price_error: null,
+        needs_review: false,
+      })
+      .eq("id", s.id);
+    await supabaseAdmin
+      .from("price_snapshots")
+      .insert({ signal_id: s.id, ticker: s.ticker, price: out.price });
+    repaired++;
+  }
+
+  return { repaired, flagged, report };
+});
+
+/** Validates every ticker used by the app against the price source. */
+export const validateTickers = createServerFn({ method: "POST" }).handler(async () => {
+  const { resolveMany } = await import("./signal-prices.server");
+  const apiKey = process.env.FINNHUB_API_KEY ?? "";
+  const keys = new Set<string>();
+  for (const ev of EVENTS)
+    for (const g of [...ev.tailwinds, ...ev.headwinds])
+      for (const t of g.tickers) keys.add(t);
+
+  const metas = [...keys].map((k) => tickerMeta(k));
+  const quotable = metas.filter((m) => m.tradable);
+  const resolved = await resolveMany(
+    quotable.map((m) => m.quote),
+    apiKey,
+  );
+
+  const rows = metas.map((m) => {
+    if (!m.tradable)
+      return {
+        ticker: m.key,
+        display: m.display,
+        quote: null,
+        ok: false,
+        status: "not_tradable",
+        message: m.note ?? "Not publicly traded",
+      };
+    const r = resolved.get(m.quote)!;
+    return {
+      ticker: m.key,
+      display: m.display,
+      quote: m.quote,
+      ok: r.status === "ok",
+      status: r.status,
+      message: r.message,
+    };
+  });
+  return { rows, failing: rows.filter((r) => !r.ok).length };
+});
+
 
 /** List all signals with lightweight current-price info. */
 export const listSignals = createServerFn({ method: "GET" }).handler(async () => {
