@@ -32,7 +32,7 @@ export const Route = createFileRoute("/api/public/hooks/fetch-prices")({
 
         const { data: openSignals, error } = await supabaseAdmin
           .from("signals")
-          .select("id,ticker,direction,signal_price,target_price,invalidation_price,status")
+          .select("id,event_id,ticker,direction,signal_price,target_price,invalidation_price,status")
           .eq("status", "open");
         if (error) {
           return new Response(JSON.stringify({ ok: false, error: error.message }), {
@@ -85,16 +85,18 @@ export const Route = createFileRoute("/api/public/hooks/fetch-prices")({
 
           // Backfill signal_price + levels if missing
           if (s.signal_price == null) {
-            const levels =
-              s.direction === "long"
-                ? { target: price * 1.1, invalidation: price * 0.92 }
-                : { target: price * 0.9, invalidation: price * 1.08 };
+            const { levelsFor } = await import("@/lib/signal-levels");
+            const { EVENTS } = await import("@/lib/ripple-data");
+            const mag =
+              EVENTS.find((e) => e.id === (s as { event_id?: string }).event_id)?.strength ??
+              "Medium";
+            const levels = levelsFor(price, s.direction as "long" | "short", mag);
             updates.push({
               id: s.id,
               patch: {
                 signal_price: price,
-                target_price: +levels.target.toFixed(4),
-                invalidation_price: +levels.invalidation.toFixed(4),
+                target_price: levels.target,
+                invalidation_price: levels.invalidation,
               },
             });
             continue;
