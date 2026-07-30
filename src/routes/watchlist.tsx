@@ -9,6 +9,7 @@ import {
 import { EventCard } from "@/components/event-card";
 import { useState } from "react";
 import { X } from "lucide-react";
+import { WatchlistQuotes } from "@/components/watchlist-quotes";
 
 export const Route = createFileRoute("/watchlist")({
   head: () => ({
