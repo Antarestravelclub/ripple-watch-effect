@@ -10,7 +10,8 @@ export function EventSignals({ eventId }: { eventId: string }) {
     queryFn: () => fetcher({ data: { eventId } }),
     staleTime: 60_000,
   });
-  const signals = data.signals ?? [];
+  // Flagged tickers (unquotable / not publicly traded) are held back for review.
+  const signals = (data.signals ?? []).filter((s) => !s.needs_review);
   if (signals.length === 0) return null;
   return (
     <div className="mt-3 flex flex-wrap gap-1.5">
