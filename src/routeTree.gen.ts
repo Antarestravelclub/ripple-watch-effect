@@ -21,6 +21,7 @@ import { Route as SignalIdRouteImport } from './routes/signal.$id'
 import { Route as EventIdRouteImport } from './routes/event.$id'
 import { Route as ApiPublicStreamQuotesRouteImport } from './routes/api/public/stream/quotes'
 import { Route as ApiPublicHooksFetchPricesRouteImport } from './routes/api/public/hooks/fetch-prices'
+import { Route as ApiPublicHooksEvaluateSignalsRouteImport } from './routes/api/public/hooks/evaluate-signals'
 
 const WatchlistRoute = WatchlistRouteImport.update({
   id: '/watchlist',
@@ -83,6 +84,12 @@ const ApiPublicHooksFetchPricesRoute =
     path: '/api/public/hooks/fetch-prices',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksEvaluateSignalsRoute =
+  ApiPublicHooksEvaluateSignalsRouteImport.update({
+    id: '/api/public/hooks/evaluate-signals',
+    path: '/api/public/hooks/evaluate-signals',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -95,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/watchlist': typeof WatchlistRoute
   '/event/$id': typeof EventIdRoute
   '/signal/$id': typeof SignalIdRoute
+  '/api/public/hooks/evaluate-signals': typeof ApiPublicHooksEvaluateSignalsRoute
   '/api/public/hooks/fetch-prices': typeof ApiPublicHooksFetchPricesRoute
   '/api/public/stream/quotes': typeof ApiPublicStreamQuotesRoute
 }
@@ -109,6 +117,7 @@ export interface FileRoutesByTo {
   '/watchlist': typeof WatchlistRoute
   '/event/$id': typeof EventIdRoute
   '/signal/$id': typeof SignalIdRoute
+  '/api/public/hooks/evaluate-signals': typeof ApiPublicHooksEvaluateSignalsRoute
   '/api/public/hooks/fetch-prices': typeof ApiPublicHooksFetchPricesRoute
   '/api/public/stream/quotes': typeof ApiPublicStreamQuotesRoute
 }
@@ -124,6 +133,7 @@ export interface FileRoutesById {
   '/watchlist': typeof WatchlistRoute
   '/event/$id': typeof EventIdRoute
   '/signal/$id': typeof SignalIdRoute
+  '/api/public/hooks/evaluate-signals': typeof ApiPublicHooksEvaluateSignalsRoute
   '/api/public/hooks/fetch-prices': typeof ApiPublicHooksFetchPricesRoute
   '/api/public/stream/quotes': typeof ApiPublicStreamQuotesRoute
 }
@@ -140,6 +150,7 @@ export interface FileRouteTypes {
     | '/watchlist'
     | '/event/$id'
     | '/signal/$id'
+    | '/api/public/hooks/evaluate-signals'
     | '/api/public/hooks/fetch-prices'
     | '/api/public/stream/quotes'
   fileRoutesByTo: FileRoutesByTo
@@ -154,6 +165,7 @@ export interface FileRouteTypes {
     | '/watchlist'
     | '/event/$id'
     | '/signal/$id'
+    | '/api/public/hooks/evaluate-signals'
     | '/api/public/hooks/fetch-prices'
     | '/api/public/stream/quotes'
   id:
@@ -168,6 +180,7 @@ export interface FileRouteTypes {
     | '/watchlist'
     | '/event/$id'
     | '/signal/$id'
+    | '/api/public/hooks/evaluate-signals'
     | '/api/public/hooks/fetch-prices'
     | '/api/public/stream/quotes'
   fileRoutesById: FileRoutesById
@@ -183,6 +196,7 @@ export interface RootRouteChildren {
   WatchlistRoute: typeof WatchlistRoute
   EventIdRoute: typeof EventIdRoute
   SignalIdRoute: typeof SignalIdRoute
+  ApiPublicHooksEvaluateSignalsRoute: typeof ApiPublicHooksEvaluateSignalsRoute
   ApiPublicHooksFetchPricesRoute: typeof ApiPublicHooksFetchPricesRoute
   ApiPublicStreamQuotesRoute: typeof ApiPublicStreamQuotesRoute
 }
@@ -273,6 +287,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksFetchPricesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/evaluate-signals': {
+      id: '/api/public/hooks/evaluate-signals'
+      path: '/api/public/hooks/evaluate-signals'
+      fullPath: '/api/public/hooks/evaluate-signals'
+      preLoaderRoute: typeof ApiPublicHooksEvaluateSignalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -287,6 +308,7 @@ const rootRouteChildren: RootRouteChildren = {
   WatchlistRoute: WatchlistRoute,
   EventIdRoute: EventIdRoute,
   SignalIdRoute: SignalIdRoute,
+  ApiPublicHooksEvaluateSignalsRoute: ApiPublicHooksEvaluateSignalsRoute,
   ApiPublicHooksFetchPricesRoute: ApiPublicHooksFetchPricesRoute,
   ApiPublicStreamQuotesRoute: ApiPublicStreamQuotesRoute,
 }
