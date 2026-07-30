@@ -197,6 +197,10 @@ export type Database = {
           generated_by: string
           id: string
           invalidation_price: number | null
+          needs_review: boolean
+          price_error: string | null
+          price_status: string
+          quote_symbol: string | null
           rationale: string | null
           signal_price: number | null
           signal_timestamp: string
@@ -217,6 +221,10 @@ export type Database = {
           generated_by?: string
           id?: string
           invalidation_price?: number | null
+          needs_review?: boolean
+          price_error?: string | null
+          price_status?: string
+          quote_symbol?: string | null
           rationale?: string | null
           signal_price?: number | null
           signal_timestamp?: string
@@ -237,6 +245,10 @@ export type Database = {
           generated_by?: string
           id?: string
           invalidation_price?: number | null
+          needs_review?: boolean
+          price_error?: string | null
+          price_status?: string
+          quote_symbol?: string | null
           rationale?: string | null
           signal_price?: number | null
           signal_timestamp?: string

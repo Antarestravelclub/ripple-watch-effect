@@ -17,6 +17,10 @@ export interface SignalRow {
   closed_at: string | null;
   close_reason: string | null;
   generated_by: string;
+  price_status?: string | null;
+  price_error?: string | null;
+  needs_review?: boolean | null;
+  quote_symbol?: string | null;
 }
 
 export interface SnapshotRow {

@@ -42,10 +42,29 @@ export const Route = createFileRoute("/api/public/hooks/fetch-prices")({
         }
 
         const tickers = Array.from(new Set((openSignals ?? []).map((s) => s.ticker)));
+        const { tickerMeta } = await import("@/lib/ticker-registry");
         const priceByTicker = new Map<string, number>();
+        const failed: string[] = [];
         for (const t of tickers) {
-          const p = await fetchQuote(t, apiKey);
+          const meta = tickerMeta(t);
+          if (!meta.tradable) {
+            failed.push(t);
+            continue;
+          }
+          const p = await fetchQuote(meta.quote, apiKey);
           if (p != null) priceByTicker.set(t, p);
+          else failed.push(t);
+        }
+        if (failed.length > 0) {
+          // Surface the failure on the row instead of leaving a stale 0.0%.
+          await supabaseAdmin
+            .from("signals")
+            .update({
+              price_status: "unsupported_symbol",
+              price_error: "No quote returned by the market feed",
+            })
+            .in("ticker", failed)
+            .eq("status", "open");
         }
 
         type SignalPatch = {
