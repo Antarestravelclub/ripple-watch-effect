@@ -4,7 +4,10 @@ import { SiteShell } from "@/components/site-shell";
 import { EventCard } from "@/components/event-card";
 import { EVENTS } from "@/lib/ripple-data";
 import { RegionFilter } from "@/components/region-filter";
+import { TickerSearch, eventTouchesTicker } from "@/components/ticker-search";
+import { MarketMovers } from "@/components/market-movers";
 import { eventMatchesRegions, type RegionCode } from "@/lib/ripple-regions";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
