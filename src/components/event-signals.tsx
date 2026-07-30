@@ -4,8 +4,15 @@ import { listSignalsForEvent } from "@/lib/signals.functions";
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
 import { tickerMeta } from "@/lib/ticker-registry";
 import { SignalBadge } from "./signal-badge";
+import type { RippleStrength } from "@/lib/ripple-data";
 
-export function EventSignals({ eventId }: { eventId: string }) {
+export function EventSignals({
+  eventId,
+  strength = "Medium",
+}: {
+  eventId: string;
+  strength?: RippleStrength;
+}) {
   const fetcher = useServerFn(listSignalsForEvent);
   const { data } = useSuspenseQuery({
     queryKey: ["signals", "event", eventId],
@@ -25,6 +32,7 @@ export function EventSignals({ eventId }: { eventId: string }) {
         <SignalBadge
           key={s.id}
           signal={s}
+          strength={strength}
           currentPrice={
             quotes[s.quote_symbol || tickerMeta(s.ticker).quote]?.price ??
             data.latest[s.id]?.price ??

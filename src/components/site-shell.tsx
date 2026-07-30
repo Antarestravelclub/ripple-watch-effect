@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { SectorHeat } from "./sector-heat";
 import { EVENTS } from "@/lib/ripple-data";
 import { OperonBadge } from "./operon-badge";
+import { DataRefreshStamp } from "./data-refresh-stamp";
 
 function NavLink({ to, children }: { to: string; children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -27,7 +28,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col bg-background gradient-radial">
       <header className="sticky top-0 z-30 border-b border-border/60 backdrop-blur bg-background/70">
-        <div className="mx-auto max-w-7xl px-4 h-14 flex items-center justify-between">
+        <div className="mx-auto max-w-7xl px-4 min-h-14 py-1.5 flex items-center justify-between gap-3 flex-wrap">
           <Link to="/" className="flex items-center">
             <RippleLogo />
           </Link>
@@ -43,6 +44,9 @@ export function SiteShell({ children }: { children: ReactNode }) {
             <NavLink to="/playbooks">Playbooks</NavLink>
             <NavLink to="/watchlist">Watchlist</NavLink>
           </nav>
+        </div>
+        <div className="mx-auto max-w-7xl px-4 pb-1.5 flex justify-end">
+          <DataRefreshStamp />
         </div>
       </header>
 

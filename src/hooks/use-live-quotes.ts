@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getQuotes } from "@/lib/quotes.functions";
+import { markDataRefresh } from "@/lib/data-refresh-store";
 
 export interface LiveQuote {
   price: number;
@@ -71,7 +72,9 @@ export function useLiveQuotes(tickers: string[]) {
       }
       return next;
     });
-    setUpdatedAt(Date.now());
+    const ts = Date.now();
+    setUpdatedAt(ts);
+    markDataRefresh(ts);
   }, [data]);
 
   // Subscribe to the stream.
@@ -95,7 +98,9 @@ export function useLiveQuotes(tickers: string[]) {
           }
           return next;
         });
-        setUpdatedAt(Date.now());
+        const ts = Date.now();
+    setUpdatedAt(ts);
+    markDataRefresh(ts);
       } catch {
         /* ignore */
       }
@@ -122,7 +127,9 @@ export function useLiveQuotes(tickers: string[]) {
           }
           return next;
         });
-        setUpdatedAt(Date.now());
+        const ts = Date.now();
+    setUpdatedAt(ts);
+    markDataRefresh(ts);
       } catch {
         /* ignore */
       }

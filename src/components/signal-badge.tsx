@@ -2,13 +2,17 @@ import { useNavigate } from "@tanstack/react-router";
 import type { SignalRow } from "@/lib/signal-metrics";
 import { fmtPct, pctTone } from "@/lib/signal-metrics";
 import { NoDataBadge, TickerLabel } from "./ticker-meta-chips";
+import { isMoveCaptured, expectedMovePct } from "@/lib/event-freshness";
+import type { RippleStrength } from "@/lib/ripple-data";
 
 export function SignalBadge({
   signal,
   currentPrice,
+  strength = "Medium",
 }: {
   signal: SignalRow;
   currentPrice: number | null;
+  strength?: RippleStrength;
 }) {
   const navigate = useNavigate();
   const sp = signal.signal_price;
@@ -24,6 +28,9 @@ export function SignalBadge({
     (sp == null
       ? "No snapshot price captured for this signal yet"
       : "No current price returned by the market feed");
+  // Priced-in check: has the ticker already travelled >60% of the expected
+  // move for this ripple magnitude since the event was captured?
+  const captured = isMoveCaptured(pct, strength);
   const dirLabel = signal.direction === "long" ? "LONG" : "SHORT";
   const dirTone =
     signal.direction === "long"
@@ -46,6 +53,14 @@ export function SignalBadge({
         <NoDataBadge reason={reason} />
       ) : (
         <span className={pctTone(pct) + " tabular-nums"}>{fmtPct(pct, 1)}</span>
+      )}
+      {captured && (
+        <span
+          className="text-[9px] uppercase tracking-wider px-1 py-px rounded border border-headwind/40 bg-headwind/10 text-headwind"
+          title={`Already moved ${fmtPct(pct, 1)} of an expected ~${expectedMovePct(strength)}% ${strength.toLowerCase()}-magnitude ripple`}
+        >
+          move likely captured
+        </span>
       )}
       {signal.status === "closed" && (
         <span className="text-[9px] uppercase tracking-wider text-muted-foreground">

@@ -7,17 +7,16 @@ import { CategoryBadge, StrengthPill } from "./badges";
 import { REGIONS, eventRegions } from "@/lib/ripple-regions";
 import { EventSignals } from "./event-signals";
 import { LivePicks } from "./live-picks";
+import { ageLabel, ageHours, STALE_AFTER_HOURS } from "@/lib/event-freshness";
 
 
-function timeAgo(iso: string) {
-  const diff = Date.now() - new Date(iso).getTime();
-  const h = Math.floor(diff / 3_600_000);
-  if (h < 1) return "just now";
-  if (h < 24) return `${h}h ago`;
-  return `${Math.floor(h / 24)}d ago`;
-}
-
-export function EventCard({ event }: { event: RippleEvent }) {
+export function EventCard({
+  event,
+  stale = false,
+}: {
+  event: RippleEvent;
+  stale?: boolean;
+}) {
   const watchlist = useWatchlist();
   const hit = watchlist.find((t) => eventTouchesTicker(event, t));
 
@@ -25,7 +24,12 @@ export function EventCard({ event }: { event: RippleEvent }) {
     <Link
       to="/event/$id"
       params={{ id: event.id }}
-      className="group block rounded-xl border border-border/70 bg-card/60 hover:bg-card hover:border-primary/40 transition-all p-4"
+      className={
+        "group block rounded-xl border transition-all p-4 " +
+        (stale
+          ? "border-border/40 bg-card/25 opacity-60 hover:opacity-100 hover:bg-card/50"
+          : "border-border/70 bg-card/60 hover:bg-card hover:border-primary/40")
+      }
     >
       <div className="flex items-center gap-2 flex-wrap">
         <CategoryBadge category={event.category} />
@@ -41,8 +45,18 @@ export function EventCard({ event }: { event: RippleEvent }) {
             Ripples your holdings • {hit}
           </span>
         )}
-        <span className="ml-auto text-[11px] text-muted-foreground">
-          {event.source} · {timeAgo(event.publishedAt)}
+        <span className="ml-auto flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <span>{event.source}</span>
+          <span
+            className={
+              "px-1.5 py-px rounded-full border tabular-nums " +
+              (ageHours(event.publishedAt) < STALE_AFTER_HOURS
+                ? "border-primary/40 bg-primary/10 text-primary"
+                : "border-border/50 text-muted-foreground")
+            }
+          >
+            {ageLabel(event.publishedAt)}
+          </span>
         </span>
       </div>
       <h3 className="mt-3 text-base sm:text-lg font-semibold leading-snug text-foreground group-hover:text-primary transition-colors">
@@ -65,7 +79,7 @@ export function EventCard({ event }: { event: RippleEvent }) {
       </div>
       <LivePicks eventId={event.id} compact />
       <Suspense fallback={null}>
-        <EventSignals eventId={event.id} />
+        <EventSignals eventId={event.id} strength={event.strength} />
       </Suspense>
 
     </Link>
