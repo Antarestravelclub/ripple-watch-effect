@@ -1,18 +1,22 @@
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, Link } from "@tanstack/react-router";
 import type { SignalRow } from "@/lib/signal-metrics";
 import { fmtPct, pctTone } from "@/lib/signal-metrics";
 import { NoDataBadge, TickerLabel } from "./ticker-meta-chips";
 import { isMoveCaptured, expectedMovePct } from "@/lib/event-freshness";
+import { CONFLICT_NOTE } from "@/lib/ticker-rollup";
 import type { RippleStrength } from "@/lib/ripple-data";
 
 export function SignalBadge({
   signal,
   currentPrice,
   strength = "Medium",
+  conflicted = false,
 }: {
   signal: SignalRow;
   currentPrice: number | null;
   strength?: RippleStrength;
+  /** True when this ticker carries opposing active signals across events. */
+  conflicted?: boolean;
 }) {
   const navigate = useNavigate();
   const sp = signal.signal_price;
@@ -37,6 +41,7 @@ export function SignalBadge({
       ? "bg-tailwind/15 text-tailwind border-tailwind/30"
       : "bg-headwind/15 text-headwind border-headwind/30";
   return (
+    <span className="inline-flex items-center">
     <button
       type="button"
       onClick={(e) => {
@@ -68,5 +73,18 @@ export function SignalBadge({
         </span>
       )}
     </button>
+    {conflicted && (
+      <Link
+        to="/tickers/$symbol"
+        params={{ symbol: signal.ticker }}
+        onClick={(e) => e.stopPropagation()}
+        title={CONFLICT_NOTE + " View this ticker's rollup."}
+        aria-label={`${signal.ticker}: ${CONFLICT_NOTE}`}
+        className="ml-1 text-[11px] leading-none text-muted-foreground hover:text-foreground"
+      >
+        ⚠
+      </Link>
+    )}
+    </span>
   );
 }

@@ -6,6 +6,7 @@ import { SiteShell } from "@/components/site-shell";
 import { listSignals, evaluateSignals } from "@/lib/signals.functions";
 import { computeMetrics, fmtPct, pctTone } from "@/lib/signal-metrics";
 import { EVENTS } from "@/lib/ripple-data";
+import { STANCE_LABEL, STANCE_CLASS, type Stance } from "@/lib/ticker-rollup";
 
 export const Route = createFileRoute("/scorecard")({
   head: () => ({
@@ -92,11 +93,66 @@ function Scorecard() {
     .filter((d): d is number => d != null);
   const medianDays = median(allDays);
 
-  const sortedByMove = [...withMove].sort(
-    (a, b) => (b.metrics.currentPct ?? 0) - (a.metrics.currentPct ?? 0),
-  );
-  const best = sortedByMove.slice(0, 5);
-  const worst = sortedByMove.slice(-5).reverse();
+  // Attribute each ticker's realized price move ONCE, to its net stance, so a
+  // single move is never counted twice in opposite directions from two events.
+  const perTicker = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        ticker: string;
+        longs: number;
+        shorts: number;
+        rawPct: number | null;
+        earliest: number;
+        headline: string;
+      }
+    >();
+    for (const r of enriched) {
+      const rec =
+        map.get(r.signal.ticker) ??
+        {
+          ticker: r.signal.ticker,
+          longs: 0,
+          shorts: 0,
+          rawPct: null as number | null,
+          earliest: Infinity,
+          headline: "",
+        };
+      if (r.signal.direction === "long") rec.longs++;
+      else rec.shorts++;
+      const ts = new Date(r.signal.signal_timestamp).getTime();
+      const pct = r.metrics.currentPct;
+      if (pct != null && ts < rec.earliest) {
+        rec.earliest = ts;
+        // Undo the per-signal direction sign to get the raw price move.
+        rec.rawPct = r.signal.direction === "long" ? pct : -pct;
+        rec.headline = r.event?.headline ?? "";
+      }
+      map.set(r.signal.ticker, rec);
+    }
+    return [...map.values()].map((rec) => {
+      const stance: Stance =
+        rec.longs > 0 && rec.shorts > 0
+          ? "conflicted"
+          : rec.shorts > 0
+            ? "short"
+            : "long";
+      const attributed =
+        rec.rawPct == null || stance === "conflicted"
+          ? null
+          : stance === "short"
+            ? -rec.rawPct
+            : rec.rawPct;
+      return { ...rec, stance, attributed };
+    });
+  }, [enriched]);
+
+  const attributable = perTicker
+    .filter((t) => t.attributed != null)
+    .sort((a, b) => (b.attributed ?? 0) - (a.attributed ?? 0));
+  const conflictedCount = perTicker.filter((t) => t.stance === "conflicted").length;
+  const best = attributable.slice(0, 5);
+  const worst = attributable.slice(-5).reverse();
 
   // By category
   const catMap = new Map<
@@ -164,8 +220,18 @@ function Scorecard() {
       </div>
 
       <div className="grid md:grid-cols-2 gap-4 mb-6">
-        <PerfList title="Best performers" rows={best} tone="tailwind" />
-        <PerfList title="Worst performers" rows={worst} tone="headwind" />
+        <PerfList
+          title="Best performers"
+          rows={best}
+          tone="tailwind"
+          conflictedCount={conflictedCount}
+        />
+        <PerfList
+          title="Worst performers"
+          rows={worst}
+          tone="headwind"
+          conflictedCount={conflictedCount}
+        />
       </div>
 
       <div className="rounded-xl border border-border/70 bg-card/40 overflow-x-auto">
@@ -257,35 +323,48 @@ function PerfList({
   title,
   rows,
   tone,
+  conflictedCount,
 }: {
   title: string;
   rows: {
-    signal: { id: string; ticker: string; direction: "long" | "short" };
-    event?: { headline: string };
-    metrics: { currentPct: number | null };
+    ticker: string;
+    headline: string;
+    stance: Stance;
+    attributed: number | null;
   }[];
   tone: "tailwind" | "headwind";
+  conflictedCount: number;
 }) {
   return (
     <div className="rounded-xl border border-border/70 bg-card/40 p-4">
       <h3 className={"text-xs font-semibold uppercase tracking-wider mb-2 text-" + tone}>
         {title}
       </h3>
+      <p className="text-[10px] text-muted-foreground mb-2">
+        One row per ticker — the move is attributed once, to its net stance.
+        {conflictedCount > 0 &&
+          ` ${conflictedCount} conflicted ticker(s) excluded.`}
+      </p>
       <div className="space-y-1.5">
         {rows.length === 0 && <div className="text-xs text-muted-foreground">—</div>}
         {rows.map((r) => (
           <Link
-            key={r.signal.id}
-            to="/signal/$id"
-            params={{ id: r.signal.id }}
+            key={r.ticker}
+            to="/tickers/$symbol"
+            params={{ symbol: r.ticker }}
             className="flex items-center gap-2 text-xs hover:bg-background/40 rounded px-1.5 py-1"
           >
-            <span className="font-mono font-semibold">{r.signal.ticker}</span>
-            <span className="flex-1 truncate text-muted-foreground">
-              {r.event?.headline ?? ""}
+            <span className="font-mono font-semibold">{r.ticker}</span>
+            <span
+              className={
+                "rounded border px-1 text-[9px] font-mono " + STANCE_CLASS[r.stance]
+              }
+            >
+              {STANCE_LABEL[r.stance]}
             </span>
-            <span className={"font-mono tabular-nums " + pctTone(r.metrics.currentPct)}>
-              {fmtPct(r.metrics.currentPct)}
+            <span className="flex-1 truncate text-muted-foreground">{r.headline}</span>
+            <span className={"font-mono tabular-nums " + pctTone(r.attributed)}>
+              {fmtPct(r.attributed)}
             </span>
           </Link>
         ))}

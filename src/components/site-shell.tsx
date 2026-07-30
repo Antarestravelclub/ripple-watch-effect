@@ -38,6 +38,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
             <NavLink to="/analyze">Analyser</NavLink>
 
             <NavLink to="/tracker">Tracker</NavLink>
+            <NavLink to="/tickers">Tickers</NavLink>
 
             <NavLink to="/scorecard">Scorecard</NavLink>
             <NavLink to="/analogues">Analogues</NavLink>
