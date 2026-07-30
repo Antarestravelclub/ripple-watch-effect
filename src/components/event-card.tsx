@@ -6,6 +6,8 @@ import { useWatchlist } from "@/lib/watchlist-store";
 import { CategoryBadge, StrengthPill } from "./badges";
 import { REGIONS, eventRegions } from "@/lib/ripple-regions";
 import { EventSignals } from "./event-signals";
+import { LivePicks } from "./live-picks";
+
 
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
