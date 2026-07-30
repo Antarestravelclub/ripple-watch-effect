@@ -33,10 +33,9 @@ export const getQuotes = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }) => {
     const apiKey = process.env.FINNHUB_API_KEY;
-    const { fetchQuote: _fq } = await import("./quotes.server");
-    type Q = Awaited<ReturnType<typeof _fq>>;
-    if (!apiKey) return { quotes: {} as Record<string, Q> };
     const { fetchQuote } = await import("./quotes.server");
+    type Q = Awaited<ReturnType<typeof fetchQuote>>;
+    if (!apiKey) return { quotes: {} as Record<string, Q> };
     const entries = await Promise.all(
       data.tickers.map(async (t) => [t, await fetchQuote(t, apiKey)] as const),
     );
