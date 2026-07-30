@@ -6,6 +6,7 @@ import { EVENTS } from "@/lib/ripple-data";
 import { RegionFilter } from "@/components/region-filter";
 import { TickerSearch, eventTouchesTicker } from "@/components/ticker-search";
 import { MarketMovers } from "@/components/market-movers";
+import { QuoteCard } from "@/components/quote-card";
 import { eventMatchesRegions, type RegionCode } from "@/lib/ripple-regions";
 
 
