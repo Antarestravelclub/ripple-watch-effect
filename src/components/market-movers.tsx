@@ -18,8 +18,11 @@ export function MarketMovers() {
   const { data, isLoading } = useQuery({
     queryKey: ["signals", "all"],
     queryFn: () => list(),
-    staleTime: 60_000,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
   });
+
 
   const { gainers, decliners, asOf } = useMemo(() => {
     const byTicker = new Map<string, Mover>();
