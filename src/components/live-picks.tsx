@@ -1,6 +1,8 @@
 import { eventTopPicks } from "@/lib/ripple-regions";
 import { useLiveQuotes, statusLabel } from "@/hooks/use-live-quotes";
 import { LivePrice } from "./live-price";
+import { tickerMeta } from "@/lib/ticker-registry";
+import { NoDataBadge, TickerLabel } from "./ticker-meta-chips";
 
 function tone(pct: number | null) {
   if (pct === null) return "text-muted-foreground";
@@ -11,6 +13,7 @@ function tone(pct: number | null) {
 
 /**
  * Live price strip for the tickers an event mechanically touches.
+ * Non-tradable names are never displayed; unpriceable ones get a "no data" pill.
  */
 export function LivePicks({
   eventId,
@@ -19,17 +22,19 @@ export function LivePicks({
   eventId: string;
   compact?: boolean;
 }) {
-  const picks = eventTopPicks(eventId);
-  const tickers = picks.map((p) => p.ticker);
+  const picks = eventTopPicks(eventId).filter((p) => tickerMeta(p.ticker).tradable);
+  const symbols = picks.map((p) => tickerMeta(p.ticker).quote);
   const { quotes, isLoading, status, streaming, marketOpen, updatedAt } =
-    useLiveQuotes(tickers);
+    useLiveQuotes(symbols);
 
-  if (tickers.length === 0) return null;
+  if (picks.length === 0) return null;
 
   const rows = picks.map((p) => {
-    const q = quotes[p.ticker] ?? null;
+    const meta = tickerMeta(p.ticker);
+    const q = quotes[meta.quote] ?? null;
     return {
       ...p,
+      meta,
       price: q?.price ?? null,
       pct: q?.changePct ?? null,
       currency: q?.currency ?? null,
@@ -50,7 +55,7 @@ export function LivePicks({
             }
             title={r.thesis}
           >
-            <span className="font-semibold tracking-wide">{r.ticker}</span>
+            <TickerLabel ticker={r.ticker} showAlt={false} />
             {r.price !== null ? (
               <>
                 <LivePrice
@@ -64,10 +69,12 @@ export function LivePicks({
                     : "—"}
                 </span>
               </>
+            ) : isLoading ? (
+              <span className="text-muted-foreground">…</span>
             ) : (
-              <span className="text-muted-foreground">
-                {isLoading ? "…" : "n/a"}
-              </span>
+              <NoDataBadge
+                reason={`No quote for ${r.meta.quote} from the market feed`}
+              />
             )}
           </span>
         ))}
@@ -92,15 +99,15 @@ export function LivePicks({
             className="flex items-start gap-3 rounded-lg border border-border/60 bg-background/40 px-3 py-2"
           >
             <div className="min-w-[64px]">
-              <div className="font-semibold text-sm">{r.ticker}</div>
-              <span
+              <TickerLabel ticker={r.ticker} className="text-sm flex-wrap" />
+              <div
                 className={
                   "text-[10px] uppercase tracking-wider " +
                   (r.side === "long" ? "text-tailwind" : "text-headwind")
                 }
               >
                 {r.side === "long" ? "Tailwind" : "Headwind"}
-              </span>
+              </div>
             </div>
             <p className="flex-1 text-xs text-muted-foreground">{r.thesis}</p>
             <div className="text-right">
@@ -110,7 +117,9 @@ export function LivePicks({
                 ) : isLoading ? (
                   "…"
                 ) : (
-                  "n/a"
+                  <NoDataBadge
+                    reason={`No quote for ${r.meta.quote} from the market feed`}
+                  />
                 )}
               </div>
               <div className={"text-xs tabular-nums " + tone(r.pct)}>
@@ -123,7 +132,7 @@ export function LivePicks({
         ))}
       </div>
       <p className="mt-3 text-[11px] text-muted-foreground/80">
-        Exposure mapping with live quotes — observation and context, not advice.
+        Delayed quotes. Exposure mapping — observation and context, not advice.
       </p>
     </section>
   );
