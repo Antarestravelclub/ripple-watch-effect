@@ -61,9 +61,11 @@ export function EventCard({ event }: { event: RippleEvent }) {
           tickers
         </span>
       </div>
+      <LivePicks eventId={event.id} compact />
       <Suspense fallback={null}>
         <EventSignals eventId={event.id} />
       </Suspense>
+
     </Link>
   );
 }
