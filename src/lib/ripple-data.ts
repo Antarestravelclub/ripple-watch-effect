@@ -407,7 +407,7 @@ export const EVENTS: RippleEvent[] = [
     tailwinds: [
       {
         sector: "App Developers",
-        tickers: ["SPOT", "MTCH", "EPIC"],
+        tickers: ["SPOT", "MTCH"],
         mechanism: "Potential reduction in platform fees improves unit economics.",
       },
     ],
