@@ -33,7 +33,9 @@ export function SiteShell({ children }: { children: ReactNode }) {
           </Link>
           <nav className="flex items-center gap-1 flex-wrap">
             <NavLink to="/">Today</NavLink>
+            <NavLink to="/analyze">Analyser</NavLink>
             <NavLink to="/tracker">Tracker</NavLink>
+
             <NavLink to="/scorecard">Scorecard</NavLink>
             <NavLink to="/analogues">Analogues</NavLink>
             <NavLink to="/playbooks">Playbooks</NavLink>
