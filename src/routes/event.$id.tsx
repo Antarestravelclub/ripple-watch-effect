@@ -132,6 +132,12 @@ function EventDetail() {
 
       <TopPicks id={event.id} />
 
+      <div className="mb-6">
+        <LivePicks eventId={event.id} />
+      </div>
+
+
+
       <section className="rounded-xl border border-border/70 bg-card/60 p-4 mb-6">
         <div className="flex items-center gap-2 mb-1">
           <History className="w-4 h-4 text-primary" />
