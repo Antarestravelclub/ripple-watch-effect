@@ -1,0 +1,130 @@
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getQuotes } from "@/lib/quotes.functions";
+import { eventTopPicks } from "@/lib/ripple-regions";
+
+function tone(pct: number | null) {
+  if (pct === null) return "text-muted-foreground";
+  if (pct > 0) return "text-tailwind";
+  if (pct < 0) return "text-headwind";
+  return "text-muted-foreground";
+}
+
+/**
+ * Live price strip for the tickers an event mechanically touches.
+ * Refreshes on an interval so the exposure list reflects current market data.
+ */
+export function LivePicks({
+  eventId,
+  compact = false,
+}: {
+  eventId: string;
+  compact?: boolean;
+}) {
+  const picks = eventTopPicks(eventId);
+  const tickers = picks.map((p) => p.ticker);
+  const fetchQuotes = useServerFn(getQuotes);
+
+  const { data, isLoading, dataUpdatedAt } = useQuery({
+    queryKey: ["quotes", eventId, tickers.join(",")],
+    queryFn: () => fetchQuotes({ data: { tickers } }),
+    enabled: tickers.length > 0,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
+    staleTime: 30_000,
+  });
+
+  if (tickers.length === 0) return null;
+
+  const rows = picks.map((p) => {
+    const q = data?.quotes?.[p.ticker] ?? null;
+    return { ...p, price: q?.price ?? null, pct: q?.changePct ?? null };
+  });
+
+  if (compact) {
+    return (
+      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+        {rows.map((r) => (
+          <span
+            key={r.ticker}
+            className={
+              "inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] " +
+              (r.side === "long"
+                ? "border-tailwind/30 bg-tailwind/10"
+                : "border-headwind/30 bg-headwind/10")
+            }
+            title={r.thesis}
+          >
+            <span className="font-semibold tracking-wide">{r.ticker}</span>
+            {r.price !== null ? (
+              <>
+                <span className="text-muted-foreground">
+                  ${r.price.toFixed(2)}
+                </span>
+                <span className={tone(r.pct)}>
+                  {r.pct !== null
+                    ? `${r.pct > 0 ? "+" : ""}${r.pct.toFixed(2)}%`
+                    : "—"}
+                </span>
+              </>
+            ) : (
+              <span className="text-muted-foreground">
+                {isLoading ? "…" : "n/a"}
+              </span>
+            )}
+          </span>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <section className="rounded-xl border border-border/70 bg-card/60 p-4">
+      <div className="flex items-baseline justify-between gap-3 mb-3">
+        <h2 className="text-sm font-semibold tracking-tight">
+          Live prices for exposed tickers
+        </h2>
+        <span className="text-[11px] text-muted-foreground">
+          Auto-refresh 60s · delayed data
+          {dataUpdatedAt
+            ? ` · updated ${new Date(dataUpdatedAt).toLocaleTimeString()}`
+            : ""}
+        </span>
+      </div>
+      <div className="grid gap-2">
+        {rows.map((r) => (
+          <div
+            key={r.ticker}
+            className="flex items-start gap-3 rounded-lg border border-border/60 bg-background/40 px-3 py-2"
+          >
+            <div className="min-w-[64px]">
+              <div className="font-semibold text-sm">{r.ticker}</div>
+              <span
+                className={
+                  "text-[10px] uppercase tracking-wider " +
+                  (r.side === "long" ? "text-tailwind" : "text-headwind")
+                }
+              >
+                {r.side === "long" ? "Tailwind" : "Headwind"}
+              </span>
+            </div>
+            <p className="flex-1 text-xs text-muted-foreground">{r.thesis}</p>
+            <div className="text-right">
+              <div className="text-sm tabular-nums">
+                {r.price !== null ? `$${r.price.toFixed(2)}` : isLoading ? "…" : "n/a"}
+              </div>
+              <div className={"text-xs tabular-nums " + tone(r.pct)}>
+                {r.pct !== null
+                  ? `${r.pct > 0 ? "+" : ""}${r.pct.toFixed(2)}% today`
+                  : ""}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <p className="mt-3 text-[11px] text-muted-foreground/80">
+        Exposure mapping with live quotes — observation and context, not advice.
+      </p>
+    </section>
+  );
+}

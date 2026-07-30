@@ -6,6 +6,8 @@ import { CategoryBadge, StrengthPill } from "@/components/badges";
 import { TickerChip } from "@/components/ticker-chip";
 import { EventSignals } from "@/components/event-signals";
 import { SimilarEvents } from "@/components/similar-events";
+import { LivePicks } from "@/components/live-picks";
+
 import { categoryToArchetypes } from "@/lib/analogue-mapping";
 import { ArrowLeft, TrendingUp, TrendingDown, Target, ShieldAlert, History } from "lucide-react";
 import { REGIONS, eventRegions, eventTopPicks } from "@/lib/ripple-regions";
@@ -131,6 +133,12 @@ function EventDetail() {
       </div>
 
       <TopPicks id={event.id} />
+
+      <div className="mb-6">
+        <LivePicks eventId={event.id} />
+      </div>
+
+
 
       <section className="rounded-xl border border-border/70 bg-card/60 p-4 mb-6">
         <div className="flex items-center gap-2 mb-1">
