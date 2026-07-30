@@ -1,0 +1,176 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getQuotes } from "@/lib/quotes.functions";
+
+export interface LiveQuote {
+  price: number;
+  change: number;
+  changePct: number;
+  prevClose: number;
+  currency: string | null;
+  at: string;
+}
+
+export type LiveStatus =
+  | "ok"
+  | "no_key"
+  | "rate_limited"
+  | "unsupported_symbol"
+  | "network_error";
+
+interface StreamQuote {
+  price: number;
+  change: number;
+  changePct: number;
+  prevClose: number;
+  currency: string | null;
+  at: string;
+}
+
+/**
+ * Live prices for a set of tickers: REST snapshot for the baseline, then a
+ * server-sent stream that applies trades as they print. Falls back to polling
+ * when the stream is unavailable or the market is closed.
+ */
+export function useLiveQuotes(tickers: string[]) {
+  const key = useMemo(() => [...new Set(tickers.map((t) => t.toUpperCase()))].sort(), [
+    tickers.join(","),
+  ]);
+  const fetchQuotes = useServerFn(getQuotes);
+  const [live, setLive] = useState<Record<string, LiveQuote>>({});
+  const [streaming, setStreaming] = useState(false);
+  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
+  const prevCloseRef = useRef<Record<string, number>>({});
+
+  const { data, isLoading, dataUpdatedAt } = useQuery({
+    queryKey: ["quotes", key.join(",")],
+    queryFn: () => fetchQuotes({ data: { tickers: key } }),
+    enabled: key.length > 0,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
+  });
+
+  // Seed / refresh from the REST snapshot.
+  useEffect(() => {
+    if (!data?.quotes) return;
+    setLive((prev) => {
+      const next = { ...prev };
+      for (const [t, q] of Object.entries(data.quotes)) {
+        if (!q) continue;
+        prevCloseRef.current[t] = q.prevClose || q.price;
+        next[t] = {
+          price: q.price,
+          change: q.change,
+          changePct: q.changePct,
+          prevClose: q.prevClose,
+          currency: q.currency ?? null,
+          at: q.at,
+        };
+      }
+      return next;
+    });
+    setUpdatedAt(Date.now());
+  }, [data]);
+
+  // Subscribe to the stream.
+  useEffect(() => {
+    if (key.length === 0 || typeof window === "undefined") return;
+    const es = new EventSource(
+      `/api/public/stream/quotes?symbols=${encodeURIComponent(key.join(","))}`,
+    );
+
+    const applySnapshot = (e: MessageEvent) => {
+      try {
+        const payload = JSON.parse(e.data) as {
+          quotes: Record<string, StreamQuote | null>;
+        };
+        setLive((prev) => {
+          const next = { ...prev };
+          for (const [t, q] of Object.entries(payload.quotes)) {
+            if (!q) continue;
+            prevCloseRef.current[t] = q.prevClose || q.price;
+            next[t] = { ...q, currency: q.currency ?? next[t]?.currency ?? null };
+          }
+          return next;
+        });
+        setUpdatedAt(Date.now());
+      } catch {
+        /* ignore */
+      }
+    };
+
+    const applyTrade = (e: MessageEvent) => {
+      try {
+        const payload = JSON.parse(e.data) as {
+          trades: Record<string, { price: number; at: string }>;
+        };
+        setLive((prev) => {
+          const next = { ...prev };
+          for (const [t, tr] of Object.entries(payload.trades)) {
+            const base = prevCloseRef.current[t] ?? next[t]?.prevClose ?? tr.price;
+            const change = tr.price - base;
+            next[t] = {
+              price: tr.price,
+              change,
+              changePct: base ? (change / base) * 100 : 0,
+              prevClose: base,
+              currency: next[t]?.currency ?? null,
+              at: tr.at,
+            };
+          }
+          return next;
+        });
+        setUpdatedAt(Date.now());
+      } catch {
+        /* ignore */
+      }
+    };
+
+    const onStatus = (e: MessageEvent) => {
+      try {
+        const s = JSON.parse(e.data) as { streaming?: boolean };
+        setStreaming(Boolean(s.streaming));
+      } catch {
+        /* ignore */
+      }
+    };
+
+    es.addEventListener("snapshot", applySnapshot as EventListener);
+    es.addEventListener("trade", applyTrade as EventListener);
+    es.addEventListener("status", onStatus as EventListener);
+    es.onerror = () => setStreaming(false);
+
+    return () => {
+      es.close();
+      setStreaming(false);
+    };
+  }, [key.join(",")]);
+
+  return {
+    quotes: live,
+    isLoading: isLoading && Object.keys(live).length === 0,
+    status: (data?.status ?? "ok") as LiveStatus,
+    marketOpen: data?.marketOpen ?? false,
+    streaming,
+    updatedAt: updatedAt ?? (dataUpdatedAt || null),
+  };
+}
+
+export function statusLabel(
+  status: LiveStatus,
+  opts: { streaming: boolean; marketOpen: boolean; updatedAt: number | null },
+): string {
+  if (status === "no_key") return "Price feed not configured";
+  if (status === "rate_limited") return "Feed rate limited — retrying";
+  if (status === "network_error") return "Feed unreachable — retrying";
+  const mode = opts.streaming
+    ? "Live · streaming"
+    : opts.marketOpen
+      ? "Delayed · refreshing"
+      : "Delayed · market closed";
+  return opts.updatedAt
+    ? `${mode} · updated ${new Date(opts.updatedAt).toLocaleTimeString()}`
+    : mode;
+}

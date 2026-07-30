@@ -4,40 +4,64 @@ export const searchTickers = createServerFn({ method: "POST" })
   .inputValidator((data: { q: string }) => ({ q: String(data.q ?? "").slice(0, 40) }))
   .handler(async ({ data }) => {
     const apiKey = process.env.FINNHUB_API_KEY;
-    if (!apiKey || data.q.trim().length < 1) return { matches: [] };
+    if (!apiKey) return { matches: [], status: "no_key" as const };
+    if (data.q.trim().length < 1) return { matches: [], status: "ok" as const };
     const { searchSymbols } = await import("./quotes.server");
-    return { matches: await searchSymbols(data.q.trim(), apiKey) };
+    return { matches: await searchSymbols(data.q.trim(), apiKey), status: "ok" as const };
   });
 
 export const getQuote = createServerFn({ method: "POST" })
   .inputValidator((data: { ticker: string }) => ({
-    ticker: String(data.ticker ?? "").toUpperCase().slice(0, 12),
+    ticker: String(data.ticker ?? "").toUpperCase().slice(0, 16),
   }))
   .handler(async ({ data }) => {
     const apiKey = process.env.FINNHUB_API_KEY;
-    if (!apiKey || !data.ticker) return { quote: null, profile: null };
-    const { fetchQuote, fetchProfile } = await import("./quotes.server");
-    const [quote, profile] = await Promise.all([
+    if (!apiKey)
+      return { quote: null, profile: null, status: "no_key" as const, marketOpen: false };
+    if (!data.ticker)
+      return {
+        quote: null,
+        profile: null,
+        status: "unsupported_symbol" as const,
+        marketOpen: false,
+      };
+    const { fetchQuote, fetchProfile, isUsMarketOpen } = await import("./quotes.server");
+    const [res, profile] = await Promise.all([
       fetchQuote(data.ticker, apiKey),
       fetchProfile(data.ticker, apiKey),
     ]);
-    return { quote, profile };
+    const quote = res.quote
+      ? { ...res.quote, currency: res.quote.currency ?? profile?.currency ?? null }
+      : null;
+    return { quote, profile, status: res.status, marketOpen: isUsMarketOpen() };
   });
 
 export const getQuotes = createServerFn({ method: "POST" })
   .inputValidator((data: { tickers: string[] }) => ({
     tickers: (data.tickers ?? [])
       .slice(0, 25)
-      .map((t) => String(t).toUpperCase().slice(0, 12))
+      .map((t) => String(t).toUpperCase().slice(0, 16))
       .filter(Boolean),
   }))
   .handler(async ({ data }) => {
     const apiKey = process.env.FINNHUB_API_KEY;
-    const { fetchQuote } = await import("./quotes.server");
-    type Q = Awaited<ReturnType<typeof fetchQuote>>;
-    if (!apiKey) return { quotes: {} as Record<string, Q> };
-    const entries = await Promise.all(
+    const { fetchQuote, isUsMarketOpen } = await import("./quotes.server");
+    type Q = Awaited<ReturnType<typeof fetchQuote>>["quote"];
+    if (!apiKey)
+      return {
+        quotes: {} as Record<string, Q>,
+        status: "no_key" as const,
+        marketOpen: false,
+        at: new Date().toISOString(),
+      };
+    const results = await Promise.all(
       data.tickers.map(async (t) => [t, await fetchQuote(t, apiKey)] as const),
     );
-    return { quotes: Object.fromEntries(entries) };
+    const quotes: Record<string, Q> = {};
+    let status: (typeof results)[number][1]["status"] = "ok";
+    for (const [t, r] of results) {
+      quotes[t] = r.quote;
+      if (r.status === "rate_limited" || r.status === "network_error") status = r.status;
+    }
+    return { quotes, status, marketOpen: isUsMarketOpen(), at: new Date().toISOString() };
   });

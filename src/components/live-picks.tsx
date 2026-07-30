@@ -1,7 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { getQuotes } from "@/lib/quotes.functions";
 import { eventTopPicks } from "@/lib/ripple-regions";
+import { useLiveQuotes, statusLabel } from "@/hooks/use-live-quotes";
+import { LivePrice } from "./live-price";
 
 function tone(pct: number | null) {
   if (pct === null) return "text-muted-foreground";
@@ -12,7 +11,6 @@ function tone(pct: number | null) {
 
 /**
  * Live price strip for the tickers an event mechanically touches.
- * Refreshes on an interval so the exposure list reflects current market data.
  */
 export function LivePicks({
   eventId,
@@ -23,22 +21,19 @@ export function LivePicks({
 }) {
   const picks = eventTopPicks(eventId);
   const tickers = picks.map((p) => p.ticker);
-  const fetchQuotes = useServerFn(getQuotes);
-
-  const { data, isLoading, dataUpdatedAt } = useQuery({
-    queryKey: ["quotes", eventId, tickers.join(",")],
-    queryFn: () => fetchQuotes({ data: { tickers } }),
-    enabled: tickers.length > 0,
-    refetchInterval: 60_000,
-    refetchOnWindowFocus: true,
-    staleTime: 30_000,
-  });
+  const { quotes, isLoading, status, streaming, marketOpen, updatedAt } =
+    useLiveQuotes(tickers);
 
   if (tickers.length === 0) return null;
 
   const rows = picks.map((p) => {
-    const q = data?.quotes?.[p.ticker] ?? null;
-    return { ...p, price: q?.price ?? null, pct: q?.changePct ?? null };
+    const q = quotes[p.ticker] ?? null;
+    return {
+      ...p,
+      price: q?.price ?? null,
+      pct: q?.changePct ?? null,
+      currency: q?.currency ?? null,
+    };
   });
 
   if (compact) {
@@ -58,9 +53,11 @@ export function LivePicks({
             <span className="font-semibold tracking-wide">{r.ticker}</span>
             {r.price !== null ? (
               <>
-                <span className="text-muted-foreground">
-                  ${r.price.toFixed(2)}
-                </span>
+                <LivePrice
+                  price={r.price}
+                  currency={r.currency}
+                  className="text-muted-foreground"
+                />
                 <span className={tone(r.pct)}>
                   {r.pct !== null
                     ? `${r.pct > 0 ? "+" : ""}${r.pct.toFixed(2)}%`
@@ -85,10 +82,7 @@ export function LivePicks({
           Live prices for exposed tickers
         </h2>
         <span className="text-[11px] text-muted-foreground">
-          Auto-refresh 60s · delayed data
-          {dataUpdatedAt
-            ? ` · updated ${new Date(dataUpdatedAt).toLocaleTimeString()}`
-            : ""}
+          {statusLabel(status, { streaming, marketOpen, updatedAt })}
         </span>
       </div>
       <div className="grid gap-2">
@@ -110,8 +104,14 @@ export function LivePicks({
             </div>
             <p className="flex-1 text-xs text-muted-foreground">{r.thesis}</p>
             <div className="text-right">
-              <div className="text-sm tabular-nums">
-                {r.price !== null ? `$${r.price.toFixed(2)}` : isLoading ? "…" : "n/a"}
+              <div className="text-sm">
+                {r.price !== null ? (
+                  <LivePrice price={r.price} currency={r.currency} />
+                ) : isLoading ? (
+                  "…"
+                ) : (
+                  "n/a"
+                )}
               </div>
               <div className={"text-xs tabular-nums " + tone(r.pct)}>
                 {r.pct !== null

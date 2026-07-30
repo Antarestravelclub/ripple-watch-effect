@@ -1,36 +1,36 @@
-import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { getQuotes } from "@/lib/quotes.functions";
-import { fmtPrice } from "@/lib/signal-metrics";
+import { useLiveQuotes, statusLabel } from "@/hooks/use-live-quotes";
+import { LivePrice } from "./live-price";
 
 export function WatchlistQuotes({ tickers }: { tickers: string[] }) {
-  const fetchQuotes = useServerFn(getQuotes);
-  const { data, isLoading } = useQuery({
-    queryKey: ["quotes", [...tickers].sort().join(",")],
-    queryFn: () => fetchQuotes({ data: { tickers } }),
-    enabled: tickers.length > 0,
-    staleTime: 60_000,
-  });
+  const { quotes, isLoading, status, streaming, marketOpen, updatedAt } =
+    useLiveQuotes(tickers);
 
   if (tickers.length === 0) return null;
 
   return (
     <section className="rounded-xl border border-border/70 bg-card/60 p-4 mb-6">
-      <h2 className="text-sm font-semibold tracking-tight mb-3">Live quotes</h2>
+      <div className="flex items-baseline justify-between gap-3 mb-3">
+        <h2 className="text-sm font-semibold tracking-tight">Live quotes</h2>
+        <span className="text-[11px] text-muted-foreground">
+          {statusLabel(status, { streaming, marketOpen, updatedAt })}
+        </span>
+      </div>
       {isLoading ? (
         <p className="text-xs text-muted-foreground">Fetching quotes…</p>
       ) : (
         <ul className="divide-y divide-border/50">
           {tickers.map((t) => {
-            const q = data?.quotes?.[t];
+            const q = quotes[t.toUpperCase()];
             return (
               <li key={t} className="flex items-center justify-between gap-3 py-1.5">
                 <span className="font-mono text-xs">{t}</span>
                 {q ? (
                   <span className="flex items-center gap-3 tabular-nums">
-                    <span className="text-[11px] text-muted-foreground">
-                      {fmtPrice(q.price)}
-                    </span>
+                    <LivePrice
+                      price={q.price}
+                      currency={q.currency}
+                      className="text-[11px] text-muted-foreground"
+                    />
                     <span
                       className={
                         "text-xs font-medium " +
@@ -46,7 +46,13 @@ export function WatchlistQuotes({ tickers }: { tickers: string[] }) {
                     </span>
                   </span>
                 ) : (
-                  <span className="text-[11px] text-muted-foreground">No live quote</span>
+                  <span className="text-[11px] text-muted-foreground">
+                    {status === "no_key"
+                      ? "Feed not configured"
+                      : status === "rate_limited"
+                        ? "Rate limited"
+                        : "No live quote"}
+                  </span>
                 )}
               </li>
             );
