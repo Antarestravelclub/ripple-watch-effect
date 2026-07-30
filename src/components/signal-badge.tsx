@@ -10,10 +10,13 @@ export function SignalBadge({
   signal,
   currentPrice,
   strength = "Medium",
+  conflicted = false,
 }: {
   signal: SignalRow;
   currentPrice: number | null;
   strength?: RippleStrength;
+  /** True when this ticker carries opposing active signals across events. */
+  conflicted?: boolean;
 }) {
   const navigate = useNavigate();
   const sp = signal.signal_price;
