@@ -126,8 +126,15 @@ export function TickerSearch({
                       }}
                       className="w-full flex items-center justify-between gap-3 rounded-md px-2 py-1.5 text-left hover:bg-accent/50"
                     >
-                      <span className="font-mono text-xs">{m.symbol}</span>
-                      <span className="text-[11px] text-muted-foreground truncate max-w-[65%]">
+                      <span className="font-mono text-xs">
+                        {m.symbol}
+                        {m.exchange && m.exchange !== "US" && (
+                          <span className="ml-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                            {m.exchange}
+                          </span>
+                        )}
+                      </span>
+                      <span className="text-[11px] text-muted-foreground truncate max-w-[60%]">
                         {m.description}
                       </span>
                     </button>
