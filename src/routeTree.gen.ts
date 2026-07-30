@@ -19,6 +19,7 @@ import { Route as AnaloguesRouteImport } from './routes/analogues'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SignalIdRouteImport } from './routes/signal.$id'
 import { Route as EventIdRouteImport } from './routes/event.$id'
+import { Route as ApiPublicStreamQuotesRouteImport } from './routes/api/public/stream/quotes'
 import { Route as ApiPublicHooksFetchPricesRouteImport } from './routes/api/public/hooks/fetch-prices'
 
 const WatchlistRoute = WatchlistRouteImport.update({
@@ -71,6 +72,11 @@ const EventIdRoute = EventIdRouteImport.update({
   path: '/event/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicStreamQuotesRoute = ApiPublicStreamQuotesRouteImport.update({
+  id: '/api/public/stream/quotes',
+  path: '/api/public/stream/quotes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksFetchPricesRoute =
   ApiPublicHooksFetchPricesRouteImport.update({
     id: '/api/public/hooks/fetch-prices',
@@ -90,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/event/$id': typeof EventIdRoute
   '/signal/$id': typeof SignalIdRoute
   '/api/public/hooks/fetch-prices': typeof ApiPublicHooksFetchPricesRoute
+  '/api/public/stream/quotes': typeof ApiPublicStreamQuotesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -103,6 +110,7 @@ export interface FileRoutesByTo {
   '/event/$id': typeof EventIdRoute
   '/signal/$id': typeof SignalIdRoute
   '/api/public/hooks/fetch-prices': typeof ApiPublicHooksFetchPricesRoute
+  '/api/public/stream/quotes': typeof ApiPublicStreamQuotesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -117,6 +125,7 @@ export interface FileRoutesById {
   '/event/$id': typeof EventIdRoute
   '/signal/$id': typeof SignalIdRoute
   '/api/public/hooks/fetch-prices': typeof ApiPublicHooksFetchPricesRoute
+  '/api/public/stream/quotes': typeof ApiPublicStreamQuotesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -132,6 +141,7 @@ export interface FileRouteTypes {
     | '/event/$id'
     | '/signal/$id'
     | '/api/public/hooks/fetch-prices'
+    | '/api/public/stream/quotes'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -145,6 +155,7 @@ export interface FileRouteTypes {
     | '/event/$id'
     | '/signal/$id'
     | '/api/public/hooks/fetch-prices'
+    | '/api/public/stream/quotes'
   id:
     | '__root__'
     | '/'
@@ -158,6 +169,7 @@ export interface FileRouteTypes {
     | '/event/$id'
     | '/signal/$id'
     | '/api/public/hooks/fetch-prices'
+    | '/api/public/stream/quotes'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -172,6 +184,7 @@ export interface RootRouteChildren {
   EventIdRoute: typeof EventIdRoute
   SignalIdRoute: typeof SignalIdRoute
   ApiPublicHooksFetchPricesRoute: typeof ApiPublicHooksFetchPricesRoute
+  ApiPublicStreamQuotesRoute: typeof ApiPublicStreamQuotesRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -246,6 +259,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EventIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/stream/quotes': {
+      id: '/api/public/stream/quotes'
+      path: '/api/public/stream/quotes'
+      fullPath: '/api/public/stream/quotes'
+      preLoaderRoute: typeof ApiPublicStreamQuotesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/fetch-prices': {
       id: '/api/public/hooks/fetch-prices'
       path: '/api/public/hooks/fetch-prices'
@@ -268,6 +288,7 @@ const rootRouteChildren: RootRouteChildren = {
   EventIdRoute: EventIdRoute,
   SignalIdRoute: SignalIdRoute,
   ApiPublicHooksFetchPricesRoute: ApiPublicHooksFetchPricesRoute,
+  ApiPublicStreamQuotesRoute: ApiPublicStreamQuotesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
