@@ -108,12 +108,22 @@ export const EVENT_META: Record<string, EventMeta> = {
   },
 };
 
+// Live (ingested) events register their region + exposure metadata here at
+// runtime, so the same helpers work for both curated and live events.
+const LIVE_META: Record<string, EventMeta> = {};
+
+export function registerEventMeta(
+  entries: Record<string, { regions: RegionCode[]; topPicks: TopPick[] }>,
+) {
+  for (const [id, meta] of Object.entries(entries)) LIVE_META[id] = meta;
+}
+
 export function eventRegions(id: string): RegionCode[] {
-  return EVENT_META[id]?.regions ?? ["GLOBAL"];
+  return EVENT_META[id]?.regions ?? LIVE_META[id]?.regions ?? ["GLOBAL"];
 }
 
 export function eventTopPicks(id: string): TopPick[] {
-  return EVENT_META[id]?.topPicks ?? [];
+  return EVENT_META[id]?.topPicks ?? LIVE_META[id]?.topPicks ?? [];
 }
 
 export function eventMatchesRegions(id: string, selected: RegionCode[]): boolean {

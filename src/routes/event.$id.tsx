@@ -2,6 +2,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { SiteShell } from "@/components/site-shell";
 import { EVENTS, type ExposureSector, type HistoricalEcho } from "@/lib/ripple-data";
+import { getLiveEvent } from "@/lib/live-events.functions";
 import { CategoryBadge, StrengthPill } from "@/components/badges";
 import { TickerChip } from "@/components/ticker-chip";
 import { EventSignals } from "@/components/event-signals";
@@ -10,13 +11,22 @@ import { LivePicks } from "@/components/live-picks";
 
 import { categoryToArchetypes } from "@/lib/analogue-mapping";
 import { ArrowLeft, TrendingUp, TrendingDown, Target, ShieldAlert, History } from "lucide-react";
-import { REGIONS, eventRegions, eventTopPicks } from "@/lib/ripple-regions";
+import { REGIONS, eventRegions, eventTopPicks, registerEventMeta } from "@/lib/ripple-regions";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const Route = createFileRoute("/event/$id")({
-  loader: ({ params }) => {
+  loader: async ({ params }) => {
+    if (UUID_RE.test(params.id)) {
+      const res = await getLiveEvent({ data: { id: params.id } });
+      if (res.event) {
+        if (res.meta) registerEventMeta({ [params.id]: res.meta });
+        return { event: res.event, meta: res.meta };
+      }
+    }
     const event = EVENTS.find((e) => e.id === params.id);
     if (!event) throw notFound();
-    return { event };
+    return { event, meta: null };
   },
   head: ({ loaderData }) => {
     if (!loaderData) {

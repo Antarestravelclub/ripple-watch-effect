@@ -5,7 +5,7 @@ import { SiteShell } from "@/components/site-shell";
 import { Sparkline } from "@/components/sparkline";
 import { getSignal } from "@/lib/signals.functions";
 import { computeMetrics, fmtPct, fmtPrice, pctTone } from "@/lib/signal-metrics";
-import { EVENTS } from "@/lib/ripple-data";
+import { useLiveEvents } from "@/hooks/use-live-events";
 import { ArrowLeft, Clock } from "lucide-react";
 
 export const Route = createFileRoute("/signal/$id")({
@@ -38,7 +38,8 @@ function SignalDetail() {
 
   if (!data.signal) throw notFound();
   const signal = data.signal;
-  const event = EVENTS.find((e) => e.id === signal.event_id);
+  const { events } = useLiveEvents();
+  const event = events.find((e) => e.id === signal.event_id);
   const metrics = computeMetrics(signal, data.snapshots);
 
   const dirTone =

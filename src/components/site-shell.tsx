@@ -2,7 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { RippleLogo } from "./ripple-logo";
 import type { ReactNode } from "react";
 import { SectorHeat } from "./sector-heat";
-import { EVENTS } from "@/lib/ripple-data";
+import { useLiveEvents } from "@/hooks/use-live-events";
 import { OperonBadge } from "./operon-badge";
 import { DataRefreshStamp } from "./data-refresh-stamp";
 
@@ -25,6 +25,7 @@ function NavLink({ to, children }: { to: string; children: ReactNode }) {
 }
 
 export function SiteShell({ children }: { children: ReactNode }) {
+  const { events } = useLiveEvents();
   return (
     <div className="min-h-screen flex flex-col bg-background gradient-radial">
       <header className="sticky top-0 z-30 border-b border-border/60 backdrop-blur bg-background/70">
@@ -55,7 +56,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
         <main className="min-w-0">{children}</main>
         <aside className="hidden lg:block">
           <div className="sticky top-20">
-            <SectorHeat events={EVENTS} />
+            <SectorHeat events={events} />
           </div>
         </aside>
       </div>

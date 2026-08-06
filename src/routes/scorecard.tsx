@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import { SiteShell } from "@/components/site-shell";
 import { listSignals, evaluateSignals } from "@/lib/signals.functions";
 import { computeMetrics, fmtPct, pctTone } from "@/lib/signal-metrics";
-import { EVENTS } from "@/lib/ripple-data";
+import { useLiveEvents } from "@/hooks/use-live-events";
 import { STANCE_LABEL, STANCE_CLASS, type Stance } from "@/lib/ticker-rollup";
 
 export const Route = createFileRoute("/scorecard")({
@@ -58,7 +58,11 @@ function Scorecard() {
     staleTime: 30_000,
   });
 
-  const eventById = useMemo(() => new Map(EVENTS.map((e) => [e.id, e])), []);
+  const { events: liveEvents } = useLiveEvents();
+  const eventById = useMemo(
+    () => new Map(liveEvents.map((e) => [e.id, e])),
+    [liveEvents],
+  );
 
   const enriched = useMemo(
     () =>

@@ -22,6 +22,7 @@ import { Route as TickersSymbolRouteImport } from './routes/tickers.$symbol'
 import { Route as SignalIdRouteImport } from './routes/signal.$id'
 import { Route as EventIdRouteImport } from './routes/event.$id'
 import { Route as ApiPublicStreamQuotesRouteImport } from './routes/api/public/stream/quotes'
+import { Route as ApiPublicHooksIngestNewsRouteImport } from './routes/api/public/hooks/ingest-news'
 import { Route as ApiPublicHooksFetchPricesRouteImport } from './routes/api/public/hooks/fetch-prices'
 import { Route as ApiPublicHooksEvaluateSignalsRouteImport } from './routes/api/public/hooks/evaluate-signals'
 
@@ -90,6 +91,12 @@ const ApiPublicStreamQuotesRoute = ApiPublicStreamQuotesRouteImport.update({
   path: '/api/public/stream/quotes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksIngestNewsRoute =
+  ApiPublicHooksIngestNewsRouteImport.update({
+    id: '/api/public/hooks/ingest-news',
+    path: '/api/public/hooks/ingest-news',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksFetchPricesRoute =
   ApiPublicHooksFetchPricesRouteImport.update({
     id: '/api/public/hooks/fetch-prices',
@@ -118,6 +125,7 @@ export interface FileRoutesByFullPath {
   '/tickers/': typeof TickersIndexRoute
   '/api/public/hooks/evaluate-signals': typeof ApiPublicHooksEvaluateSignalsRoute
   '/api/public/hooks/fetch-prices': typeof ApiPublicHooksFetchPricesRoute
+  '/api/public/hooks/ingest-news': typeof ApiPublicHooksIngestNewsRoute
   '/api/public/stream/quotes': typeof ApiPublicStreamQuotesRoute
 }
 export interface FileRoutesByTo {
@@ -135,6 +143,7 @@ export interface FileRoutesByTo {
   '/tickers': typeof TickersIndexRoute
   '/api/public/hooks/evaluate-signals': typeof ApiPublicHooksEvaluateSignalsRoute
   '/api/public/hooks/fetch-prices': typeof ApiPublicHooksFetchPricesRoute
+  '/api/public/hooks/ingest-news': typeof ApiPublicHooksIngestNewsRoute
   '/api/public/stream/quotes': typeof ApiPublicStreamQuotesRoute
 }
 export interface FileRoutesById {
@@ -153,6 +162,7 @@ export interface FileRoutesById {
   '/tickers/': typeof TickersIndexRoute
   '/api/public/hooks/evaluate-signals': typeof ApiPublicHooksEvaluateSignalsRoute
   '/api/public/hooks/fetch-prices': typeof ApiPublicHooksFetchPricesRoute
+  '/api/public/hooks/ingest-news': typeof ApiPublicHooksIngestNewsRoute
   '/api/public/stream/quotes': typeof ApiPublicStreamQuotesRoute
 }
 export interface FileRouteTypes {
@@ -172,6 +182,7 @@ export interface FileRouteTypes {
     | '/tickers/'
     | '/api/public/hooks/evaluate-signals'
     | '/api/public/hooks/fetch-prices'
+    | '/api/public/hooks/ingest-news'
     | '/api/public/stream/quotes'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -189,6 +200,7 @@ export interface FileRouteTypes {
     | '/tickers'
     | '/api/public/hooks/evaluate-signals'
     | '/api/public/hooks/fetch-prices'
+    | '/api/public/hooks/ingest-news'
     | '/api/public/stream/quotes'
   id:
     | '__root__'
@@ -206,6 +218,7 @@ export interface FileRouteTypes {
     | '/tickers/'
     | '/api/public/hooks/evaluate-signals'
     | '/api/public/hooks/fetch-prices'
+    | '/api/public/hooks/ingest-news'
     | '/api/public/stream/quotes'
   fileRoutesById: FileRoutesById
 }
@@ -224,6 +237,7 @@ export interface RootRouteChildren {
   TickersIndexRoute: typeof TickersIndexRoute
   ApiPublicHooksEvaluateSignalsRoute: typeof ApiPublicHooksEvaluateSignalsRoute
   ApiPublicHooksFetchPricesRoute: typeof ApiPublicHooksFetchPricesRoute
+  ApiPublicHooksIngestNewsRoute: typeof ApiPublicHooksIngestNewsRoute
   ApiPublicStreamQuotesRoute: typeof ApiPublicStreamQuotesRoute
 }
 
@@ -320,6 +334,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicStreamQuotesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/ingest-news': {
+      id: '/api/public/hooks/ingest-news'
+      path: '/api/public/hooks/ingest-news'
+      fullPath: '/api/public/hooks/ingest-news'
+      preLoaderRoute: typeof ApiPublicHooksIngestNewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/fetch-prices': {
       id: '/api/public/hooks/fetch-prices'
       path: '/api/public/hooks/fetch-prices'
@@ -352,18 +373,9 @@ const rootRouteChildren: RootRouteChildren = {
   TickersIndexRoute: TickersIndexRoute,
   ApiPublicHooksEvaluateSignalsRoute: ApiPublicHooksEvaluateSignalsRoute,
   ApiPublicHooksFetchPricesRoute: ApiPublicHooksFetchPricesRoute,
+  ApiPublicHooksIngestNewsRoute: ApiPublicHooksIngestNewsRoute,
   ApiPublicStreamQuotesRoute: ApiPublicStreamQuotesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

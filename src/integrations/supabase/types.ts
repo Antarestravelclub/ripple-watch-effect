@@ -151,6 +151,146 @@ export type Database = {
           },
         ]
       }
+      ingest_runs: {
+        Row: {
+          error: string | null
+          events_created: number
+          finished_at: string | null
+          headlines_seen: number
+          id: string
+          ok: boolean
+          signals_created: number
+          skipped: number
+          started_at: string
+        }
+        Insert: {
+          error?: string | null
+          events_created?: number
+          finished_at?: string | null
+          headlines_seen?: number
+          id?: string
+          ok?: boolean
+          signals_created?: number
+          skipped?: number
+          started_at?: string
+        }
+        Update: {
+          error?: string | null
+          events_created?: number
+          finished_at?: string | null
+          headlines_seen?: number
+          id?: string
+          ok?: boolean
+          signals_created?: number
+          skipped?: number
+          started_at?: string
+        }
+        Relationships: []
+      }
+      live_event_exposures: {
+        Row: {
+          company_name: string | null
+          confidence: string
+          created_at: string
+          id: string
+          live_event_id: string
+          mechanism: string
+          needs_review: boolean
+          quote_symbol: string | null
+          review_reason: string | null
+          sector: string
+          side: string
+          ticker: string
+        }
+        Insert: {
+          company_name?: string | null
+          confidence?: string
+          created_at?: string
+          id?: string
+          live_event_id: string
+          mechanism?: string
+          needs_review?: boolean
+          quote_symbol?: string | null
+          review_reason?: string | null
+          sector?: string
+          side: string
+          ticker: string
+        }
+        Update: {
+          company_name?: string | null
+          confidence?: string
+          created_at?: string
+          id?: string
+          live_event_id?: string
+          mechanism?: string
+          needs_review?: boolean
+          quote_symbol?: string | null
+          review_reason?: string | null
+          sector?: string
+          side?: string
+          ticker?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_event_exposures_live_event_id_fkey"
+            columns: ["live_event_id"]
+            isOneToOne: false
+            referencedRelation: "live_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_events: {
+        Row: {
+          category: string
+          created_at: string
+          dedupe_key: string
+          headline: string
+          id: string
+          published_at: string
+          regions: string[]
+          source: string
+          source_url: string | null
+          strength: string
+          summary: string
+          transmission_channel: string
+          updated_at: string
+          why_markets_care: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          dedupe_key: string
+          headline: string
+          id?: string
+          published_at?: string
+          regions?: string[]
+          source?: string
+          source_url?: string | null
+          strength?: string
+          summary?: string
+          transmission_channel?: string
+          updated_at?: string
+          why_markets_care?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          dedupe_key?: string
+          headline?: string
+          id?: string
+          published_at?: string
+          regions?: string[]
+          source?: string
+          source_url?: string | null
+          strength?: string
+          summary?: string
+          transmission_channel?: string
+          updated_at?: string
+          why_markets_care?: string
+        }
+        Relationships: []
+      }
       price_snapshots: {
         Row: {
           captured_at: string

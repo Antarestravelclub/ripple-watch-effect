@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteShell } from "@/components/site-shell";
-import { EVENTS, eventTouchesTicker } from "@/lib/ripple-data";
+import { eventTouchesTicker } from "@/lib/ripple-data";
+import { useLiveEvents } from "@/hooks/use-live-events";
 import {
   addTicker,
   removeTicker,
@@ -33,9 +34,10 @@ export const Route = createFileRoute("/watchlist")({
 
 function WatchlistPage() {
   const watchlist = useWatchlist();
+  const { events } = useLiveEvents();
   const [input, setInput] = useState("");
 
-  const relevant = EVENTS.filter((e) =>
+  const relevant = events.filter((e) =>
     watchlist.some((t) => eventTouchesTicker(e, t)),
   ).sort(
     (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
