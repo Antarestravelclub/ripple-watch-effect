@@ -2,36 +2,14 @@
 // Only createServerFn declarations + erased types live here.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import {
+  ArticleImpactSchema,
+  EXPOSURE_SYSTEM_PROMPT,
+  type ArticleImpact,
+} from "./exposure-schema";
 
-export const ArticleImpactSchema = z.object({
-  headline: z.string(),
-  summary: z.string(),
-  category: z.string(),
-  regions: z.array(z.string()),
-  transmissionChannel: z.string(),
-  strength: z.enum(["Low", "Medium", "High"]),
-  positive: z.array(
-    z.object({
-      ticker: z.string(),
-      company: z.string(),
-      sector: z.string(),
-      mechanism: z.string(),
-      confidence: z.enum(["Low", "Medium", "High"]),
-    }),
-  ),
-  negative: z.array(
-    z.object({
-      ticker: z.string(),
-      company: z.string(),
-      sector: z.string(),
-      mechanism: z.string(),
-      confidence: z.enum(["Low", "Medium", "High"]),
-    }),
-  ),
-  caveats: z.string(),
-});
-
-export type ArticleImpact = z.infer<typeof ArticleImpactSchema>;
+export { ArticleImpactSchema };
+export type { ArticleImpact };
 
 export const analyzeArticle = createServerFn({ method: "POST" })
   .inputValidator((input: { text: string }) =>
@@ -51,14 +29,7 @@ export const analyzeArticle = createServerFn({ method: "POST" })
     const { output } = await generateText({
       model: gateway("google/gemini-3.6-flash"),
       output: Output.object({ schema: ArticleImpactSchema }),
-      system: [
-        "You are an equity-exposure research assistant for an educational tool.",
-        "Given a news article, identify the mechanical transmission channel to listed equities.",
-        "List publicly listed companies with real exchange tickers that are most positively and most negatively exposed.",
-        "Explain the mechanism concretely (input costs, demand, substitution, regulation, supply chain).",
-        "Never give investment advice; never use the words buy, sell, or recommendation.",
-        "Describe exposure and historical behaviour only. 3-6 names per side when supportable, fewer if not.",
-      ].join(" "),
+      system: EXPOSURE_SYSTEM_PROMPT,
       prompt: `Analyse this article:\n\n${data.text}`,
     });
 
