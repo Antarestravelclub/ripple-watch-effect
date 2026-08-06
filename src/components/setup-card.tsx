@@ -110,7 +110,7 @@ export function SetupCard({ setup }: { setup: SwingSetup }) {
           {setup.flags.map((f) => (
             <span
               key={f}
-              className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border border-warning/30 bg-warning/10 text-warning"
+              className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border border-headwind/30 bg-headwind/10 text-headwind"
             >
               <AlertTriangle className="w-3 h-3" />
               {f}
