@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Search, X, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { EVENTS } from "@/lib/ripple-data";
+import type { RippleEvent } from "@/lib/ripple-data";
 import { searchTickers } from "@/lib/quotes.functions";
 
 export interface TickerHit {
@@ -12,9 +12,9 @@ export interface TickerHit {
   eventCount: number;
 }
 
-function allTickers(): TickerHit[] {
+function allTickers(events: RippleEvent[]): TickerHit[] {
   const map = new Map<string, TickerHit>();
-  for (const ev of EVENTS) {
+  for (const ev of events) {
     const groups: Array<[typeof ev.tailwinds, "tailwind" | "headwind"]> = [
       [ev.tailwinds, "tailwind"],
       [ev.headwinds, "headwind"],
@@ -46,13 +46,15 @@ export function TickerSearch({
   query,
   onChange,
   onSelectSymbol,
+  events = [],
 }: {
   query: string;
   onChange: (q: string) => void;
   onSelectSymbol?: (symbol: string) => void;
+  events?: RippleEvent[];
 }) {
   const [focused, setFocused] = useState(false);
-  const universe = useMemo(allTickers, []);
+  const universe = useMemo(() => allTickers(events), [events]);
   const q = query.trim().toUpperCase();
   const debounced = useDebounced(q, 300);
 
@@ -174,7 +176,7 @@ export function TickerSearch({
 }
 
 export function eventTouchesTicker(
-  ev: (typeof EVENTS)[number],
+  ev: RippleEvent,
   query: string,
 ): boolean {
   const q = query.trim().toUpperCase();
