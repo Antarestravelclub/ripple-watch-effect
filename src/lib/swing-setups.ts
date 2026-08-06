@@ -163,7 +163,7 @@ export function buildSetups(input: {
       ticker: signal.ticker,
       quoteSymbol,
       displaySymbol: meta.display || signal.ticker,
-      companyName: signal.company_name ?? meta.name ?? null,
+      companyName: meta.name ?? null,
       direction,
       magnitude,
       mechanism: signal.rationale || event?.whyMarketsCare || "Mechanical exposure to this event.",
