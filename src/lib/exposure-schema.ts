@@ -2,32 +2,32 @@
 // automated news ingestion job. Client-safe (types + zod only).
 import { z } from "zod";
 
+/** Tolerant level parsing — models often answer "medium-high", "moderate", etc. */
+export function normalizeLevel(raw: unknown): "Low" | "Medium" | "High" {
+  const v = String(raw ?? "").toLowerCase();
+  if (v.startsWith("h") || v.includes("strong") || v.includes("severe")) return "High";
+  if (v.startsWith("l") || v.includes("weak") || v.includes("minor")) return "Low";
+  return "Medium";
+}
+
+const ExposureRow = z.object({
+  ticker: z.string().default(""),
+  company: z.string().default(""),
+  sector: z.string().default(""),
+  mechanism: z.string().default(""),
+  confidence: z.string().default("Medium").transform(normalizeLevel),
+});
+
 export const ArticleImpactSchema = z.object({
-  headline: z.string(),
-  summary: z.string(),
-  category: z.string(),
-  regions: z.array(z.string()),
-  transmissionChannel: z.string(),
-  strength: z.enum(["Low", "Medium", "High"]),
-  positive: z.array(
-    z.object({
-      ticker: z.string(),
-      company: z.string(),
-      sector: z.string(),
-      mechanism: z.string(),
-      confidence: z.enum(["Low", "Medium", "High"]),
-    }),
-  ),
-  negative: z.array(
-    z.object({
-      ticker: z.string(),
-      company: z.string(),
-      sector: z.string(),
-      mechanism: z.string(),
-      confidence: z.enum(["Low", "Medium", "High"]),
-    }),
-  ),
-  caveats: z.string(),
+  headline: z.string().default(""),
+  summary: z.string().default(""),
+  category: z.string().default("Geopolitical"),
+  regions: z.array(z.string()).default([]),
+  transmissionChannel: z.string().default(""),
+  strength: z.string().default("Medium").transform(normalizeLevel),
+  positive: z.array(ExposureRow).default([]),
+  negative: z.array(ExposureRow).default([]),
+  caveats: z.string().default(""),
 });
 
 export type ArticleImpact = z.infer<typeof ArticleImpactSchema>;
