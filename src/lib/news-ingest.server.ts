@@ -3,9 +3,6 @@
 // validates every ticker against the price feed, and stores events, exposures
 // and auto-generated signals.
 import {
-  ArticleImpactWireSchema,
-  normalizeImpact,
-  EXPOSURE_SYSTEM_PROMPT,
   normalizeCategory,
   normalizeRegions,
   type ArticleImpact,
@@ -35,19 +32,6 @@ export function dedupeKeyFor(item: NewsItem): string {
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 160);
-}
-
-async function extractExposure(text: string, apiKey: string): Promise<ArticleImpact> {
-  const { createLovableAiGatewayProvider } = await import("./ai-gateway.server");
-  const { generateText, Output } = await import("ai");
-  const gateway = createLovableAiGatewayProvider(apiKey);
-  const { output } = await generateText({
-    model: gateway("google/gemini-3.6-flash"),
-    output: Output.object({ schema: ArticleImpactWireSchema }),
-    system: EXPOSURE_SYSTEM_PROMPT,
-    prompt: `Analyse this article:\n\n${text}`,
-  });
-  return normalizeImpact(output);
 }
 
 export interface IngestResult {
@@ -162,6 +146,7 @@ export async function runNewsIngest(): Promise<IngestResult> {
     }
     let impact: ArticleImpact;
     try {
+      const { extractExposure } = await import("./exposure-extract.server");
       impact = await extractExposure(text, aiKey);
     } catch (e) {
       detail.push(
