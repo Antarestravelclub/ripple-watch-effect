@@ -5,7 +5,8 @@ import { useMemo, useState } from "react";
 import { SiteShell } from "@/components/site-shell";
 import { ensureSignals, listSignals } from "@/lib/signals.functions";
 import { computeMetrics, fmtPct, fmtPrice, pctTone } from "@/lib/signal-metrics";
-import { EVENTS, type EventCategory } from "@/lib/ripple-data";
+import { type EventCategory } from "@/lib/ripple-data";
+import { useLiveEvents } from "@/hooks/use-live-events";
 import { useWatchlist } from "@/lib/watchlist-store";
 import { RefreshCw } from "lucide-react";
 
@@ -62,7 +63,11 @@ function TrackerPage() {
   const [sortKey, setSortKey] = useState<SortKey>("pct");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
-  const eventById = useMemo(() => new Map(EVENTS.map((e) => [e.id, e])), []);
+  const { events: liveEvents } = useLiveEvents();
+  const eventById = useMemo(
+    () => new Map(liveEvents.map((e) => [e.id, e])),
+    [liveEvents],
+  );
 
   const rows = useMemo(() => {
     const enriched = data.signals.map((s) => {

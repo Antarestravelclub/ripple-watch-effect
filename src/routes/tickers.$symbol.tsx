@@ -10,7 +10,7 @@ import {
 } from "@/lib/ticker-rollup";
 import { fmtPct, pctTone } from "@/lib/signal-metrics";
 import { TickerLabel } from "@/components/ticker-meta-chips";
-import { EVENTS } from "@/lib/ripple-data";
+import { useLiveEvents } from "@/hooks/use-live-events";
 
 export const Route = createFileRoute("/tickers/$symbol")({
   head: ({ params }) => ({
@@ -37,7 +37,8 @@ function TickerDetail() {
   const { rows, isLoading } = useTickerRollups();
   const row = rows.find((r) => r.ticker.toUpperCase() === symbol.toUpperCase());
   const { quotes } = useLiveQuotes(row ? [row.quoteSymbol] : []);
-  const eventById = new Map(EVENTS.map((e) => [e.id, e]));
+  const { events } = useLiveEvents();
+  const eventById = new Map(events.map((e) => [e.id, e]));
 
   if (!row) {
     return (
