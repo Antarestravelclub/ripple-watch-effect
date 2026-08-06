@@ -102,7 +102,8 @@ export const repairSignalPrices = createServerFn({ method: "POST" }).handler(asy
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { fetchQuoteWithRetry, sleep } = await import("./signal-prices.server");
   const { levelsFor } = await import("./signal-levels");
-  const magnitudeByEvent = new Map(EVENTS.map((e) => [e.id, e.strength]));
+  const { eventMagnitudes } = await import("./event-magnitude.server");
+  const magnitudeByEvent = await eventMagnitudes();
   const apiKey = process.env.FINNHUB_API_KEY ?? "";
   if (!apiKey)
     return {

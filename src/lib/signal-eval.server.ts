@@ -1,7 +1,7 @@
 // Server-only evaluation engine for open signals.
 // Recomputes magnitude-aware levels, refreshes prices, and resolves signals
 // into target / invalidation / expired outcomes.
-import { EVENTS } from "./ripple-data";
+import { eventMagnitudes } from "./event-magnitude.server";
 import { tickerMeta } from "./ticker-registry";
 import { levelsFor, tradingDaysBetween, EXPIRY_TRADING_DAYS, type RippleMagnitude } from "./signal-levels";
 import { fetchQuoteWithRetry, sleep } from "./signal-prices.server";
@@ -19,9 +19,7 @@ export async function runEvaluation(): Promise<EvalResult> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const apiKey = process.env.FINNHUB_API_KEY ?? "";
 
-  const magnitudeByEvent = new Map<string, RippleMagnitude>(
-    EVENTS.map((e) => [e.id, e.strength as RippleMagnitude]),
-  );
+  const magnitudeByEvent = (await eventMagnitudes()) as Map<string, RippleMagnitude>;
 
   const { data: rows, error } = await supabaseAdmin
     .from("signals")

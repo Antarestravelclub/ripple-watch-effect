@@ -86,10 +86,10 @@ export const Route = createFileRoute("/api/public/hooks/fetch-prices")({
           // Backfill signal_price + levels if missing
           if (s.signal_price == null) {
             const { levelsFor } = await import("@/lib/signal-levels");
-            const { EVENTS } = await import("@/lib/ripple-data");
+            const { eventMagnitudes } = await import("@/lib/event-magnitude.server");
+            const mags = await eventMagnitudes();
             const mag =
-              EVENTS.find((e) => e.id === (s as { event_id?: string }).event_id)?.strength ??
-              "Medium";
+              mags.get((s as { event_id?: string }).event_id ?? "") ?? "Medium";
             const levels = levelsFor(price, s.direction as "long" | "short", mag);
             updates.push({
               id: s.id,
