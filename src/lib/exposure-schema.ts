@@ -10,27 +10,76 @@ export function normalizeLevel(raw: unknown): "Low" | "Medium" | "High" {
   return "Medium";
 }
 
-const ExposureRow = z.object({
-  ticker: z.string().default(""),
-  company: z.string().default(""),
-  sector: z.string().default(""),
-  mechanism: z.string().default(""),
-  confidence: z.string().default("Medium").transform(normalizeLevel),
+/**
+ * Wire schema handed to the model: plain strings only, no enums or transforms,
+ * so a slightly-off answer still parses instead of being thrown away.
+ */
+const WireRow = z.object({
+  ticker: z.string(),
+  company: z.string(),
+  sector: z.string(),
+  mechanism: z.string(),
+  confidence: z.string(),
 });
 
-export const ArticleImpactSchema = z.object({
-  headline: z.string().default(""),
-  summary: z.string().default(""),
-  category: z.string().default("Geopolitical"),
-  regions: z.array(z.string()).default([]),
-  transmissionChannel: z.string().default(""),
-  strength: z.string().default("Medium").transform(normalizeLevel),
-  positive: z.array(ExposureRow).default([]),
-  negative: z.array(ExposureRow).default([]),
-  caveats: z.string().default(""),
+export const ArticleImpactWireSchema = z.object({
+  headline: z.string(),
+  summary: z.string(),
+  category: z.string(),
+  regions: z.array(z.string()),
+  transmissionChannel: z.string(),
+  strength: z.string(),
+  positive: z.array(WireRow),
+  negative: z.array(WireRow),
+  caveats: z.string(),
 });
 
-export type ArticleImpact = z.infer<typeof ArticleImpactSchema>;
+export interface ExposureRow {
+  ticker: string;
+  company: string;
+  sector: string;
+  mechanism: string;
+  confidence: "Low" | "Medium" | "High";
+}
+
+export interface ArticleImpact {
+  headline: string;
+  summary: string;
+  category: string;
+  regions: string[];
+  transmissionChannel: string;
+  strength: "Low" | "Medium" | "High";
+  positive: ExposureRow[];
+  negative: ExposureRow[];
+  caveats: string;
+}
+
+/** Coerce a loose model answer into the app's strict shape. */
+export function normalizeImpact(raw: unknown): ArticleImpact {
+  const o = (raw ?? {}) as Record<string, unknown>;
+  const rows = (v: unknown): ExposureRow[] =>
+    (Array.isArray(v) ? v : []).map((r) => {
+      const x = (r ?? {}) as Record<string, unknown>;
+      return {
+        ticker: String(x.ticker ?? "").trim(),
+        company: String(x.company ?? "").trim(),
+        sector: String(x.sector ?? "").trim(),
+        mechanism: String(x.mechanism ?? "").trim(),
+        confidence: normalizeLevel(x.confidence),
+      };
+    });
+  return {
+    headline: String(o.headline ?? ""),
+    summary: String(o.summary ?? ""),
+    category: String(o.category ?? "Geopolitical"),
+    regions: Array.isArray(o.regions) ? o.regions.map(String) : [],
+    transmissionChannel: String(o.transmissionChannel ?? ""),
+    strength: normalizeLevel(o.strength),
+    positive: rows(o.positive),
+    negative: rows(o.negative),
+    caveats: String(o.caveats ?? ""),
+  };
+}
 
 export const EXPOSURE_SYSTEM_PROMPT = [
   "You are an equity-exposure research assistant for an educational tool.",
