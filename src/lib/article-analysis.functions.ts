@@ -3,12 +3,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import {
-  ArticleImpactSchema,
+  ArticleImpactWireSchema,
   EXPOSURE_SYSTEM_PROMPT,
+  normalizeImpact,
   type ArticleImpact,
 } from "./exposure-schema";
 
-export { ArticleImpactSchema };
 export type { ArticleImpact };
 
 export const analyzeArticle = createServerFn({ method: "POST" })
@@ -28,10 +28,10 @@ export const analyzeArticle = createServerFn({ method: "POST" })
 
     const { output } = await generateText({
       model: gateway("google/gemini-3.6-flash"),
-      output: Output.object({ schema: ArticleImpactSchema }),
+      output: Output.object({ schema: ArticleImpactWireSchema }),
       system: EXPOSURE_SYSTEM_PROMPT,
       prompt: `Analyse this article:\n\n${data.text}`,
     });
 
-    return output;
+    return normalizeImpact(output);
   });

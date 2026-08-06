@@ -3,7 +3,8 @@
 // validates every ticker against the price feed, and stores events, exposures
 // and auto-generated signals.
 import {
-  ArticleImpactSchema,
+  ArticleImpactWireSchema,
+  normalizeImpact,
   EXPOSURE_SYSTEM_PROMPT,
   normalizeCategory,
   normalizeRegions,
@@ -42,11 +43,11 @@ async function extractExposure(text: string, apiKey: string): Promise<ArticleImp
   const gateway = createLovableAiGatewayProvider(apiKey);
   const { output } = await generateText({
     model: gateway("google/gemini-3.6-flash"),
-    output: Output.object({ schema: ArticleImpactSchema }),
+    output: Output.object({ schema: ArticleImpactWireSchema }),
     system: EXPOSURE_SYSTEM_PROMPT,
     prompt: `Analyse this article:\n\n${text}`,
   });
-  return output;
+  return normalizeImpact(output);
 }
 
 export interface IngestResult {
