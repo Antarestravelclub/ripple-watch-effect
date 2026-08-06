@@ -1,4 +1,4 @@
-import { useNavigate, Link } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import type { SignalRow } from "@/lib/signal-metrics";
 import { fmtPct, pctTone } from "@/lib/signal-metrics";
 import { NoDataBadge, TickerLabel } from "./ticker-meta-chips";
@@ -79,7 +79,7 @@ export function SignalBadge({
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          router.navigate({ to: "/tickers/$symbol", params: { symbol: signal.ticker } });
+          navigate({ to: "/tickers/$symbol", params: { symbol: signal.ticker } });
         }}
         title={CONFLICT_NOTE + " View this ticker's rollup."}
         aria-label={`${signal.ticker}: ${CONFLICT_NOTE}`}
