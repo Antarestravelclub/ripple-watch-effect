@@ -105,6 +105,8 @@ function TodayPage() {
 
       <MarketMovers />
 
+      <TopSetupsStrip events={liveEvents} />
+
       <div className="mb-5">
         <RegionFilter selected={regions} onChange={setRegions} />
       </div>
