@@ -1,7 +1,6 @@
 // Client-side access to the live (ingested) event feed.
 // Keeps a module-level snapshot so pages that only need event lookups
 // (tracker, scorecard, signal detail) can read it without their own query.
-import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listLiveEvents } from "@/lib/live-events.functions";
@@ -34,11 +33,11 @@ export function useLiveEvents() {
     refetchOnWindowFocus: true,
   });
 
-  useEffect(() => {
-    if (!query.data) return;
+  // Register synchronously so the same render can resolve regions/top picks.
+  if (query.data) {
     registerEventMeta(query.data.meta ?? {});
     snapshot = query.data.events as RippleEvent[];
-  }, [query.data]);
+  }
 
   return {
     events: (query.data?.events ?? []) as RippleEvent[],
