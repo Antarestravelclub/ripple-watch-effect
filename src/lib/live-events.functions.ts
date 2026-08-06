@@ -21,7 +21,7 @@ export const listLiveEvents = createServerFn({ method: "GET" }).handler(async ()
     .limit(60);
   if (error) throw new Error(error.message);
 
-  const ids = (events ?? []).map((e) => e.id);
+  const ids = ((events ?? []) as Array<{ id: string }>).map((e) => e.id);
   const { data: exposures } = ids.length
     ? await supabase.from("live_event_exposures").select(EXPOSURE_COLUMNS).in("live_event_id", ids)
     : { data: [] as LiveExposureRow[] };
