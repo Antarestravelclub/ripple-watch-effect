@@ -5,6 +5,7 @@ import { Link } from "@tanstack/react-router";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { listSignals } from "@/lib/signals.functions";
 import { fmtPct, fmtPrice, pctTone } from "@/lib/signal-metrics";
+import { statusLabel, useLiveQuotes } from "@/hooks/use-live-quotes";
 
 interface Mover {
   id: string;
@@ -12,6 +13,9 @@ interface Mover {
   price: number;
   pct: number;
 }
+
+/** Snapshots older than this are treated as stale and excluded. */
+const MAX_SNAPSHOT_AGE_MS = 24 * 60 * 60 * 1000;
 
 export function MarketMovers() {
   const list = useServerFn(listSignals);
@@ -23,26 +27,41 @@ export function MarketMovers() {
     refetchOnWindowFocus: true,
   });
 
-
-  const { gainers, decliners, asOf } = useMemo(() => {
-    const byTicker = new Map<string, Mover>();
-    let asOf: string | null = null;
-    for (const s of data?.signals ?? []) {
+  // Only open signals with a recent snapshot qualify as "live" moves.
+  const tracked = useMemo(() => {
+    const cutoff = Date.now() - MAX_SNAPSHOT_AGE_MS;
+    return (data?.signals ?? []).filter((s) => {
+      if (s.status !== "open" || !s.signal_price) return false;
       const snap = data?.latest[s.id];
-      if (!snap || !s.signal_price) continue;
-      const pct = ((snap.price - s.signal_price) / s.signal_price) * 100;
+      if (!snap) return false;
+      return new Date(snap.captured_at).getTime() >= cutoff;
+    });
+  }, [data]);
+
+  const symbols = useMemo(
+    () => tracked.map((s) => (s.quote_symbol || s.ticker).toUpperCase()),
+    [tracked],
+  );
+  const { quotes, streaming, marketOpen, status, updatedAt } = useLiveQuotes(symbols);
+
+  const { gainers, decliners } = useMemo(() => {
+    const byTicker = new Map<string, Mover>();
+    for (const s of tracked) {
+      const symbol = (s.quote_symbol || s.ticker).toUpperCase();
+      // Prefer the streamed last price; fall back to the stored snapshot.
+      const price = quotes[symbol]?.price ?? data?.latest[s.id]?.price;
+      if (price == null || !s.signal_price) continue;
+      const pct = ((price - s.signal_price) / s.signal_price) * 100;
       if (!isFinite(pct)) continue;
       if (!byTicker.has(s.ticker))
-        byTicker.set(s.ticker, { id: s.id, ticker: s.ticker, price: snap.price, pct });
-      if (!asOf || snap.captured_at > asOf) asOf = snap.captured_at;
+        byTicker.set(s.ticker, { id: s.id, ticker: s.ticker, price, pct });
     }
     const all = [...byTicker.values()];
     return {
       gainers: all.filter((m) => m.pct > 0).sort((a, b) => b.pct - a.pct).slice(0, 5),
       decliners: all.filter((m) => m.pct < 0).sort((a, b) => a.pct - b.pct).slice(0, 5),
-      asOf,
     };
-  }, [data]);
+  }, [tracked, quotes, data]);
 
   const empty = !isLoading && gainers.length === 0 && decliners.length === 0;
 
@@ -51,8 +70,8 @@ export function MarketMovers() {
       <div className="flex items-baseline justify-between gap-3 mb-3">
         <h2 className="text-sm font-semibold tracking-tight">Market moves</h2>
         <span className="text-[11px] text-muted-foreground">
-          Delayed prices · move since signal snapshot
-          {asOf ? ` · as of ${new Date(asOf).toLocaleString()}` : ""}
+          Move since signal snapshot · open signals only ·{" "}
+          {statusLabel(status, { streaming, marketOpen, updatedAt })}
         </span>
       </div>
 
@@ -60,8 +79,9 @@ export function MarketMovers() {
         <p className="text-xs text-muted-foreground">Loading price moves…</p>
       ) : empty ? (
         <p className="text-xs text-muted-foreground">
-          No price snapshots yet. Seed signals from the Tracker page to start monitoring
-          moves.
+          No fresh moves right now —{" "}
+          {marketOpen ? "awaiting the next price refresh" : "market closed"}. Open signals
+          appear here once a current price is received.
         </p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
@@ -75,6 +95,7 @@ export function MarketMovers() {
     </section>
   );
 }
+
 
 function MoverList({
   title,
