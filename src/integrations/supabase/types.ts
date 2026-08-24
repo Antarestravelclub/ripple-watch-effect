@@ -161,6 +161,7 @@ export type Database = {
           ok: boolean
           signals_created: number
           skipped: number
+          stages: Json
           started_at: string
         }
         Insert: {
@@ -172,6 +173,7 @@ export type Database = {
           ok?: boolean
           signals_created?: number
           skipped?: number
+          stages?: Json
           started_at?: string
         }
         Update: {
@@ -183,6 +185,7 @@ export type Database = {
           ok?: boolean
           signals_created?: number
           skipped?: number
+          stages?: Json
           started_at?: string
         }
         Relationships: []

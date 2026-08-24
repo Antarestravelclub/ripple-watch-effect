@@ -14,6 +14,16 @@ export function loadedEvents(): RippleEvent[] {
   return snapshot;
 }
 
+export interface IngestStages {
+  duplicates: number;
+  tooThin: number;
+  aiFailed: number;
+  aiBlocked: boolean;
+  noExposure: number;
+  stored: number;
+  detail?: string[];
+}
+
 export interface IngestRun {
   started_at: string;
   finished_at: string | null;
@@ -21,6 +31,7 @@ export interface IngestRun {
   error: string | null;
   events_created: number;
   headlines_seen: number;
+  stages?: IngestStages | null;
 }
 
 export function useLiveEvents() {

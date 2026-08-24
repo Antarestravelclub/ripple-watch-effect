@@ -12,7 +12,7 @@ const NEWS_URL = "https://finnhub.io/api/v1/news?category=general";
 
 /** Max headlines pulled per run, and max sent through the AI per run. */
 export const HEADLINE_SCAN_CAP = 40;
-export const AI_ANALYSE_CAP = 5;
+export const AI_ANALYSE_CAP = 12;
 export const RETENTION_DAYS = 14;
 
 interface NewsItem {
@@ -34,6 +34,15 @@ export function dedupeKeyFor(item: NewsItem): string {
     .slice(0, 160);
 }
 
+export interface IngestStages {
+  duplicates: number;
+  tooThin: number;
+  aiFailed: number;
+  aiBlocked: boolean;
+  noExposure: number;
+  stored: number;
+}
+
 export interface IngestResult {
   ok: boolean;
   headlinesSeen: number;
@@ -41,11 +50,26 @@ export interface IngestResult {
   skipped: number;
   signalsCreated: number;
   error: string | null;
+  stages: IngestStages;
   detail: string[];
+}
+
+/** 402/403 from the AI gateway are terminal for the whole run (credit block,
+ * policy block, stale key) — retrying headline after headline just burns time. */
+function isTerminalAiError(message: string): boolean {
+  return /\[(402|403)\]/.test(message) || /credits exhausted/i.test(message);
 }
 
 export async function runNewsIngest(): Promise<IngestResult> {
   const detail: string[] = [];
+  const stages: IngestStages = {
+    duplicates: 0,
+    tooThin: 0,
+    aiFailed: 0,
+    aiBlocked: false,
+    noExposure: 0,
+    stored: 0,
+  };
   const result: IngestResult = {
     ok: false,
     headlinesSeen: 0,
@@ -53,6 +77,7 @@ export async function runNewsIngest(): Promise<IngestResult> {
     skipped: 0,
     signalsCreated: 0,
     error: null,
+    stages,
     detail,
   };
 
@@ -78,6 +103,7 @@ export async function runNewsIngest(): Promise<IngestResult> {
           signals_created: result.signalsCreated,
           ok: result.ok,
           error: result.error,
+          stages: { ...stages, detail: detail.slice(0, 8) },
         })
         .eq("id", runId);
     }
@@ -106,7 +132,7 @@ export async function runNewsIngest(): Promise<IngestResult> {
     return finish();
   }
 
-  const cutoff = Date.now() - 36 * 3_600_000;
+  const cutoff = Date.now() - 48 * 3_600_000;
   const candidates = items
     .filter((i) => (i.headline ?? "").trim().length > 20)
     .filter((i) => !i.datetime || i.datetime * 1000 > cutoff)
@@ -122,7 +148,7 @@ export async function runNewsIngest(): Promise<IngestResult> {
   const seen = new Set((existing ?? []).map((r) => r.dedupe_key));
 
   const fresh = candidates.filter((i) => !seen.has(dedupeKeyFor(i)));
-  result.skipped = candidates.length - fresh.length;
+  stages.duplicates = candidates.length - fresh.length;
 
   const { fetchQuoteWithRetry, sleep } = await import("./signal-prices.server");
   const { tickerMeta } = await import("./ticker-registry");
@@ -140,8 +166,8 @@ export async function runNewsIngest(): Promise<IngestResult> {
 
   for (const item of fresh.slice(0, AI_ANALYSE_CAP)) {
     const text = `${item.headline ?? ""}\n\n${item.summary ?? ""}`.trim();
-    if (text.length < 80) {
-      result.skipped++;
+    if (text.length < 60) {
+      stages.tooThin++;
       continue;
     }
     let impact: ArticleImpact;
@@ -149,12 +175,23 @@ export async function runNewsIngest(): Promise<IngestResult> {
       const { extractExposure } = await import("./exposure-extract.server");
       impact = await extractExposure(text, aiKey);
     } catch (e) {
-      detail.push(
-        `AI extraction failed for "${item.headline}": ${
-          e instanceof Error ? e.message : "unknown error"
-        }`,
-      );
-      result.skipped++;
+      const message = e instanceof Error ? e.message : "unknown error";
+      stages.aiFailed++;
+      if (isTerminalAiError(message)) {
+        // Circuit breaker: a blocked/exhausted AI gateway fails every remaining
+        // headline identically. Stop, mark the run failed, surface the reason.
+        stages.aiBlocked = true;
+        result.error = `AI exposure engine blocked: ${message}`;
+        detail.push(
+          `AI blocked after ${stages.aiFailed} attempt(s) — remaining ${
+            fresh.length - stages.aiFailed
+          } headline(s) parked until the next run.`,
+        );
+        result.skipped =
+          stages.duplicates + stages.tooThin + stages.aiFailed + stages.noExposure;
+        return finish();
+      }
+      detail.push(`AI extraction failed for "${item.headline}": ${message}`);
       continue;
     }
 
@@ -163,7 +200,7 @@ export async function runNewsIngest(): Promise<IngestResult> {
       { side: "headwind", rows: impact.negative ?? [] },
     ];
     if (sides.every((s) => s.rows.length === 0)) {
-      result.skipped++;
+      stages.noExposure++;
       continue;
     }
 
@@ -190,9 +227,9 @@ export async function runNewsIngest(): Promise<IngestResult> {
       .maybeSingle();
     if (evErr || !ev) {
       detail.push(`Store failed for "${item.headline}": ${evErr?.message ?? "no row"}`);
-      result.skipped++;
       continue;
     }
+    stages.stored++;
     result.eventsCreated++;
 
     for (const { side, rows } of sides) {
@@ -264,9 +301,28 @@ export async function runNewsIngest(): Promise<IngestResult> {
     }
   }
 
+  result.skipped =
+    stages.duplicates + stages.tooThin + stages.aiFailed + stages.noExposure;
+
   // Retention: drop events beyond the window so the feed can never go stale.
   const pruneBefore = new Date(Date.now() - RETENTION_DAYS * 86_400_000).toISOString();
   await supabaseAdmin.from("live_events").delete().lt("published_at", pruneBefore);
+
+  // A run that saw fresh headlines but stored nothing is degraded, not fine —
+  // say so and record why so the UI can show the real reason.
+  if (result.eventsCreated === 0 && fresh.length > 0) {
+    const analysed = fresh.slice(0, AI_ANALYSE_CAP).length - stages.tooThin;
+    if (analysed > 0 && stages.noExposure === analysed && stages.aiFailed === 0) {
+      result.ok = true; // genuinely quiet news cycle — nothing had equity exposure
+    } else {
+      result.ok = false;
+      result.error =
+        stages.aiFailed > 0
+          ? `AI analysis failed for ${stages.aiFailed}/${analysed} headline(s).`
+          : "No new events stored despite fresh headlines.";
+    }
+    return finish();
+  }
 
   result.ok = true;
   return finish();

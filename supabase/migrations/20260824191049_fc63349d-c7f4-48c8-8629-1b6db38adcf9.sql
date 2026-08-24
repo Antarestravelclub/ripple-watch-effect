@@ -1,0 +1,1 @@
+ALTER TABLE public.ingest_runs ADD COLUMN IF NOT EXISTS stages jsonb NOT NULL DEFAULT '{}'::jsonb;

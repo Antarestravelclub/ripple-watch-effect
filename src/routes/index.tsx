@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { SiteShell } from "@/components/site-shell";
 import { EventCard } from "@/components/event-card";
 import { RegionFilter } from "@/components/region-filter";
@@ -11,6 +13,7 @@ import { eventMatchesRegions, type RegionCode } from "@/lib/ripple-regions";
 import { isStale, sortByStrengthThenRecency, STALE_AFTER_HOURS } from "@/lib/event-freshness";
 import { ChevronDown, RefreshCw, AlertTriangle } from "lucide-react";
 import { useLiveEvents } from "@/hooks/use-live-events";
+import { refreshNewsFeed } from "@/lib/live-events.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -35,15 +38,56 @@ export const Route = createFileRoute("/")({
 });
 
 function IngestStatus() {
-  const { lastIngest, isLoading, error, refetch } = useLiveEvents();
+  const { events, lastIngest, isLoading, error, refetch } = useLiveEvents();
+  const queryClient = useQueryClient();
+  const runRefresh = useServerFn(refreshNewsFeed);
+  const [refreshing, setRefreshing] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+
   const at = lastIngest?.finished_at ?? lastIngest?.started_at ?? null;
   const failed = lastIngest ? !lastIngest.ok : false;
+  const quiet =
+    lastIngest?.ok && lastIngest.events_created === 0 && !lastIngest.error;
+  const newestPub = events.reduce(
+    (max, e) => Math.max(max, new Date(e.publishedAt).getTime()),
+    0,
+  );
+  const feedAgeH =
+    newestPub > 0 ? (Date.now() - newestPub) / 3_600_000 : null;
+  const feedLagging = feedAgeH != null && feedAgeH > 6;
+
+  const refreshNow = async () => {
+    setRefreshing(true);
+    setNote(null);
+    try {
+      const r = await runRefresh();
+      setNote(
+        r.ok
+          ? r.eventsCreated > 0
+            ? `${r.eventsCreated} new event${r.eventsCreated === 1 ? "" : "s"}, ${r.signalsCreated} signal${r.signalsCreated === 1 ? "" : "s"}`
+            : "Checked — no new market-moving headlines"
+          : (r.error ?? "Refresh failed"),
+      );
+      await queryClient.invalidateQueries({ queryKey: ["live-events"] });
+    } catch (e) {
+      setNote(e instanceof Error ? e.message : "Refresh failed");
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   return (
     <div className="mb-4 flex items-center gap-2 flex-wrap text-[11px] text-muted-foreground">
       <span
         className={
           "w-1.5 h-1.5 rounded-full " +
-          (failed ? "bg-headwind" : at ? "bg-tailwind animate-pulse" : "bg-muted")
+          (failed || error
+            ? "bg-headwind"
+            : quiet
+              ? "bg-amber-400"
+              : at
+                ? "bg-tailwind animate-pulse"
+                : "bg-muted")
         }
       />
       <span>
@@ -59,14 +103,32 @@ function IngestStatus() {
           {error ?? lastIngest?.error ?? "Last refresh failed"}
         </span>
       )}
-      <button
-        type="button"
-        onClick={() => refetch()}
-        className="ml-auto inline-flex items-center gap-1 rounded-md border border-border/60 px-2 py-1 hover:text-foreground hover:bg-card/60 transition-colors"
-      >
-        <RefreshCw className="h-3 w-3" />
-        Reload feed
-      </button>
+      {!failed && !error && feedLagging && (
+        <span className="inline-flex items-center gap-1 text-amber-400">
+          <AlertTriangle className="h-3 w-3" />
+          Newest ripple is {Math.round(feedAgeH!)}h old — hit Refresh now to pull
+          the latest headlines
+        </span>
+      )}
+      {note && !failed && !error && <span className="text-foreground/80">{note}</span>}
+      <div className="ml-auto flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={refreshNow}
+          disabled={refreshing}
+          className="inline-flex items-center gap-1 rounded-md border border-border/60 px-2 py-1 hover:text-foreground hover:bg-card/60 transition-colors disabled:opacity-50"
+        >
+          <RefreshCw className={"h-3 w-3 " + (refreshing ? "animate-spin" : "")} />
+          {refreshing ? "Refreshing…" : "Refresh now"}
+        </button>
+        <button
+          type="button"
+          onClick={() => refetch()}
+          className="inline-flex items-center gap-1 rounded-md border border-border/60 px-2 py-1 hover:text-foreground hover:bg-card/60 transition-colors"
+        >
+          Reload feed
+        </button>
+      </div>
     </div>
   );
 }
