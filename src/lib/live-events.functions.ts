@@ -28,7 +28,7 @@ export const listLiveEvents = createServerFn({ method: "GET" }).handler(async ()
 
   const { data: runs } = await supabase
     .from("ingest_runs")
-    .select("started_at,finished_at,ok,error,events_created,headlines_seen")
+    .select("started_at,finished_at,ok,error,events_created,headlines_seen,stages")
     .order("started_at", { ascending: false })
     .limit(1);
 
