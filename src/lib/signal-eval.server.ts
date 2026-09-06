@@ -66,14 +66,22 @@ export async function runEvaluation(): Promise<EvalResult> {
     if (sym) symbols.add(sym);
   }
   const priceBySymbol = new Map<string, number>();
+  const rangeBySymbol = new Map<string, { high: number | null; low: number | null }>();
   for (const sym of symbols) {
     const q = await fetchQuoteWithRetry(sym, apiKey);
     if (q.price != null) priceBySymbol.set(sym, q.price);
+    rangeBySymbol.set(sym, { high: q.dayHigh ?? null, low: q.dayLow ?? null });
     await sleep(120);
   }
   out.priced = priceBySymbol.size;
 
-  const snapshots: Array<{ signal_id: string; ticker: string; price: number }> = [];
+  const snapshots: Array<{
+    signal_id: string;
+    ticker: string;
+    price: number;
+    day_high: number | null;
+    day_low: number | null;
+  }> = [];
   const now = new Date().toISOString();
 
   // 3. Resolve.
@@ -81,21 +89,41 @@ export async function runEvaluation(): Promise<EvalResult> {
     out.evaluated++;
     const sym = s.quote_symbol ?? tickerMeta(s.ticker).quote;
     const price = sym ? priceBySymbol.get(sym) : undefined;
+    const range = sym ? rangeBySymbol.get(sym) : undefined;
     const dir = s.direction as "long" | "short";
     const days = tradingDaysBetween(s.signal_timestamp);
 
     if (price != null) {
-      snapshots.push({ signal_id: s.id, ticker: s.ticker, price });
+      snapshots.push({
+        signal_id: s.id,
+        ticker: s.ticker,
+        price,
+        day_high: range?.high ?? null,
+        day_low: range?.low ?? null,
+      });
     }
 
-    // Look at the full snapshot history so an intraday touch isn't missed.
+    // Look at the full snapshot history, using each row's intraday range when
+    // available, so a touch between polls isn't missed.
     const { data: hist } = await supabaseAdmin
       .from("price_snapshots")
-      .select("price")
+      .select("price,day_high,day_low")
       .eq("signal_id", s.id);
-    const prices = [
-      ...(hist ?? []).map((h) => Number(h.price)),
-      ...(price != null ? [price] : []),
+    const bars: Array<{ high: number; low: number }> = [
+      ...(hist ?? []).map((h) => {
+        const p = Number(h.price);
+        const hi = h.day_high != null ? Number(h.day_high) : p;
+        const lo = h.day_low != null ? Number(h.day_low) : p;
+        return { high: Math.max(hi, p), low: Math.min(lo, p) };
+      }),
+      ...(price != null
+        ? [
+            {
+              high: Math.max(range?.high ?? price, price),
+              low: Math.min(range?.low ?? price, price),
+            },
+          ]
+        : []),
     ];
 
     const target = s.target_price != null ? Number(s.target_price) : null;
@@ -103,9 +131,10 @@ export async function runEvaluation(): Promise<EvalResult> {
 
     let hitTarget = false;
     let hitInv = false;
-    for (const p of prices) {
-      if (target != null && (dir === "long" ? p >= target : p <= target)) hitTarget = true;
-      if (inv != null && (dir === "long" ? p <= inv : p >= inv)) hitInv = true;
+    for (const b of bars) {
+      if (target != null && (dir === "long" ? b.high >= target : b.low <= target))
+        hitTarget = true;
+      if (inv != null && (dir === "long" ? b.low <= inv : b.high >= inv)) hitInv = true;
     }
 
     let reason: "target" | "invalidation" | "expired" | null = null;
@@ -114,10 +143,15 @@ export async function runEvaluation(): Promise<EvalResult> {
     else if (days >= EXPIRY_TRADING_DAYS) reason = "expired";
     if (!reason) continue;
 
+
+    const lastClose = (hist ?? []).length
+      ? Number((hist ?? [])[(hist ?? []).length - 1]!.price)
+      : null;
     const closePrice =
       reason === "target" ? (target ?? price ?? null)
       : reason === "invalidation" ? (inv ?? price ?? null)
-      : (price ?? prices[prices.length - 1] ?? null);
+      : (price ?? lastClose);
+
 
     await supabaseAdmin
       .from("signals")

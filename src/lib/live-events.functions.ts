@@ -17,8 +17,10 @@ export const listLiveEvents = createServerFn({ method: "GET" }).handler(async ()
   const { data: events, error } = await supabase
     .from("live_events")
     .select(EVENT_COLUMNS)
+    .eq("archived", false)
     .order("published_at", { ascending: false })
     .limit(60);
+
   if (error) throw new Error(error.message);
 
   const ids = ((events ?? []) as Array<{ id: string }>).map((e) => e.id);
