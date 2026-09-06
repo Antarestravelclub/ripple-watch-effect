@@ -144,10 +144,14 @@ export async function runEvaluation(): Promise<EvalResult> {
     if (!reason) continue;
 
 
+    const lastClose = (hist ?? []).length
+      ? Number((hist ?? [])[(hist ?? []).length - 1]!.price)
+      : null;
     const closePrice =
       reason === "target" ? (target ?? price ?? null)
       : reason === "invalidation" ? (inv ?? price ?? null)
-      : (price ?? prices[prices.length - 1] ?? null);
+      : (price ?? lastClose);
+
 
     await supabaseAdmin
       .from("signals")
