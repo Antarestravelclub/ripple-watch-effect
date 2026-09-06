@@ -240,6 +240,8 @@ export async function runNewsIngest(): Promise<IngestResult> {
         let needsReview = false;
         let reviewReason: string | null = null;
         let priced: number | null = null;
+        let dayHigh: number | null = null;
+        let dayLow: number | null = null;
 
         if (!meta.tradable) {
           needsReview = true;
@@ -251,8 +253,11 @@ export async function runNewsIngest(): Promise<IngestResult> {
             reviewReason = out.message ?? out.status;
           } else {
             priced = out.price;
+            dayHigh = out.dayHigh ?? null;
+            dayLow = out.dayLow ?? null;
           }
         }
+
 
         await supabaseAdmin.from("live_event_exposures").insert({
           live_event_id: ev.id,
@@ -291,11 +296,16 @@ export async function runNewsIngest(): Promise<IngestResult> {
             .select("id")
             .maybeSingle();
           if (sig) {
-            await supabaseAdmin
-              .from("price_snapshots")
-              .insert({ signal_id: sig.id, ticker: raw, price: priced });
+            await supabaseAdmin.from("price_snapshots").insert({
+              signal_id: sig.id,
+              ticker: raw,
+              price: priced,
+              day_high: dayHigh,
+              day_low: dayLow,
+            });
             result.signalsCreated++;
           }
+
         }
       }
     }
