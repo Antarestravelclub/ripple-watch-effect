@@ -5,7 +5,11 @@ import { createFileRoute } from "@tanstack/react-router";
 export const Route = createFileRoute("/api/public/hooks/evaluate-signals")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        const expected = process.env.CRON_SECRET ?? "";
+        if (expected && request.headers.get("x-cron-key") !== expected) {
+          return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+        }
         try {
           const { runEvaluation } = await import("@/lib/signal-eval.server");
           const result = await runEvaluation();

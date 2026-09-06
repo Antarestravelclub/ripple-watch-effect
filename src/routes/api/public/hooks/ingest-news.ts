@@ -5,7 +5,14 @@ import { createFileRoute } from "@tanstack/react-router";
 export const Route = createFileRoute("/api/public/hooks/ingest-news")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        const expected = process.env.CRON_SECRET ?? "";
+        if (expected && request.headers.get("x-cron-key") !== expected) {
+          return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
         const { runNewsIngest } = await import("@/lib/news-ingest.server");
         const result = await runNewsIngest();
         return new Response(JSON.stringify(result), {
