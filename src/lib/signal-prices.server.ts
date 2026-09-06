@@ -14,6 +14,8 @@ export interface FetchOutcome {
   price: number | null;
   status: FetchStatus;
   message: string | null;
+  dayHigh?: number | null;
+  dayLow?: number | null;
 }
 
 const BASE = "https://finnhub.io/api/v1";
@@ -39,14 +41,16 @@ export async function fetchQuoteDetailed(
         status: "network_error",
         message: `Feed HTTP ${res.status}`,
       };
-    const j = (await res.json()) as { c?: number };
+    const j = (await res.json()) as { c?: number; h?: number; l?: number };
     if (typeof j.c !== "number" || j.c <= 0)
       return {
         price: null,
         status: "unsupported_symbol",
         message: "Symbol not covered by the feed",
       };
-    return { price: j.c, status: "ok", message: null };
+    const dayHigh = typeof j.h === "number" && j.h > 0 ? j.h : null;
+    const dayLow = typeof j.l === "number" && j.l > 0 ? j.l : null;
+    return { price: j.c, status: "ok", message: null, dayHigh, dayLow };
   } catch (e) {
     return {
       price: null,
@@ -55,6 +59,7 @@ export async function fetchQuoteDetailed(
     };
   }
 }
+
 
 /** Retries once on a rate-limit response after a short pause. */
 export async function fetchQuoteWithRetry(
