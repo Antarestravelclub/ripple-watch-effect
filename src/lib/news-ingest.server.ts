@@ -314,9 +314,14 @@ export async function runNewsIngest(): Promise<IngestResult> {
   result.skipped =
     stages.duplicates + stages.tooThin + stages.aiFailed + stages.noExposure;
 
-  // Retention: drop events beyond the window so the feed can never go stale.
+  // Retention: archive events beyond the window (keeps permalinks + open signals).
   const pruneBefore = new Date(Date.now() - RETENTION_DAYS * 86_400_000).toISOString();
-  await supabaseAdmin.from("live_events").delete().lt("published_at", pruneBefore);
+  await supabaseAdmin
+    .from("live_events")
+    .update({ archived: true })
+    .lt("published_at", pruneBefore)
+    .eq("archived", false);
+
 
   // A run that saw fresh headlines but stored nothing is degraded, not fine —
   // say so and record why so the UI can show the real reason.
