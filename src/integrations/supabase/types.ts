@@ -245,6 +245,7 @@ export type Database = {
       }
       live_events: {
         Row: {
+          archived: boolean
           category: string
           created_at: string
           dedupe_key: string
@@ -261,6 +262,7 @@ export type Database = {
           why_markets_care: string
         }
         Insert: {
+          archived?: boolean
           category?: string
           created_at?: string
           dedupe_key: string
@@ -277,6 +279,7 @@ export type Database = {
           why_markets_care?: string
         }
         Update: {
+          archived?: boolean
           category?: string
           created_at?: string
           dedupe_key?: string
@@ -297,6 +300,8 @@ export type Database = {
       price_snapshots: {
         Row: {
           captured_at: string
+          day_high: number | null
+          day_low: number | null
           id: number
           price: number
           signal_id: string
@@ -304,6 +309,8 @@ export type Database = {
         }
         Insert: {
           captured_at?: string
+          day_high?: number | null
+          day_low?: number | null
           id?: number
           price: number
           signal_id: string
@@ -311,6 +318,8 @@ export type Database = {
         }
         Update: {
           captured_at?: string
+          day_high?: number | null
+          day_low?: number | null
           id?: number
           price?: number
           signal_id?: string
