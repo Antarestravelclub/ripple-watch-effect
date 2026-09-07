@@ -3,7 +3,7 @@ import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo } from "react";
 import { SiteShell } from "@/components/site-shell";
-import { listSignals, evaluateSignals } from "@/lib/signals.functions";
+import { listSignals, evaluateSignals, lastEvaluationRun } from "@/lib/signals.functions";
 import { computeMetrics, fmtPct, pctTone } from "@/lib/signal-metrics";
 import { useLiveEvents } from "@/hooks/use-live-events";
 import { STANCE_LABEL, STANCE_CLASS, type Stance } from "@/lib/ticker-rollup";
