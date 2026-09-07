@@ -24,7 +24,6 @@ import { Route as SignalIdRouteImport } from './routes/signal.$id'
 import { Route as EventIdRouteImport } from './routes/event.$id'
 import { Route as ApiPublicStreamQuotesRouteImport } from './routes/api/public/stream/quotes'
 import { Route as ApiPublicHooksIngestNewsRouteImport } from './routes/api/public/hooks/ingest-news'
-import { Route as ApiPublicHooksFetchPricesRouteImport } from './routes/api/public/hooks/fetch-prices'
 import { Route as ApiPublicHooksEvaluateSignalsRouteImport } from './routes/api/public/hooks/evaluate-signals'
 
 const WatchlistRoute = WatchlistRouteImport.update({
@@ -103,12 +102,6 @@ const ApiPublicHooksIngestNewsRoute =
     path: '/api/public/hooks/ingest-news',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksFetchPricesRoute =
-  ApiPublicHooksFetchPricesRouteImport.update({
-    id: '/api/public/hooks/fetch-prices',
-    path: '/api/public/hooks/fetch-prices',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiPublicHooksEvaluateSignalsRoute =
   ApiPublicHooksEvaluateSignalsRouteImport.update({
     id: '/api/public/hooks/evaluate-signals',
@@ -131,7 +124,6 @@ export interface FileRoutesByFullPath {
   '/tickers/$symbol': typeof TickersSymbolRoute
   '/tickers/': typeof TickersIndexRoute
   '/api/public/hooks/evaluate-signals': typeof ApiPublicHooksEvaluateSignalsRoute
-  '/api/public/hooks/fetch-prices': typeof ApiPublicHooksFetchPricesRoute
   '/api/public/hooks/ingest-news': typeof ApiPublicHooksIngestNewsRoute
   '/api/public/stream/quotes': typeof ApiPublicStreamQuotesRoute
 }
@@ -150,7 +142,6 @@ export interface FileRoutesByTo {
   '/tickers/$symbol': typeof TickersSymbolRoute
   '/tickers': typeof TickersIndexRoute
   '/api/public/hooks/evaluate-signals': typeof ApiPublicHooksEvaluateSignalsRoute
-  '/api/public/hooks/fetch-prices': typeof ApiPublicHooksFetchPricesRoute
   '/api/public/hooks/ingest-news': typeof ApiPublicHooksIngestNewsRoute
   '/api/public/stream/quotes': typeof ApiPublicStreamQuotesRoute
 }
@@ -170,7 +161,6 @@ export interface FileRoutesById {
   '/tickers/$symbol': typeof TickersSymbolRoute
   '/tickers/': typeof TickersIndexRoute
   '/api/public/hooks/evaluate-signals': typeof ApiPublicHooksEvaluateSignalsRoute
-  '/api/public/hooks/fetch-prices': typeof ApiPublicHooksFetchPricesRoute
   '/api/public/hooks/ingest-news': typeof ApiPublicHooksIngestNewsRoute
   '/api/public/stream/quotes': typeof ApiPublicStreamQuotesRoute
 }
@@ -191,7 +181,6 @@ export interface FileRouteTypes {
     | '/tickers/$symbol'
     | '/tickers/'
     | '/api/public/hooks/evaluate-signals'
-    | '/api/public/hooks/fetch-prices'
     | '/api/public/hooks/ingest-news'
     | '/api/public/stream/quotes'
   fileRoutesByTo: FileRoutesByTo
@@ -210,7 +199,6 @@ export interface FileRouteTypes {
     | '/tickers/$symbol'
     | '/tickers'
     | '/api/public/hooks/evaluate-signals'
-    | '/api/public/hooks/fetch-prices'
     | '/api/public/hooks/ingest-news'
     | '/api/public/stream/quotes'
   id:
@@ -229,7 +217,6 @@ export interface FileRouteTypes {
     | '/tickers/$symbol'
     | '/tickers/'
     | '/api/public/hooks/evaluate-signals'
-    | '/api/public/hooks/fetch-prices'
     | '/api/public/hooks/ingest-news'
     | '/api/public/stream/quotes'
   fileRoutesById: FileRoutesById
@@ -249,7 +236,6 @@ export interface RootRouteChildren {
   TickersSymbolRoute: typeof TickersSymbolRoute
   TickersIndexRoute: typeof TickersIndexRoute
   ApiPublicHooksEvaluateSignalsRoute: typeof ApiPublicHooksEvaluateSignalsRoute
-  ApiPublicHooksFetchPricesRoute: typeof ApiPublicHooksFetchPricesRoute
   ApiPublicHooksIngestNewsRoute: typeof ApiPublicHooksIngestNewsRoute
   ApiPublicStreamQuotesRoute: typeof ApiPublicStreamQuotesRoute
 }
@@ -361,13 +347,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksIngestNewsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/fetch-prices': {
-      id: '/api/public/hooks/fetch-prices'
-      path: '/api/public/hooks/fetch-prices'
-      fullPath: '/api/public/hooks/fetch-prices'
-      preLoaderRoute: typeof ApiPublicHooksFetchPricesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/hooks/evaluate-signals': {
       id: '/api/public/hooks/evaluate-signals'
       path: '/api/public/hooks/evaluate-signals'
@@ -393,7 +372,6 @@ const rootRouteChildren: RootRouteChildren = {
   TickersSymbolRoute: TickersSymbolRoute,
   TickersIndexRoute: TickersIndexRoute,
   ApiPublicHooksEvaluateSignalsRoute: ApiPublicHooksEvaluateSignalsRoute,
-  ApiPublicHooksFetchPricesRoute: ApiPublicHooksFetchPricesRoute,
   ApiPublicHooksIngestNewsRoute: ApiPublicHooksIngestNewsRoute,
   ApiPublicStreamQuotesRoute: ApiPublicStreamQuotesRoute,
 }
