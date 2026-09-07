@@ -43,8 +43,6 @@ export async function runEvaluation(): Promise<EvalResult> {
       "id,event_id,ticker,quote_symbol,direction,signal_price,target_price,invalidation_price,signal_timestamp,status",
     )
     .eq("status", "open");
-  if (error) throw new Error(error.message);
-
   const out: EvalResult = {
     evaluated: 0,
     relevelled: 0,
@@ -54,8 +52,17 @@ export async function runEvaluation(): Promise<EvalResult> {
     priced: 0,
   };
 
+  if (error) {
+    await record(out, error.message);
+    throw new Error(error.message);
+  }
+
   const open = (rows ?? []).filter((r) => r.signal_price != null);
-  if (open.length === 0) return out;
+  if (open.length === 0) {
+    await record(out, null);
+    return out;
+  }
+
 
   // 1. Make sure every open signal has magnitude-aware levels.
   for (const s of open) {
