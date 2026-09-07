@@ -40,6 +40,56 @@ function median(nums: number[]): number | null {
   return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
 }
 
+function agoLabel(iso: string): string {
+  const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60_000));
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins} minute${mins === 1 ? "" : "s"} ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs} hour${hrs === 1 ? "" : "s"} ago`;
+  const days = Math.round(hrs / 24);
+  return `${days} day${days === 1 ? "" : "s"} ago`;
+}
+
+/** "Last checked" readout: proves the automatic 15-minute check is running. */
+function LastCheckedLine() {
+  const fetchRun = useServerFn(lastEvaluationRun);
+  const { data } = useQuery({
+    queryKey: ["signals", "last-evaluation"],
+    queryFn: () => fetchRun(),
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
+  const run = data?.run ?? null;
+  if (!run) return null;
+
+  if (!run.ok) {
+    return (
+      <p className="text-[11px] text-amber-400 mt-1">
+        Last automatic check {agoLabel(run.finished_at)} did not finish
+        {run.error ? ` — ${run.error}` : ""}.
+      </p>
+    );
+  }
+
+  const parts = [
+    run.target_hits > 0 ? `${run.target_hits} reached target` : null,
+    run.invalidated > 0 ? `${run.invalidated} stopped out` : null,
+    run.expired > 0 ? `${run.expired} expired` : null,
+  ].filter(Boolean) as string[];
+
+  return (
+    <p className="text-[11px] text-muted-foreground mt-1">
+      <span className="text-foreground/80">Last checked {agoLabel(run.finished_at)}</span>
+      {" — "}
+      {parts.length > 0
+        ? parts.join(", ")
+        : `${run.evaluated} open signal${run.evaluated === 1 ? "" : "s"} reviewed, no changes`}
+      . Checks run automatically every 15 minutes on weekdays.
+    </p>
+  );
+}
+
+
 function Scorecard() {
   const list = useServerFn(listSignals);
   const evaluate = useServerFn(evaluateSignals);
