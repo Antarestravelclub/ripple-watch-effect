@@ -198,7 +198,9 @@ function Scorecard() {
             ? "Evaluating open signals against target and invalidation levels…"
             : "Signals resolve on target, invalidation, or after 10 trading days (expired). Delayed prices."}
         </p>
+        <LastCheckedLine />
       </div>
+
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         <Kpi
