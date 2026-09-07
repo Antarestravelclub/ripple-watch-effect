@@ -195,5 +195,7 @@ export async function runEvaluation(): Promise<EvalResult> {
     await supabaseAdmin.from("price_snapshots").insert(snapshots);
   }
 
+  await record(out, null);
   return out;
+
 }
