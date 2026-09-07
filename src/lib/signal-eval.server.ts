@@ -19,7 +19,23 @@ export async function runEvaluation(): Promise<EvalResult> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const apiKey = process.env.FINNHUB_API_KEY ?? "";
 
+  /** Records the run so the Scorecard can show when signals were last checked. */
+  const record = async (out: EvalResult, error: string | null) => {
+    await supabaseAdmin.from("evaluation_runs").insert({
+      finished_at: new Date().toISOString(),
+      evaluated: out.evaluated,
+      relevelled: out.relevelled,
+      target_hits: out.targetHits,
+      invalidated: out.invalidated,
+      expired: out.expired,
+      priced: out.priced,
+      ok: error == null,
+      error,
+    });
+  };
+
   const magnitudeByEvent = (await eventMagnitudes()) as Map<string, RippleMagnitude>;
+
 
   const { data: rows, error } = await supabaseAdmin
     .from("signals")
@@ -27,8 +43,6 @@ export async function runEvaluation(): Promise<EvalResult> {
       "id,event_id,ticker,quote_symbol,direction,signal_price,target_price,invalidation_price,signal_timestamp,status",
     )
     .eq("status", "open");
-  if (error) throw new Error(error.message);
-
   const out: EvalResult = {
     evaluated: 0,
     relevelled: 0,
@@ -38,8 +52,17 @@ export async function runEvaluation(): Promise<EvalResult> {
     priced: 0,
   };
 
+  if (error) {
+    await record(out, error.message);
+    throw new Error(error.message);
+  }
+
   const open = (rows ?? []).filter((r) => r.signal_price != null);
-  if (open.length === 0) return out;
+  if (open.length === 0) {
+    await record(out, null);
+    return out;
+  }
+
 
   // 1. Make sure every open signal has magnitude-aware levels.
   for (const s of open) {
@@ -172,5 +195,7 @@ export async function runEvaluation(): Promise<EvalResult> {
     await supabaseAdmin.from("price_snapshots").insert(snapshots);
   }
 
+  await record(out, null);
   return out;
+
 }
