@@ -19,7 +19,23 @@ export async function runEvaluation(): Promise<EvalResult> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const apiKey = process.env.FINNHUB_API_KEY ?? "";
 
+  /** Records the run so the Scorecard can show when signals were last checked. */
+  const record = async (out: EvalResult, error: string | null) => {
+    await supabaseAdmin.from("evaluation_runs").insert({
+      finished_at: new Date().toISOString(),
+      evaluated: out.evaluated,
+      relevelled: out.relevelled,
+      target_hits: out.targetHits,
+      invalidated: out.invalidated,
+      expired: out.expired,
+      priced: out.priced,
+      ok: error == null,
+      error,
+    });
+  };
+
   const magnitudeByEvent = (await eventMagnitudes()) as Map<string, RippleMagnitude>;
+
 
   const { data: rows, error } = await supabaseAdmin
     .from("signals")

@@ -319,3 +319,26 @@ export const evaluateSignals = createServerFn({ method: "POST" }).handler(async 
   const { runEvaluation } = await import("./signal-eval.server");
   return runEvaluation();
 });
+
+export interface EvaluationRunRow {
+  finished_at: string;
+  evaluated: number;
+  target_hits: number;
+  invalidated: number;
+  expired: number;
+  ok: boolean;
+  error: string | null;
+}
+
+/** Newest automatic (or on-page) evaluation run, for the "last checked" readout. */
+export const lastEvaluationRun = createServerFn({ method: "GET" }).handler(async () => {
+  const { publicSupabase } = await import("./supabase-public.server");
+  const supabase = publicSupabase();
+  const { data } = await supabase
+    .from("evaluation_runs")
+    .select("finished_at,evaluated,target_hits,invalidated,expired,ok,error")
+    .order("finished_at", { ascending: false })
+    .limit(1);
+  return { run: (data?.[0] ?? null) as EvaluationRunRow | null };
+});
+
