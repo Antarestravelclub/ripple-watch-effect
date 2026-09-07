@@ -50,6 +50,48 @@ export type Database = {
         }
         Relationships: []
       }
+      evaluation_runs: {
+        Row: {
+          created_at: string
+          error: string | null
+          evaluated: number
+          expired: number
+          finished_at: string
+          id: string
+          invalidated: number
+          ok: boolean
+          priced: number
+          relevelled: number
+          target_hits: number
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          evaluated?: number
+          expired?: number
+          finished_at?: string
+          id?: string
+          invalidated?: number
+          ok?: boolean
+          priced?: number
+          relevelled?: number
+          target_hits?: number
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          evaluated?: number
+          expired?: number
+          finished_at?: string
+          id?: string
+          invalidated?: number
+          ok?: boolean
+          priced?: number
+          relevelled?: number
+          target_hits?: number
+        }
+        Relationships: []
+      }
       historical_events: {
         Row: {
           archetype: Database["public"]["Enums"]["event_archetype"]
