@@ -5,7 +5,12 @@ import { Link } from "@tanstack/react-router";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { listSignals } from "@/lib/signals.functions";
 import { fmtPct, fmtPrice, pctTone } from "@/lib/signal-metrics";
-import { statusLabel, useLiveQuotes } from "@/hooks/use-live-quotes";
+import {
+  statusLabel,
+  useLiveQuotes,
+  type FeedDiagnostics,
+} from "@/hooks/use-live-quotes";
+
 
 interface Mover {
   id: string;
