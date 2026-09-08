@@ -169,7 +169,7 @@ function TickerDetail() {
           <h2 className="text-sm font-semibold tracking-tight">Price</h2>
           <span className="text-[11px] text-muted-foreground">
             delayed
-            {live?.asOf ? ` · ${new Date(live.asOf).toLocaleTimeString()}` : ""}
+            {live?.at ? ` · ${new Date(live.at).toLocaleTimeString()}` : ""}
           </span>
         </div>
         {!meta.tradable ? (
@@ -191,8 +191,8 @@ function TickerDetail() {
               value={changePct == null ? "—" : `${changePct >= 0 ? "+" : ""}${changePct.toFixed(2)}%`}
               tone={pctTone(changePct)}
             />
-            <Stat label="Day high" value={money(snap?.high ?? live?.dayHigh ?? null)} />
-            <Stat label="Day low" value={money(snap?.low ?? live?.dayLow ?? null)} />
+            <Stat label="Day high" value={money(snap?.high ?? null)} />
+            <Stat label="Day low" value={money(snap?.low ?? null)} />
             <Stat label="Prev close" value={money(live?.prevClose ?? snap?.prevClose ?? null)} />
           </div>
         )}
