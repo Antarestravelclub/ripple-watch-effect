@@ -110,9 +110,13 @@
 @media print {
   .no-print,
   header nav,
-  nav,
-  footer {
+  nav {
     display: none !important;
+  }
+  footer {
+    color: #444 !important;
+    background: transparent !important;
+    border-color: #bbb !important;
   }
   html,
   body {
