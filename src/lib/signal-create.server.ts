@@ -134,6 +134,7 @@ export async function createSignal(
       benchmark_symbol: BENCHMARK_SYMBOL,
       benchmark_entry_price: benchmark,
       benchmark_entry_estimated: false,
+      benchmark_source: "exact",
       mode: "paper",
       status: "open",
     })

@@ -45,6 +45,8 @@ export interface SignalRow {
   benchmark_symbol?: string | null;
   benchmark_entry_price?: number | null;
   benchmark_entry_estimated?: boolean | null;
+  /** "exact" = index price captured at creation; "backfilled_daily" = daily close filled in later. */
+  benchmark_source?: "exact" | "backfilled_daily" | null;
   benchmark_exit_price?: number | null;
   below_threshold?: boolean | null;
   mode?: string | null;

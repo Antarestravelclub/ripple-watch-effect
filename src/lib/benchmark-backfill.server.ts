@@ -25,6 +25,7 @@ export async function backfillBenchmarks(limit = 500): Promise<BackfillResult> {
       benchmark_symbol?: string;
       benchmark_entry_price?: number;
       benchmark_entry_estimated?: boolean;
+      benchmark_source?: "backfilled_daily";
       benchmark_exit_price?: number;
     } = {};
     if (s.benchmark_entry_price == null) {
@@ -33,6 +34,7 @@ export async function backfillBenchmarks(limit = 500): Promise<BackfillResult> {
         patch.benchmark_symbol = BENCHMARK_SYMBOL;
         patch.benchmark_entry_price = entry;
         patch.benchmark_entry_estimated = true;
+        patch.benchmark_source = "backfilled_daily";
         out.entriesFilled++;
       }
     }
