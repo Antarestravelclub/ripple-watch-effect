@@ -65,6 +65,17 @@ export function MarketMovers() {
 
   const empty = !isLoading && gainers.length === 0 && decliners.length === 0;
 
+  // Timestamp on the most recent price actually received, so a stale feed is
+  // visibly different from the market simply being closed.
+  const lastPriceAt = useMemo(() => {
+    let newest = 0;
+    for (const q of Object.values(quotes)) {
+      const t = q?.at ? new Date(q.at).getTime() : 0;
+      if (t > newest) newest = t;
+    }
+    return newest || null;
+  }, [quotes]);
+
   return (
     <section className="rounded-xl border border-border/70 bg-card/60 p-4 mb-5">
       <div className="flex items-baseline justify-between gap-3 mb-3">
@@ -72,8 +83,13 @@ export function MarketMovers() {
         <span className="text-[11px] text-muted-foreground">
           Move since signal snapshot · open signals only ·{" "}
           {statusLabel(status, { streaming, marketOpen, updatedAt })}
+          {" · "}
+          {lastPriceAt
+            ? `last price ${new Date(lastPriceAt).toLocaleTimeString()}`
+            : "no price received yet"}
         </span>
       </div>
+
 
       {isLoading ? (
         <p className="text-xs text-muted-foreground">Loading price moves…</p>
