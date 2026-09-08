@@ -176,3 +176,54 @@ function MoverList({
     </div>
   );
 }
+
+function timeOrDash(iso: string | null) {
+  return iso ? new Date(iso).toLocaleTimeString() : "—";
+}
+
+function FeedDiagnosticsCard({
+  diagnostics,
+  blocked,
+}: {
+  diagnostics: FeedDiagnostics | null;
+  blocked: boolean;
+}) {
+  if (!diagnostics) return null;
+  return (
+    <div
+      className={
+        "mb-3 rounded-lg border px-3 py-2 text-[11px] " +
+        (blocked
+          ? "border-headwind/50 bg-headwind/10 text-foreground"
+          : "border-border/60 bg-background/40 text-muted-foreground")
+      }
+    >
+      <div className="font-medium mb-1">Feed diagnostics</div>
+      <dl className="grid gap-x-4 gap-y-0.5 sm:grid-cols-2">
+        <div className="flex justify-between gap-2">
+          <dt>Provider</dt>
+          <dd className="font-mono">{diagnostics.provider}</dd>
+        </div>
+        <div className="flex justify-between gap-2">
+          <dt>Last fetch attempt</dt>
+          <dd className="font-mono">{timeOrDash(diagnostics.lastAttemptAt)}</dd>
+        </div>
+        <div className="flex justify-between gap-2">
+          <dt>Last successful price</dt>
+          <dd className="font-mono">{timeOrDash(diagnostics.lastSuccessAt)}</dd>
+        </div>
+        <div className="flex justify-between gap-2">
+          <dt>Attempts / ok / failed</dt>
+          <dd className="font-mono">
+            {diagnostics.attempts} / {diagnostics.successes} / {diagnostics.failures}
+          </dd>
+        </div>
+      </dl>
+      {diagnostics.lastError ? (
+        <p className="mt-1 font-mono text-headwind">
+          Last error {timeOrDash(diagnostics.lastErrorAt)}: {diagnostics.lastError}
+        </p>
+      ) : null}
+    </div>
+  );
+}
