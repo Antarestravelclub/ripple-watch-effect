@@ -342,3 +342,10 @@ export const lastEvaluationRun = createServerFn({ method: "GET" }).handler(async
   return { run: (data?.[0] ?? null) as EvaluationRunRow | null };
 });
 
+/** Paper portfolio settings used for risk sizing and P/L. */
+export const getPortfolioSettings = createServerFn({ method: "GET" }).handler(async () => {
+  const { portfolioSettings } = await import("./signal-create.server");
+  return portfolioSettings();
+});
+
+

@@ -4,7 +4,19 @@ import { useServerFn } from "@tanstack/react-start";
 import { SiteShell } from "@/components/site-shell";
 import { Sparkline } from "@/components/sparkline";
 import { getSignal } from "@/lib/signals.functions";
-import { computeMetrics, fmtPct, fmtPrice, pctTone } from "@/lib/signal-metrics";
+import {
+  computeMetrics,
+  fmtPct,
+  fmtPrice,
+  pctTone,
+  STATUS_LABEL,
+  realisedPct,
+  benchmarkPct,
+  alphaPct,
+  rMultiple,
+} from "@/lib/signal-metrics";
+import { ConvictionBreakdownList } from "@/components/conviction-chip";
+
 import { useLiveEvents } from "@/hooks/use-live-events";
 import { ArrowLeft, Clock } from "lucide-react";
 
@@ -60,10 +72,13 @@ function SignalDetail() {
       <div className="rounded-xl border border-border/70 bg-card/60 p-5 mb-4">
         <div className="flex items-center gap-2 flex-wrap">
           <span className={"text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md border " + dirTone}>
-            {signal.direction === "long" ? "Long thesis" : "Short / avoid"}
+            {signal.direction === "long" ? "Long exposure" : "Short exposure"}
+          </span>
+          <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md border border-border/70 text-muted-foreground">
+            Paper only
           </span>
           <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-            Conviction {signal.conviction}/5 · {signal.generated_by}
+            {STATUS_LABEL[signal.status]} · {signal.generated_by}
           </span>
           <span className="ml-auto inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground">
             <Clock className="w-3 h-3" />
@@ -85,6 +100,76 @@ function SignalDetail() {
         )}
       </div>
 
+      {signal.conviction_score != null && (
+        <div className="grid gap-3 md:grid-cols-2 mb-4">
+          <div className="rounded-xl border border-border/70 bg-card/60 p-4">
+            <div className="flex items-baseline justify-between">
+              <h2 className="text-sm font-semibold">Conviction score</h2>
+              <span className="font-mono text-2xl tabular-nums">
+                {signal.conviction_score}
+                <span className="text-xs text-muted-foreground">/100</span>
+              </span>
+            </div>
+            {signal.below_threshold && (
+              <p className="mt-2 text-[11px] text-headwind">
+                Below the 55-point threshold — tracked for learning, sized at zero.
+              </p>
+            )}
+            <div className="mt-3">
+              {signal.conviction_breakdown && (
+                <ConvictionBreakdownList breakdown={signal.conviction_breakdown} />
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border/70 bg-card/60 p-4">
+            <h2 className="text-sm font-semibold">Risk frame</h2>
+            <dl className="mt-3 space-y-2 text-xs">
+              <Row label="Entry reference" value={fmtPrice(signal.signal_price)} />
+              <Row
+                label="Stop (1.5× ATR)"
+                value={fmtPrice(signal.stop_price ?? null)}
+                tone="text-headwind"
+              />
+              <Row
+                label="Target (2.0× ATR)"
+                value={fmtPrice(signal.target_price)}
+                tone="text-tailwind"
+              />
+              <Row
+                label="ATR(14) at signal"
+                value={signal.atr_at_signal != null ? fmtPrice(signal.atr_at_signal) : "—"}
+              />
+              <Row
+                label="Suggested size"
+                value={
+                  signal.suggested_size_pct != null
+                    ? signal.suggested_size_pct.toFixed(2) + "% of notional"
+                    : "—"
+                }
+              />
+              <Row label="Reward : risk" value="1.33 : 1" />
+              <Row
+                label="Benchmark at entry"
+                value={
+                  signal.benchmark_entry_price != null
+                    ? `${signal.benchmark_symbol ?? "SPY"} ${fmtPrice(signal.benchmark_entry_price)}${signal.benchmark_entry_estimated ? " (est.)" : ""}`
+                    : "—"
+                }
+              />
+            </dl>
+            {signal.invalidation_text && (
+              <p className="mt-3 rounded-md border border-border/60 bg-background/40 p-2 text-[11px] text-muted-foreground">
+                <span className="uppercase tracking-wider text-[10px] block mb-1">
+                  Kill condition
+                </span>
+                {signal.invalidation_text}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
         <Stat label="Signal price" value={fmtPrice(signal.signal_price)} />
         <Stat
@@ -105,15 +190,37 @@ function SignalDetail() {
         />
       </div>
 
+      {signal.status !== "open" && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+          <Stat label="Exit price" value={fmtPrice(signal.closed_price)} />
+          <Stat
+            label="Result"
+            value={fmtPct(realisedPct(signal))}
+            tone={pctTone(realisedPct(signal))}
+            sub={rMultiple(signal) != null ? `${rMultiple(signal)!.toFixed(2)}R` : undefined}
+          />
+          <Stat
+            label={`${signal.benchmark_symbol ?? "SPY"} same window`}
+            value={fmtPct(benchmarkPct(signal))}
+          />
+          <Stat
+            label="Alpha vs index"
+            value={fmtPct(alphaPct(signal))}
+            tone={pctTone(alphaPct(signal))}
+          />
+        </div>
+      )}
+
       <div className="rounded-xl border border-border/70 bg-card/60 p-4 mb-4">
         <Sparkline
           snapshots={data.snapshots}
           signalPrice={signal.signal_price}
           targetPrice={signal.target_price}
-          invalidationPrice={signal.invalidation_price}
+          invalidationPrice={signal.stop_price ?? signal.invalidation_price}
           direction={signal.direction}
         />
       </div>
+
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
         <Stat
@@ -169,6 +276,23 @@ function Stat({
         {value}
       </div>
       {sub && <div className="text-[11px] text-muted-foreground mt-0.5">{sub}</div>}
+    </div>
+  );
+}
+
+function Row({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone?: string;
+}) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className={"font-mono tabular-nums " + (tone ?? "text-foreground")}>{value}</dd>
     </div>
   );
 }

@@ -339,6 +339,33 @@ export type Database = {
         }
         Relationships: []
       }
+      portfolio_settings: {
+        Row: {
+          created_at: string
+          id: string
+          max_position_pct: number
+          notional_value: number
+          risk_per_trade_pct: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          max_position_pct?: number
+          notional_value?: number
+          risk_per_trade_pct?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          max_position_pct?: number
+          notional_value?: number
+          risk_per_trade_pct?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       price_snapshots: {
         Row: {
           captured_at: string
@@ -377,20 +404,69 @@ export type Database = {
           },
         ]
       }
+      signal_evaluation_log: {
+        Row: {
+          benchmark_price: number | null
+          created_at: string
+          detail: string | null
+          id: number
+          price: number | null
+          signal_id: string
+          trigger: string
+        }
+        Insert: {
+          benchmark_price?: number | null
+          created_at?: string
+          detail?: string | null
+          id?: number
+          price?: number | null
+          signal_id: string
+          trigger: string
+        }
+        Update: {
+          benchmark_price?: number | null
+          created_at?: string
+          detail?: string | null
+          id?: number
+          price?: number | null
+          signal_id?: string
+          trigger?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signal_evaluation_log_signal_id_fkey"
+            columns: ["signal_id"]
+            isOneToOne: false
+            referencedRelation: "signals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       signals: {
         Row: {
+          atr_at_signal: number | null
+          below_threshold: boolean
+          benchmark_entry_estimated: boolean
+          benchmark_entry_price: number | null
+          benchmark_exit_price: number | null
+          benchmark_symbol: string
           close_reason: string | null
           closed_at: string | null
           closed_price: number | null
           company_name: string | null
           conviction: number
+          conviction_breakdown: Json | null
+          conviction_score: number | null
           created_at: string
           direction: string
           event_id: string
           exchange: string | null
           generated_by: string
           id: string
+          invalidation_params: Json | null
           invalidation_price: number | null
+          invalidation_text: string | null
+          mode: string
           needs_review: boolean
           price_error: string | null
           price_status: string
@@ -399,22 +475,35 @@ export type Database = {
           signal_price: number | null
           signal_timestamp: string
           status: string
+          stop_price: number | null
+          suggested_size_pct: number | null
           target_price: number | null
           ticker: string
         }
         Insert: {
+          atr_at_signal?: number | null
+          below_threshold?: boolean
+          benchmark_entry_estimated?: boolean
+          benchmark_entry_price?: number | null
+          benchmark_exit_price?: number | null
+          benchmark_symbol?: string
           close_reason?: string | null
           closed_at?: string | null
           closed_price?: number | null
           company_name?: string | null
           conviction?: number
+          conviction_breakdown?: Json | null
+          conviction_score?: number | null
           created_at?: string
           direction: string
           event_id: string
           exchange?: string | null
           generated_by?: string
           id?: string
+          invalidation_params?: Json | null
           invalidation_price?: number | null
+          invalidation_text?: string | null
+          mode?: string
           needs_review?: boolean
           price_error?: string | null
           price_status?: string
@@ -423,22 +512,35 @@ export type Database = {
           signal_price?: number | null
           signal_timestamp?: string
           status?: string
+          stop_price?: number | null
+          suggested_size_pct?: number | null
           target_price?: number | null
           ticker: string
         }
         Update: {
+          atr_at_signal?: number | null
+          below_threshold?: boolean
+          benchmark_entry_estimated?: boolean
+          benchmark_entry_price?: number | null
+          benchmark_exit_price?: number | null
+          benchmark_symbol?: string
           close_reason?: string | null
           closed_at?: string | null
           closed_price?: number | null
           company_name?: string | null
           conviction?: number
+          conviction_breakdown?: Json | null
+          conviction_score?: number | null
           created_at?: string
           direction?: string
           event_id?: string
           exchange?: string | null
           generated_by?: string
           id?: string
+          invalidation_params?: Json | null
           invalidation_price?: number | null
+          invalidation_text?: string | null
+          mode?: string
           needs_review?: boolean
           price_error?: string | null
           price_status?: string
@@ -447,6 +549,8 @@ export type Database = {
           signal_price?: number | null
           signal_timestamp?: string
           status?: string
+          stop_price?: number | null
+          suggested_size_pct?: number | null
           target_price?: number | null
           ticker?: string
         }

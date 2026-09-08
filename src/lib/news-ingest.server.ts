@@ -7,6 +7,8 @@ import {
   normalizeRegions,
   type ArticleImpact,
 } from "./exposure-schema";
+import type { EventCategory } from "./ripple-data";
+
 
 const NEWS_URL = "https://finnhub.io/api/v1/news?category=general";
 
@@ -152,7 +154,9 @@ export async function runNewsIngest(): Promise<IngestResult> {
 
   const { fetchQuoteWithRetry, sleep } = await import("./signal-prices.server");
   const { tickerMeta } = await import("./ticker-registry");
-  const { levelsFor } = await import("./signal-levels");
+  const { createSignal, portfolioSettings } = await import("./signal-create.server");
+  const portfolio = await portfolioSettings();
+
 
   const priceCache = new Map<string, Awaited<ReturnType<typeof fetchQuoteWithRetry>>>();
   async function priceFor(symbol: string) {
@@ -272,41 +276,36 @@ export async function runNewsIngest(): Promise<IngestResult> {
           review_reason: reviewReason,
         });
 
-        // Auto-generate a tracked signal for validated, non-low-confidence names.
+        // Auto-generate an advisor-grade paper signal for validated names.
+        // Rejected when the ticker has no usable daily history for ATR.
         if (!needsReview && priced != null && row.confidence !== "Low") {
           const dir = side === "tailwind" ? "long" : "short";
           const magnitude = (ev.strength as "Low" | "Medium" | "High") ?? "Medium";
-          const lv = levelsFor(priced, dir, magnitude);
-          const { data: sig } = await supabaseAdmin
-            .from("signals")
-            .insert({
-              event_id: ev.id,
+          const outcome = await createSignal(
+            {
+              eventId: ev.id,
               ticker: raw,
-              company_name: row.company ?? null,
+              companyName: row.company ?? null,
+              quoteSymbol: meta.quote,
               direction: dir,
-              conviction: row.confidence === "High" ? 5 : 3,
+              entryPrice: priced,
+              dayHigh,
+              dayLow,
               rationale: row.mechanism ?? "",
-              generated_by: "ripple-news-v1",
-              signal_price: priced,
-              quote_symbol: meta.quote,
-              price_status: "ok",
-              target_price: lv.target,
-              invalidation_price: lv.invalidation,
-            })
-            .select("id")
-            .maybeSingle();
-          if (sig) {
-            await supabaseAdmin.from("price_snapshots").insert({
-              signal_id: sig.id,
-              ticker: raw,
-              price: priced,
-              day_high: dayHigh,
-              day_low: dayLow,
-            });
-            result.signalsCreated++;
-          }
+              strength: magnitude,
+              confidence: (row.confidence as "Low" | "Medium" | "High") ?? "Medium",
+              category: normalizeCategory(impact.category) as EventCategory,
 
+              eventText: text,
+              eventPublishedAt: publishedAt,
+              generatedBy: "ripple-news-v2",
+            },
+            portfolio,
+          );
+          if (outcome.ok) result.signalsCreated++;
+          else detail.push(`Signal rejected for ${raw}: ${outcome.reason}`);
         }
+
       }
     }
   }

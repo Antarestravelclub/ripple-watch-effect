@@ -1,6 +1,8 @@
 import { useNavigate } from "@tanstack/react-router";
 import type { SignalRow } from "@/lib/signal-metrics";
-import { fmtPct, pctTone } from "@/lib/signal-metrics";
+import { fmtPct, pctTone, STATUS_LABEL } from "@/lib/signal-metrics";
+import { ConvictionChip } from "./conviction-chip";
+
 import { NoDataBadge, TickerLabel } from "./ticker-meta-chips";
 import { isMoveCaptured, expectedMovePct } from "@/lib/event-freshness";
 import { CONFLICT_NOTE } from "@/lib/ticker-rollup";
@@ -67,11 +69,21 @@ export function SignalBadge({
           move likely captured
         </span>
       )}
-      {signal.status === "closed" && (
-        <span className="text-[9px] uppercase tracking-wider text-muted-foreground">
-          · {signal.close_reason ?? "closed"}
+      <ConvictionChip
+        score={signal.conviction_score}
+        breakdown={signal.conviction_breakdown}
+      />
+      {signal.status !== "open" && (
+        <span
+          className={
+            "text-[9px] uppercase tracking-wider " +
+            (signal.status === "closed" ? "text-tailwind" : "text-headwind")
+          }
+        >
+          · {STATUS_LABEL[signal.status]}
         </span>
       )}
+
     </button>
     {conflicted && (
       <button

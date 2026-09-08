@@ -12,6 +12,20 @@ export const EXPECTED_MOVE_PCT: Record<RippleMagnitude, number> = {
 /** Number of trading days a signal is allowed to run before expiring. */
 export const EXPIRY_TRADING_DAYS = 10;
 
+/** ATR multiples used for advisor-grade stops and targets. */
+export const STOP_ATR_MULT = 1.5;
+export const TARGET_ATR_MULT = 2.0;
+
+/** ATR-scaled stop and target for an entry price (long; mirrored for short). */
+export function atrLevels(entry: number, direction: "long" | "short", atr: number) {
+  const sign = direction === "long" ? 1 : -1;
+  return {
+    stop: +(entry - sign * STOP_ATR_MULT * atr).toFixed(4),
+    target: +(entry + sign * TARGET_ATR_MULT * atr).toFixed(4),
+  };
+}
+
+
 export interface Levels {
   target: number;
   invalidation: number;
