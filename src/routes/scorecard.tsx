@@ -562,7 +562,35 @@ function BenchmarkSection({
               Sum of each closed paper signal's return minus the index over the
               identical holding window · {n} closed signal{n === 1 ? "" : "s"}
             </p>
+            <div className="mt-2 inline-flex rounded-md border border-border overflow-hidden text-[11px]">
+              {(
+                [
+                  { key: false, label: `All (${all.length})` },
+                  { key: true, label: `Exact index prices only (${exactCount})` },
+                ] as const
+              ).map((opt) => (
+                <button
+                  key={String(opt.key)}
+                  type="button"
+                  onClick={() => setExactOnly(opt.key)}
+                  className={
+                    "px-2.5 py-1 transition-colors " +
+                    (exactOnly === opt.key
+                      ? "bg-primary/20 text-foreground"
+                      : "text-muted-foreground hover:text-foreground")
+                  }
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              {exactOnly
+                ? "Only signals whose index price was captured at creation."
+                : "Includes older signals priced from the index's daily close on their creation date (approximate)."}
+            </p>
           </div>
+
           <div className="grid grid-cols-3 gap-3 min-w-[260px]">
             <Kpi
               label="Paper P/L"
