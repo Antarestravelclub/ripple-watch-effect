@@ -156,9 +156,13 @@ export function useLiveQuotes(tickers: string[]) {
         const s = JSON.parse(e.data) as {
           streaming?: boolean;
           marketOpen?: boolean;
+          status?: LiveStatus;
+          diagnostics?: FeedDiagnostics;
         };
         setStreaming(Boolean(s.streaming));
         if (typeof s.marketOpen === "boolean") setStreamMarketOpen(s.marketOpen);
+        if (s.status) setStreamStatus(s.status);
+        if (s.diagnostics) setStreamDiag(s.diagnostics);
       } catch {
         /* ignore */
       }
@@ -176,17 +180,34 @@ export function useLiveQuotes(tickers: string[]) {
     };
   }, [key.join(",")]);
 
+  const restDiag = (data?.diagnostics ?? null) as FeedDiagnostics | null;
+  const diagnostics = useMemo(() => {
+    if (!streamDiag) return restDiag;
+    if (!restDiag) return streamDiag;
+    const newer = (a: string | null, b: string | null) =>
+      (a ?? "") >= (b ?? "") ? a : b;
+    const streamWins =
+      (streamDiag.lastAttemptAt ?? "") >= (restDiag.lastAttemptAt ?? "");
+    return {
+      ...(streamWins ? streamDiag : restDiag),
+      lastSuccessAt: newer(streamDiag.lastSuccessAt, restDiag.lastSuccessAt),
+      lastAttemptAt: newer(streamDiag.lastAttemptAt, restDiag.lastAttemptAt),
+    } as FeedDiagnostics;
+  }, [streamDiag, restDiag]);
+
   return {
     quotes: live,
     isLoading: isLoading && Object.keys(live).length === 0,
-    status: (data?.status ?? "ok") as LiveStatus,
+    status: (streamStatus ?? data?.status ?? "ok") as LiveStatus,
     // The stream evaluates market hours when it connects. Prefer that fresh
     // value over a potentially cached REST snapshot from SSR/query hydration.
     marketOpen: streamMarketOpen ?? data?.marketOpen ?? false,
     streaming,
     updatedAt: updatedAt ?? (dataUpdatedAt || null),
+    diagnostics,
   };
 }
+
 
 export function statusLabel(
   status: LiveStatus,
