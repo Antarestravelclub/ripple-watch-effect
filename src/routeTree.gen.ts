@@ -14,6 +14,7 @@ import { Route as TrackerRouteImport } from './routes/tracker'
 import { Route as SetupsRouteImport } from './routes/setups'
 import { Route as ScorecardRouteImport } from './routes/scorecard'
 import { Route as PlaybooksRouteImport } from './routes/playbooks'
+import { Route as ManualRouteImport } from './routes/manual'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as AnalyzeRouteImport } from './routes/analyze'
 import { Route as AnaloguesRouteImport } from './routes/analogues'
@@ -50,6 +51,11 @@ const ScorecardRoute = ScorecardRouteImport.update({
 const PlaybooksRoute = PlaybooksRouteImport.update({
   id: '/playbooks',
   path: '/playbooks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ManualRoute = ManualRouteImport.update({
+  id: '/manual',
+  path: '/manual',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CalendarRoute = CalendarRouteImport.update({
@@ -121,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/analogues': typeof AnaloguesRoute
   '/analyze': typeof AnalyzeRoute
   '/calendar': typeof CalendarRoute
+  '/manual': typeof ManualRoute
   '/playbooks': typeof PlaybooksRoute
   '/scorecard': typeof ScorecardRoute
   '/setups': typeof SetupsRoute
@@ -140,6 +147,7 @@ export interface FileRoutesByTo {
   '/analogues': typeof AnaloguesRoute
   '/analyze': typeof AnalyzeRoute
   '/calendar': typeof CalendarRoute
+  '/manual': typeof ManualRoute
   '/playbooks': typeof PlaybooksRoute
   '/scorecard': typeof ScorecardRoute
   '/setups': typeof SetupsRoute
@@ -160,6 +168,7 @@ export interface FileRoutesById {
   '/analogues': typeof AnaloguesRoute
   '/analyze': typeof AnalyzeRoute
   '/calendar': typeof CalendarRoute
+  '/manual': typeof ManualRoute
   '/playbooks': typeof PlaybooksRoute
   '/scorecard': typeof ScorecardRoute
   '/setups': typeof SetupsRoute
@@ -181,6 +190,7 @@ export interface FileRouteTypes {
     | '/analogues'
     | '/analyze'
     | '/calendar'
+    | '/manual'
     | '/playbooks'
     | '/scorecard'
     | '/setups'
@@ -200,6 +210,7 @@ export interface FileRouteTypes {
     | '/analogues'
     | '/analyze'
     | '/calendar'
+    | '/manual'
     | '/playbooks'
     | '/scorecard'
     | '/setups'
@@ -219,6 +230,7 @@ export interface FileRouteTypes {
     | '/analogues'
     | '/analyze'
     | '/calendar'
+    | '/manual'
     | '/playbooks'
     | '/scorecard'
     | '/setups'
@@ -239,6 +251,7 @@ export interface RootRouteChildren {
   AnaloguesRoute: typeof AnaloguesRoute
   AnalyzeRoute: typeof AnalyzeRoute
   CalendarRoute: typeof CalendarRoute
+  ManualRoute: typeof ManualRoute
   PlaybooksRoute: typeof PlaybooksRoute
   ScorecardRoute: typeof ScorecardRoute
   SetupsRoute: typeof SetupsRoute
@@ -289,6 +302,13 @@ declare module '@tanstack/react-router' {
       path: '/playbooks'
       fullPath: '/playbooks'
       preLoaderRoute: typeof PlaybooksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/manual': {
+      id: '/manual'
+      path: '/manual'
+      fullPath: '/manual'
+      preLoaderRoute: typeof ManualRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/calendar': {
@@ -383,6 +403,7 @@ const rootRouteChildren: RootRouteChildren = {
   AnaloguesRoute: AnaloguesRoute,
   AnalyzeRoute: AnalyzeRoute,
   CalendarRoute: CalendarRoute,
+  ManualRoute: ManualRoute,
   PlaybooksRoute: PlaybooksRoute,
   ScorecardRoute: ScorecardRoute,
   SetupsRoute: SetupsRoute,
