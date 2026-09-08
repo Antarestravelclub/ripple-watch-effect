@@ -42,7 +42,11 @@ export function MarketMovers() {
     () => tracked.map((s) => (s.quote_symbol || s.ticker).toUpperCase()),
     [tracked],
   );
-  const { quotes, streaming, marketOpen, status, updatedAt } = useLiveQuotes(symbols);
+  const { quotes, streaming, marketOpen, status, updatedAt, diagnostics } =
+    useLiveQuotes(symbols);
+  const feedBlocked =
+    status === "rate_limited" || status === "no_key" || status === "network_error";
+
 
   const { gainers, decliners } = useMemo(() => {
     const byTicker = new Map<string, Mover>();
