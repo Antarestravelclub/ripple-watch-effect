@@ -3,10 +3,28 @@ import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo } from "react";
 import { SiteShell } from "@/components/site-shell";
-import { listSignals, evaluateSignals, lastEvaluationRun } from "@/lib/signals.functions";
-import { computeMetrics, fmtPct, pctTone } from "@/lib/signal-metrics";
+import {
+  listSignals,
+  evaluateSignals,
+  lastEvaluationRun,
+  getPortfolioSettings,
+} from "@/lib/signals.functions";
+import {
+  computeMetrics,
+  fmtPct,
+  pctTone,
+  realisedPct,
+  benchmarkPct,
+  alphaPct,
+  rMultiple,
+  paperPnl,
+  type SignalRow,
+} from "@/lib/signal-metrics";
+import { convictionBand, BAND_LABEL, type ConvictionBand } from "@/lib/conviction";
+import { DEFAULT_PORTFOLIO } from "@/lib/position-sizing";
 import { useLiveEvents } from "@/hooks/use-live-events";
 import { STANCE_LABEL, STANCE_CLASS, type Stance } from "@/lib/ticker-rollup";
+
 
 export const Route = createFileRoute("/scorecard")({
   head: () => ({
