@@ -259,6 +259,15 @@ function Scorecard() {
         <LastCheckedLine />
       </div>
 
+      <BenchmarkSection
+        signals={enriched.map((r) => ({
+          signal: r.signal,
+          category: r.event?.category ?? "Unknown",
+        }))}
+      />
+
+
+
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         <Kpi
