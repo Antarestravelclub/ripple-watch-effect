@@ -25,6 +25,7 @@ export async function backfillBenchmarks(limit = 500): Promise<BackfillResult> {
       benchmark_symbol?: string;
       benchmark_entry_price?: number;
       benchmark_entry_estimated?: boolean;
+      benchmark_source?: "backfilled_daily";
       benchmark_exit_price?: number;
     } = {};
     if (s.benchmark_entry_price == null) {
@@ -33,6 +34,7 @@ export async function backfillBenchmarks(limit = 500): Promise<BackfillResult> {
         patch.benchmark_symbol = BENCHMARK_SYMBOL;
         patch.benchmark_entry_price = entry;
         patch.benchmark_entry_estimated = true;
+        patch.benchmark_source = "backfilled_daily";
         out.entriesFilled++;
       }
     }
@@ -40,9 +42,12 @@ export async function backfillBenchmarks(limit = 500): Promise<BackfillResult> {
       const exit = await benchmarkCloseAt(s.closed_at);
       if (exit != null) {
         patch.benchmark_exit_price = exit;
+        // A daily-close exit makes the whole comparison approximate.
+        patch.benchmark_source = "backfilled_daily";
         out.exitsFilled++;
       }
     }
+
     if (Object.keys(patch).length > 0) {
       await supabaseAdmin.from("signals").update(patch).eq("id", s.id);
     }
