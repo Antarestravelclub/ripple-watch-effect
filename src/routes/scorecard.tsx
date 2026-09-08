@@ -129,12 +129,17 @@ function Scorecard() {
 
   const totalTracked = enriched.length;
   const targetHits = enriched.filter((r) => r.signal.close_reason === "target").length;
-  const invalidated = enriched.filter(
-    (r) => r.signal.close_reason === "invalidation",
+  const invalidated = enriched.filter((r) =>
+    ["invalidation", "stop", "close_beyond", "event_reversed"].includes(
+      r.signal.close_reason ?? "",
+    ),
   ).length;
-  const expired = enriched.filter((r) => r.signal.close_reason === "expired").length;
+  const expired = enriched.filter((r) =>
+    ["expired", "max_days_open"].includes(r.signal.close_reason ?? ""),
+  ).length;
   const resolved = targetHits + invalidated + expired;
   const hitRate = resolved > 0 ? (targetHits / resolved) * 100 : null;
+
 
   const withMove = enriched.filter((r) => r.metrics.currentPct != null);
   const avgMove =
@@ -226,9 +231,12 @@ function Scorecard() {
       catMap.get(cat) ??
       { total: 0, targets: 0, invalidated: 0, expired: 0, moves: [], days: [] };
     rec.total++;
-    if (r.signal.close_reason === "target") rec.targets++;
-    if (r.signal.close_reason === "invalidation") rec.invalidated++;
-    if (r.signal.close_reason === "expired") rec.expired++;
+    const reason = r.signal.close_reason ?? "";
+    if (reason === "target") rec.targets++;
+    if (["invalidation", "stop", "close_beyond", "event_reversed"].includes(reason))
+      rec.invalidated++;
+    if (["expired", "max_days_open"].includes(reason)) rec.expired++;
+
     if (r.metrics.currentPct != null) rec.moves.push(r.metrics.currentPct);
     const d = daysToResolution(r.signal.signal_timestamp, r.signal.closed_at);
     if (d != null) rec.days.push(d);

@@ -1,16 +1,21 @@
 // Pure, client-safe helpers to compute tracked-signal metrics from snapshots.
 // No secrets, no server-only imports — safe to import from React components.
+import type { ConvictionBreakdown } from "./conviction";
+
+/** Every state a tracked signal can be in. */
+export type SignalStatus = "open" | "closed" | "stopped" | "invalidated";
 
 export interface SignalRow {
   id: string;
   event_id: string;
   ticker: string;
+  company_name?: string | null;
   direction: "long" | "short";
   conviction: number;
   rationale: string | null;
   signal_price: number | null;
   signal_timestamp: string;
-  status: "open" | "closed";
+  status: SignalStatus;
   target_price: number | null;
   invalidation_price: number | null;
   closed_price: number | null;
@@ -21,12 +26,79 @@ export interface SignalRow {
   price_error?: string | null;
   needs_review?: boolean | null;
   quote_symbol?: string | null;
+  // Advisor-grade fields (null on legacy rows).
+  conviction_score?: number | null;
+  conviction_breakdown?: ConvictionBreakdown | null;
+  suggested_size_pct?: number | null;
+  atr_at_signal?: number | null;
+  stop_price?: number | null;
+  invalidation_text?: string | null;
+  invalidation_params?: Record<string, unknown> | null;
+  benchmark_symbol?: string | null;
+  benchmark_entry_price?: number | null;
+  benchmark_entry_estimated?: boolean | null;
+  benchmark_exit_price?: number | null;
+  below_threshold?: boolean | null;
+  mode?: string | null;
 }
 
 export interface SnapshotRow {
   price: number;
   captured_at: string;
 }
+
+/** True when the signal is no longer running. */
+export function isResolved(status: SignalStatus): boolean {
+  return status !== "open";
+}
+
+export const STATUS_LABEL: Record<SignalStatus, string> = {
+  open: "Open",
+  closed: "Target hit",
+  stopped: "Stopped out",
+  invalidated: "Invalidated",
+};
+
+/** Realised return of a closed signal, in the direction's favour (%). */
+export function realisedPct(s: SignalRow): number | null {
+  if (s.signal_price == null || s.closed_price == null) return null;
+  const raw = ((s.closed_price - s.signal_price) / s.signal_price) * 100;
+  return s.direction === "long" ? raw : -raw;
+}
+
+/** Benchmark return over the identical holding window (%). */
+export function benchmarkPct(s: SignalRow): number | null {
+  const a = s.benchmark_entry_price;
+  const b = s.benchmark_exit_price;
+  if (a == null || b == null || !(a > 0)) return null;
+  return ((b - a) / a) * 100;
+}
+
+/** Signal return minus benchmark return over the same window (%). */
+export function alphaPct(s: SignalRow): number | null {
+  const r = realisedPct(s);
+  const bm = benchmarkPct(s);
+  if (r == null || bm == null) return null;
+  return r - bm;
+}
+
+/** Result in multiples of the risk taken (1R = entry → stop distance). */
+export function rMultiple(s: SignalRow): number | null {
+  const r = realisedPct(s);
+  if (r == null || s.signal_price == null || s.stop_price == null) return null;
+  const riskPct = (Math.abs(s.signal_price - s.stop_price) / s.signal_price) * 100;
+  if (!(riskPct > 0)) return null;
+  return r / riskPct;
+}
+
+/** Paper P/L in dollars for a closed signal, given the portfolio notional. */
+export function paperPnl(s: SignalRow, notional: number): number | null {
+  const r = realisedPct(s);
+  const size = s.suggested_size_pct;
+  if (r == null || size == null) return null;
+  return (notional * (size / 100) * r) / 100;
+}
+
 
 export interface SignalMetrics {
   currentPrice: number | null;

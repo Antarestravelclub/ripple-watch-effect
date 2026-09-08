@@ -25,6 +25,7 @@ import { Route as EventIdRouteImport } from './routes/event.$id'
 import { Route as ApiPublicStreamQuotesRouteImport } from './routes/api/public/stream/quotes'
 import { Route as ApiPublicHooksIngestNewsRouteImport } from './routes/api/public/hooks/ingest-news'
 import { Route as ApiPublicHooksEvaluateSignalsRouteImport } from './routes/api/public/hooks/evaluate-signals'
+import { Route as ApiPublicHooksBackfillBenchmarksRouteImport } from './routes/api/public/hooks/backfill-benchmarks'
 
 const WatchlistRoute = WatchlistRouteImport.update({
   id: '/watchlist',
@@ -108,6 +109,12 @@ const ApiPublicHooksEvaluateSignalsRoute =
     path: '/api/public/hooks/evaluate-signals',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksBackfillBenchmarksRoute =
+  ApiPublicHooksBackfillBenchmarksRouteImport.update({
+    id: '/api/public/hooks/backfill-benchmarks',
+    path: '/api/public/hooks/backfill-benchmarks',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -123,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/signal/$id': typeof SignalIdRoute
   '/tickers/$symbol': typeof TickersSymbolRoute
   '/tickers/': typeof TickersIndexRoute
+  '/api/public/hooks/backfill-benchmarks': typeof ApiPublicHooksBackfillBenchmarksRoute
   '/api/public/hooks/evaluate-signals': typeof ApiPublicHooksEvaluateSignalsRoute
   '/api/public/hooks/ingest-news': typeof ApiPublicHooksIngestNewsRoute
   '/api/public/stream/quotes': typeof ApiPublicStreamQuotesRoute
@@ -141,6 +149,7 @@ export interface FileRoutesByTo {
   '/signal/$id': typeof SignalIdRoute
   '/tickers/$symbol': typeof TickersSymbolRoute
   '/tickers': typeof TickersIndexRoute
+  '/api/public/hooks/backfill-benchmarks': typeof ApiPublicHooksBackfillBenchmarksRoute
   '/api/public/hooks/evaluate-signals': typeof ApiPublicHooksEvaluateSignalsRoute
   '/api/public/hooks/ingest-news': typeof ApiPublicHooksIngestNewsRoute
   '/api/public/stream/quotes': typeof ApiPublicStreamQuotesRoute
@@ -160,6 +169,7 @@ export interface FileRoutesById {
   '/signal/$id': typeof SignalIdRoute
   '/tickers/$symbol': typeof TickersSymbolRoute
   '/tickers/': typeof TickersIndexRoute
+  '/api/public/hooks/backfill-benchmarks': typeof ApiPublicHooksBackfillBenchmarksRoute
   '/api/public/hooks/evaluate-signals': typeof ApiPublicHooksEvaluateSignalsRoute
   '/api/public/hooks/ingest-news': typeof ApiPublicHooksIngestNewsRoute
   '/api/public/stream/quotes': typeof ApiPublicStreamQuotesRoute
@@ -180,6 +190,7 @@ export interface FileRouteTypes {
     | '/signal/$id'
     | '/tickers/$symbol'
     | '/tickers/'
+    | '/api/public/hooks/backfill-benchmarks'
     | '/api/public/hooks/evaluate-signals'
     | '/api/public/hooks/ingest-news'
     | '/api/public/stream/quotes'
@@ -198,6 +209,7 @@ export interface FileRouteTypes {
     | '/signal/$id'
     | '/tickers/$symbol'
     | '/tickers'
+    | '/api/public/hooks/backfill-benchmarks'
     | '/api/public/hooks/evaluate-signals'
     | '/api/public/hooks/ingest-news'
     | '/api/public/stream/quotes'
@@ -216,6 +228,7 @@ export interface FileRouteTypes {
     | '/signal/$id'
     | '/tickers/$symbol'
     | '/tickers/'
+    | '/api/public/hooks/backfill-benchmarks'
     | '/api/public/hooks/evaluate-signals'
     | '/api/public/hooks/ingest-news'
     | '/api/public/stream/quotes'
@@ -235,6 +248,7 @@ export interface RootRouteChildren {
   SignalIdRoute: typeof SignalIdRoute
   TickersSymbolRoute: typeof TickersSymbolRoute
   TickersIndexRoute: typeof TickersIndexRoute
+  ApiPublicHooksBackfillBenchmarksRoute: typeof ApiPublicHooksBackfillBenchmarksRoute
   ApiPublicHooksEvaluateSignalsRoute: typeof ApiPublicHooksEvaluateSignalsRoute
   ApiPublicHooksIngestNewsRoute: typeof ApiPublicHooksIngestNewsRoute
   ApiPublicStreamQuotesRoute: typeof ApiPublicStreamQuotesRoute
@@ -354,6 +368,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksEvaluateSignalsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/backfill-benchmarks': {
+      id: '/api/public/hooks/backfill-benchmarks'
+      path: '/api/public/hooks/backfill-benchmarks'
+      fullPath: '/api/public/hooks/backfill-benchmarks'
+      preLoaderRoute: typeof ApiPublicHooksBackfillBenchmarksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -371,6 +392,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignalIdRoute: SignalIdRoute,
   TickersSymbolRoute: TickersSymbolRoute,
   TickersIndexRoute: TickersIndexRoute,
+  ApiPublicHooksBackfillBenchmarksRoute: ApiPublicHooksBackfillBenchmarksRoute,
   ApiPublicHooksEvaluateSignalsRoute: ApiPublicHooksEvaluateSignalsRoute,
   ApiPublicHooksIngestNewsRoute: ApiPublicHooksIngestNewsRoute,
   ApiPublicStreamQuotesRoute: ApiPublicStreamQuotesRoute,

@@ -4,7 +4,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { SiteShell } from "@/components/site-shell";
 import { ensureSignals, listSignals } from "@/lib/signals.functions";
-import { computeMetrics, fmtPct, fmtPrice, pctTone } from "@/lib/signal-metrics";
+import { computeMetrics, fmtPct, fmtPrice, pctTone, STATUS_LABEL } from "@/lib/signal-metrics";
+import { ConvictionChip } from "@/components/conviction-chip";
+
 import { type EventCategory } from "@/lib/ripple-data";
 import { useLiveEvents } from "@/hooks/use-live-events";
 import { useWatchlist } from "@/lib/watchlist-store";
@@ -34,11 +36,12 @@ type SortKey =
   | "direction"
   | "signal_price"
   | "current"
-  | "high"
-  | "low"
+  | "score"
+  | "size"
   | "pct"
   | "status"
   | "date";
+
 
 function TrackerPage() {
   const list = useServerFn(listSignals);
@@ -56,7 +59,7 @@ function TrackerPage() {
   });
 
   const watchlist = useWatchlist();
-  const [status, setStatus] = useState<"all" | "open" | "closed">("all");
+  const [status, setStatus] = useState<"all" | "open" | "closed" | "stopped" | "invalidated">("all");
   const [direction, setDirection] = useState<"all" | "long" | "short">("all");
   const [category, setCategory] = useState<"all" | EventCategory>("all");
   const [onlyWatchlist, setOnlyWatchlist] = useState(false);
@@ -100,10 +103,15 @@ function TrackerPage() {
             return ((a.signal.signal_price ?? 0) - (b.signal.signal_price ?? 0)) * dir;
           case "current":
             return ((a.currentPrice ?? 0) - (b.currentPrice ?? 0)) * dir;
-          case "high":
-            return ((a.metrics.runningHigh ?? 0) - (b.metrics.runningHigh ?? 0)) * dir;
-          case "low":
-            return ((a.metrics.runningLow ?? 0) - (b.metrics.runningLow ?? 0)) * dir;
+          case "score":
+            return (
+              ((a.signal.conviction_score ?? -1) - (b.signal.conviction_score ?? -1)) * dir
+            );
+          case "size":
+            return (
+              ((a.signal.suggested_size_pct ?? -1) - (b.signal.suggested_size_pct ?? -1)) * dir
+            );
+
           case "status":
             return a.signal.status.localeCompare(b.signal.status) * dir;
           case "date":
@@ -153,7 +161,14 @@ function TrackerPage() {
 
       <div className="mb-4 flex flex-wrap gap-2">
         <Select label="Status" value={status} onChange={(v) => setStatus(v as typeof status)}
-          options={[["all", "All"], ["open", "Open"], ["closed", "Closed"]]} />
+          options={[
+            ["all", "All"],
+            ["open", "Open"],
+            ["closed", "Target hit"],
+            ["stopped", "Stopped out"],
+            ["invalidated", "Invalidated"],
+          ]} />
+
         <Select label="Direction" value={direction} onChange={(v) => setDirection(v as typeof direction)}
           options={[["all", "All"], ["long", "Long"], ["short", "Short"]]} />
         <Select label="Category" value={category} onChange={(v) => setCategory(v as typeof category)}
@@ -195,12 +210,15 @@ function TrackerPage() {
                 <Th onClick={() => toggleSort("ticker")}>Ticker</Th>
                 <Th>Event</Th>
                 <Th onClick={() => toggleSort("direction")}>Dir</Th>
-                <Th onClick={() => toggleSort("signal_price")} right>Signal</Th>
+                <Th onClick={() => toggleSort("score")} right>Score</Th>
+                <Th onClick={() => toggleSort("size")} right>Size %</Th>
+                <Th onClick={() => toggleSort("signal_price")} right>Entry</Th>
+                <Th right>Stop</Th>
+                <Th right>Target</Th>
                 <Th onClick={() => toggleSort("current")} right>Current</Th>
-                <Th onClick={() => toggleSort("high")} right>High</Th>
-                <Th onClick={() => toggleSort("low")} right>Low</Th>
                 <Th onClick={() => toggleSort("pct")} right>% Move</Th>
                 <Th onClick={() => toggleSort("status")}>Status</Th>
+
               </tr>
             </thead>
             <tbody>
@@ -235,14 +253,28 @@ function TrackerPage() {
                       {signal.direction === "long" ? "LONG" : "SHORT"}
                     </span>
                   </td>
+                  <td className="p-2 text-right">
+                    <ConvictionChip
+                      score={signal.conviction_score}
+                      breakdown={signal.conviction_breakdown}
+                    />
+                    {signal.conviction_score == null && (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </td>
+                  <td className="p-2 text-right font-mono tabular-nums text-muted-foreground">
+                    {signal.suggested_size_pct != null
+                      ? signal.suggested_size_pct.toFixed(2)
+                      : "—"}
+                  </td>
                   <td className="p-2 text-right font-mono tabular-nums">{fmtPrice(signal.signal_price)}</td>
+                  <td className="p-2 text-right font-mono tabular-nums text-headwind/80">
+                    {fmtPrice(signal.stop_price ?? signal.invalidation_price)}
+                  </td>
+                  <td className="p-2 text-right font-mono tabular-nums text-tailwind/80">
+                    {fmtPrice(signal.target_price)}
+                  </td>
                   <td className="p-2 text-right font-mono tabular-nums">{fmtPrice(currentPrice)}</td>
-                  <td className="p-2 text-right font-mono tabular-nums text-muted-foreground">
-                    {fmtPrice(metrics.runningHigh)}
-                  </td>
-                  <td className="p-2 text-right font-mono tabular-nums text-muted-foreground">
-                    {fmtPrice(metrics.runningLow)}
-                  </td>
                   <td className={"p-2 text-right font-mono tabular-nums " + pctTone(metrics.currentPct)}>
                     {fmtPct(metrics.currentPct)}
                   </td>
@@ -252,27 +284,25 @@ function TrackerPage() {
                         "text-[10px] uppercase tracking-wider " +
                         (signal.status === "open"
                           ? "text-foreground"
-                          : signal.close_reason === "target"
+                          : signal.status === "closed"
                           ? "text-tailwind"
                           : "text-headwind")
                       }
+                      title={signal.close_reason ?? undefined}
                     >
-                      {signal.status === "open"
-                        ? "Open"
-                        : signal.close_reason === "target"
-                        ? "Target hit"
-                        : "Invalidated"}
+                      {STATUS_LABEL[signal.status]}
                     </span>
                   </td>
                 </tr>
               ))}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="p-6 text-center text-muted-foreground">
+                  <td colSpan={10} className="p-6 text-center text-muted-foreground">
                     No signals match these filters.
                   </td>
                 </tr>
               )}
+
             </tbody>
           </table>
         </div>
