@@ -131,10 +131,58 @@ export async function fetchProfile(
   };
 }
 
-/** Rough US regular-session check (weekday, 13:30–20:00 UTC). */
-export function isUsMarketOpen(now = new Date()): boolean {
-  const day = now.getUTCDay();
-  if (day === 0 || day === 6) return false;
-  const mins = now.getUTCHours() * 60 + now.getUTCMinutes();
-  return mins >= 13 * 60 + 30 && mins <= 20 * 60;
+/** NYSE full-day closures (America/New_York calendar dates, YYYY-MM-DD). */
+const US_MARKET_HOLIDAYS = new Set<string>([
+  // 2025
+  "2025-01-01","2025-01-09","2025-01-20","2025-02-17","2025-04-18","2025-05-26",
+  "2025-06-19","2025-07-04","2025-09-01","2025-11-27","2025-12-25",
+  // 2026
+  "2026-01-01","2026-01-19","2026-02-16","2026-04-03","2026-05-25","2026-06-19",
+  "2026-07-03","2026-09-07","2026-11-26","2026-12-25",
+  // 2027
+  "2027-01-01","2027-01-18","2027-02-15","2027-03-26","2027-05-31","2027-06-18",
+  "2027-07-05","2027-09-06","2027-11-25","2027-12-24",
+]);
+
+/** Early closes (1:00pm ET) — day after Thanksgiving, Christmas Eve, July 3 etc. */
+const US_MARKET_HALF_DAYS = new Set<string>([
+  "2025-07-03","2025-11-28","2025-12-24",
+  "2026-11-27","2026-12-24",
+  "2027-11-26",
+]);
+
+/** Wall-clock parts of `now` in America/New_York, DST-aware. */
+function newYorkParts(now: Date) {
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    weekday: "short",
+    hour12: false,
+  });
+  const p: Record<string, string> = {};
+  for (const part of fmt.formatToParts(now)) p[part.type] = part.value;
+  const hour = p.hour === "24" ? 0 : Number(p.hour);
+  return {
+    date: `${p.year}-${p.month}-${p.day}`,
+    weekday: p.weekday,
+    minutes: hour * 60 + Number(p.minute),
+  };
 }
+
+/**
+ * US regular session check in exchange local time (America/New_York, DST-aware):
+ * 9:30–16:00 Mon–Fri, excluding NYSE holidays; 9:30–13:00 on half days.
+ * Only the listed dates are closed, so the day after a holiday is open.
+ */
+export function isUsMarketOpen(now = new Date()): boolean {
+  const { date, weekday, minutes } = newYorkParts(now);
+  if (weekday === "Sat" || weekday === "Sun") return false;
+  if (US_MARKET_HOLIDAYS.has(date)) return false;
+  const close = US_MARKET_HALF_DAYS.has(date) ? 13 * 60 : 16 * 60;
+  return minutes >= 9 * 60 + 30 && minutes < close;
+}
+
