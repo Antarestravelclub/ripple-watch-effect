@@ -1,0 +1,587 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { SiteShell } from "@/components/site-shell";
+import type { ReactNode } from "react";
+
+export const Route = createFileRoute("/manual")({
+  head: () => ({
+    meta: [
+      { title: "User Manual — The Ripple Effect" },
+      {
+        name: "description",
+        content:
+          "How The Ripple Effect works, page by page: event ingestion, exposure mapping, conviction scoring, stops and targets, the scorecard, and a daily routine for getting the most out of it.",
+      },
+      { property: "og:title", content: "User Manual — The Ripple Effect" },
+      {
+        property: "og:description",
+        content:
+          "A full walkthrough of every page, how signals are built and evaluated, and the habits that make the tool most useful.",
+      },
+      { property: "og:type", content: "article" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
+  component: ManualPage,
+});
+
+function Section({
+  id,
+  title,
+  children,
+}: {
+  id: string;
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section id={id} className="scroll-mt-24">
+      <h2 className="text-lg font-semibold tracking-tight mb-2">{title}</h2>
+      <div className="space-y-3 text-sm text-muted-foreground leading-relaxed">
+        {children}
+      </div>
+    </section>
+  );
+}
+
+function Card({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="rounded-xl border border-border/70 bg-card/60 p-4">
+      <h3 className="text-sm font-semibold text-foreground mb-1.5">{title}</h3>
+      <div className="text-sm text-muted-foreground leading-relaxed space-y-2">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function Term({ children }: { children: ReactNode }) {
+  return <span className="text-foreground font-medium">{children}</span>;
+}
+
+const CONTENTS = [
+  ["what-it-is", "What this tool is (and is not)"],
+  ["how-it-works", "How the engine works, end to end"],
+  ["pages", "Every page, explained"],
+  ["reading-a-signal", "How to read a signal card"],
+  ["conviction", "Conviction, sizing, stops and targets"],
+  ["scorecard", "The honest number: alpha vs the index"],
+  ["routine", "A daily routine that works"],
+  ["success", "Getting the most out of it"],
+  ["pitfalls", "Common mistakes"],
+  ["glossary", "Glossary"],
+  ["faq", "Troubleshooting & FAQ"],
+] as const;
+
+function ManualPage() {
+  return (
+    <SiteShell>
+      <article className="max-w-3xl">
+        <header className="mb-6">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+            User Manual
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Everything the app does, why it does it, and how to use it well.
+            Written to be read once from top to bottom, then dipped into.
+          </p>
+        </header>
+
+        <nav className="rounded-xl border border-border/70 bg-card/60 p-4 mb-8">
+          <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+            Contents
+          </div>
+          <ol className="grid gap-1 sm:grid-cols-2 text-sm">
+            {CONTENTS.map(([id, label], i) => (
+              <li key={id}>
+                <a
+                  href={`#${id}`}
+                  className="text-muted-foreground hover:text-primary transition-colors"
+                >
+                  {i + 1}. {label}
+                </a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+
+        <div className="space-y-10">
+          <Section id="what-it-is" title="1. What this tool is (and is not)">
+            <p>
+              The Ripple Effect watches world news and answers one question:{" "}
+              <Term>
+                when something happens, which listed companies are mechanically
+                touched by it, and in which direction?
+              </Term>{" "}
+              A refinery fire changes fuel spreads. A port closure changes
+              shipping rates. A rate decision changes bank margins. Those links
+              are physical and contractual, not opinions.
+            </p>
+            <p>
+              It is a <Term>research and awareness tool</Term>. It does not
+              predict prices, it does not tell you to buy or sell anything, and
+              nothing in it is investment advice. Every idea it produces is
+              tracked on paper only — there is no broker connection, and no
+              screen in the app can switch a signal to live trading.
+            </p>
+            <p>
+              The value is in the discipline: every idea is written down before
+              the outcome is known, with a level that would prove it wrong, and
+              then scored honestly against simply holding the index.
+            </p>
+          </Section>
+
+          <Section id="how-it-works" title="2. How the engine works, end to end">
+            <p>Six stages run continuously in the background:</p>
+            <ol className="space-y-2 list-decimal pl-5">
+              <li>
+                <Term>Ingest.</Term> Every 15 minutes the app pulls fresh
+                financial news headlines. Duplicates and thin items are dropped.
+              </li>
+              <li>
+                <Term>Interpret.</Term> Each surviving headline is read and
+                turned into a structured event: a category, the regions
+                involved, why markets care, a ripple strength (Low / Medium /
+                High), and the transmission channel — the actual mechanism
+                through which the news reaches company earnings.
+              </li>
+              <li>
+                <Term>Map exposure.</Term> The event is mapped to named tickers
+                on two sides: <Term>tailwind</Term> (mechanically helped) and{" "}
+                <Term>headwind</Term> (mechanically hurt), each with a written
+                mechanism. Foreign names are mapped to liquid US-listed lines
+                where one exists, so a price actually exists to track.
+              </li>
+              <li>
+                <Term>Score and size.</Term> Each exposure becomes a signal with
+                a conviction score out of 100, a stop, a target, a written
+                kill-condition, and a suggested position size as a percentage of
+                a $100,000 paper portfolio.
+              </li>
+              <li>
+                <Term>Price.</Term> One batched price request per run covers
+                every open ticker plus the benchmark, and stores the result in a
+                single shared price table. Every part of the app reads that one
+                table, so nothing shows a different number than anything else.
+              </li>
+              <li>
+                <Term>Evaluate.</Term> Every 15 minutes on weekdays, each open
+                signal is checked against the day's high and low: target hit,
+                stop hit, kill-condition triggered, or time expired. Each
+                resolution is logged with prices and a reason — nothing changes
+                state silently.
+              </li>
+            </ol>
+            <p>
+              Prices are <Term>delayed</Term>, not real-time streaming quotes.
+              Treat every number as "roughly now", never as an executable price.
+            </p>
+          </Section>
+
+          <Section id="pages" title="3. Every page, explained">
+            <div className="grid gap-3">
+              <Card title="Today — the live feed">
+                <p>
+                  Ripples ordered by strength, then freshness. Anything under 48
+                  hours old sits in the main list; older items collapse into
+                  "Older ripples". The status line at the top shows when news
+                  last refreshed, with <Term>Refresh now</Term> to pull
+                  headlines immediately.
+                </p>
+                <p>
+                  <Term>Market moves</Term> groups the biggest movers under the
+                  event that flagged them, so you always see the cause next to
+                  the effect. <Term>Feed status</Term> hides the technical
+                  price-feed readout and opens itself when a price update fails.
+                  The search box filters the feed to a single ticker, and the
+                  region chips narrow to the US, EU, Canada, Australia, Japan or
+                  China.
+                </p>
+              </Card>
+
+              <Card title="Setups — ranked swing scenarios">
+                <p>
+                  The same signals, ranked 0–100 on freshness, event strength
+                  and how much of the expected move is still uncaptured. Each
+                  setup shows an entry zone, target, invalidation level, risk /
+                  reward and an expected timeframe. Ideas where most of the move
+                  has already happened are flagged{" "}
+                  <Term>priced-in</Term> — that warning is the most useful thing
+                  on the page.
+                </p>
+              </Card>
+
+              <Card title="Calendar — scheduled catalysts">
+                <p>
+                  Known dates ahead: central bank meetings, elections, OPEC,
+                  major data. Use it to avoid opening an idea the day before
+                  something scheduled can overrule it.
+                </p>
+              </Card>
+
+              <Card title="Analyser — paste your own article">
+                <p>
+                  Paste any article or note and the same exposure logic runs on
+                  it, returning positive and negative exposures with mechanisms.
+                  Use it for stories the news feed missed, or to test whether a
+                  story you already believe in actually has a mechanical path to
+                  earnings.
+                </p>
+              </Card>
+
+              <Card title="Tracker — every signal in one table">
+                <p>
+                  Sortable list of all signals with direction, conviction,
+                  status, move since flagging and days open. This is where you
+                  audit the engine rather than browse it. A live chart panel
+                  covers the highest-conviction open names.
+                </p>
+              </Card>
+
+              <Card title="Tickers — the conflict resolver">
+                <p>
+                  The same company can be helped by one event and hurt by
+                  another. This page rolls every open signal up per ticker into
+                  a net stance: <Term>Long</Term>, <Term>Short</Term> or{" "}
+                  <Term>Conflicted</Term>. Check it before taking any single
+                  idea seriously — a conflicted name means the app is telling
+                  you the story is genuinely two-sided.
+                </p>
+              </Card>
+
+              <Card title="Scorecard — did any of this work?">
+                <p>
+                  Paper P/L, win rate, average R, target hits, invalidations and
+                  the headline number: cumulative alpha versus the index. Also
+                  shows when evaluation last ran, and lets you view alpha using
+                  exactly-priced entries only or all entries including
+                  backfilled ones.
+                </p>
+              </Card>
+
+              <Card title="Analogues & Playbooks — historical context">
+                <p>
+                  <Term>Analogues</Term> is a library of canonical past events
+                  with what actually happened to specific stocks, the time
+                  window, and whether the move reverted.{" "}
+                  <Term>Playbooks</Term> generalises those into typical winners,
+                  losers, magnitude and duration per event archetype. Read the
+                  playbook for an archetype before trusting today's version of
+                  it.
+                </p>
+              </Card>
+
+              <Card title="Watchlist — your own names">
+                <p>
+                  Track the tickers you care about and get flagged when an event
+                  touches them, with live quotes alongside.
+                </p>
+              </Card>
+            </div>
+          </Section>
+
+          <Section id="reading-a-signal" title="4. How to read a signal card">
+            <p>Read a card in this order — it is the fastest route to a judgement:</p>
+            <ol className="space-y-2 list-decimal pl-5">
+              <li>
+                <Term>Mechanism first.</Term> If the written mechanism does not
+                make sense to you in one sentence, stop. No score rescues a link
+                you cannot explain.
+              </li>
+              <li>
+                <Term>Age.</Term> Under 24 hours is where the tool is most
+                useful. Past 72 hours, assume the market has read the news too.
+              </li>
+              <li>
+                <Term>Move since flagging.</Term> If most of the expected move
+                has already happened, the opportunity was yesterday. That is
+                what the priced-in warning means.
+              </li>
+              <li>
+                <Term>Direction and conflicts.</Term> Check the ticker's net
+                stance. A conflicted name is a reason to wait, not a reason to
+                pick a side.
+              </li>
+              <li>
+                <Term>Levels.</Term> The stop, target and kill-condition tell
+                you what would prove the idea wrong. An idea with no such level
+                is not an idea.
+              </li>
+            </ol>
+          </Section>
+
+          <Section id="conviction" title="5. Conviction, sizing, stops and targets">
+            <p>
+              <Term>Conviction (0–100)</Term> is a transparent rubric, not a
+              black box, and the breakdown is shown on the card:
+            </p>
+            <ul className="space-y-1 list-disc pl-5">
+              <li>up to 35 points — event severity / strength</li>
+              <li>
+                up to 30 points — directness: is the company named or the
+                sector primary, or is it a second-order ripple?
+              </li>
+              <li>
+                up to 25 points — historical analogue hit rate for this
+                archetype and direction
+              </li>
+              <li>
+                up to 10 points — freshness, decaying from full at under 24
+                hours to zero at 72 hours
+              </li>
+            </ul>
+            <p>
+              Signals scoring under 55 are still recorded and tracked — so the
+              scorecard can learn from them — but they are flagged{" "}
+              <Term>below threshold</Term> and sized at zero.
+            </p>
+            <p>
+              <Term>Stops and targets are volatility-scaled</Term>, not fixed
+              percentages. Each uses ATR(14), the ticker's average daily range:
+              a stop 1.5× ATR against the idea, a target 2.0× ATR in favour. A
+              quiet utility and a volatile miner therefore get very different
+              distances, which is the point. If a ticker has fewer than 15 daily
+              bars of history, the signal is rejected outright rather than
+              guessed.
+            </p>
+            <p>
+              <Term>Sizing follows risk, not conviction alone.</Term> Position
+              size is set so a stop-out costs 0.5% of the paper portfolio,
+              capped at 5% of notional, then scaled by conviction: full size at
+              80+, three-quarters at 65–79, half at 55–64, zero below 55.
+            </p>
+            <p>
+              <Term>Kill conditions</Term> are checked automatically: a maximum
+              days-open time stop, a close beyond a thesis-breaking level, and
+              the linked event being superseded or archived.
+            </p>
+          </Section>
+
+          <Section id="scorecard" title="6. The honest number: alpha vs the index">
+            <p>
+              Making money in a rising market proves nothing. For every closed
+              signal, the app records the benchmark's price at entry and at
+              exit, then compares the signal's return with the index's return
+              over the identical window. The difference is <Term>alpha</Term>,
+              and it is the headline stat.
+            </p>
+            <p>
+              Alpha is broken down by event category and by conviction band, so
+              you can see which kinds of events actually earn their place and
+              which are noise. If cumulative alpha turns negative, the page says
+              so plainly: the strategy is underperforming simply holding the
+              index.
+            </p>
+            <p>
+              Entry prices captured at the moment of flagging are labelled{" "}
+              <Term>exact</Term>; older ones reconstructed from daily closes are
+              labelled <Term>backfilled</Term>. Use the exact-only view when you
+              want the cleanest read.
+            </p>
+          </Section>
+
+          <Section id="routine" title="7. A daily routine that works">
+            <ol className="space-y-2 list-decimal pl-5">
+              <li>
+                <Term>Morning, before the open.</Term> Open{" "}
+                <Link to="/" className="text-primary hover:underline">
+                  Today
+                </Link>{" "}
+                and read only the fresh ripples. Ignore anything in "Older
+                ripples" unless it is still developing.
+              </li>
+              <li>
+                <Term>Check the calendar.</Term> Note anything scheduled today
+                that could overrule a fresh idea.
+              </li>
+              <li>
+                <Term>Shortlist from Setups.</Term> Take the top few, drop
+                everything flagged priced-in, and drop anything whose mechanism
+                you cannot restate in your own words.
+              </li>
+              <li>
+                <Term>Resolve conflicts.</Term> Run each survivor through
+                Tickers. Discard conflicted names.
+              </li>
+              <li>
+                <Term>Read the analogue.</Term> Check the playbook for that
+                archetype: typical magnitude, typical duration, and how often it
+                reverted.
+              </li>
+              <li>
+                <Term>Write down the levels.</Term> Entry zone, stop, target,
+                kill condition, and the size the app suggests. Before the
+                outcome, not after.
+              </li>
+              <li>
+                <Term>End of week.</Term> Open the Scorecard. Look only at
+                alpha, and at which categories and conviction bands produced it.
+                Let that change what you shortlist next week.
+              </li>
+            </ol>
+          </Section>
+
+          <Section id="success" title="8. Getting the most out of it">
+            <ul className="space-y-2 list-disc pl-5">
+              <li>
+                <Term>Trade the mechanism, not the headline.</Term> The
+                headline is the trigger; the mechanism is the reason. If you
+                cannot name who pays more or earns more, there is no idea.
+              </li>
+              <li>
+                <Term>Freshness is the whole edge.</Term> The tool exists to
+                shorten the gap between news and understanding. A three-day-old
+                ripple has no gap left.
+              </li>
+              <li>
+                <Term>Prefer high conviction, but respect the sizing.</Term>{" "}
+                Below-threshold signals are there for learning, not for
+                acting.
+              </li>
+              <li>
+                <Term>Second-order beats obvious.</Term> The named victim is
+                usually already moved. The substitute supplier, the alternative
+                route, the competing input often is not.
+              </li>
+              <li>
+                <Term>Let the scorecard prune you.</Term> After a few dozen
+                closed signals, category alpha tells you which event types you
+                should stop looking at.
+              </li>
+              <li>
+                <Term>Check liquidity and borrow yourself.</Term> The app maps
+                exposure; it does not verify that a name is tradeable or
+                shortable in size.
+              </li>
+              <li>
+                <Term>Use the Analyser for your own reading.</Term> Your best
+                edge is a story the feed has not categorised yet.
+              </li>
+            </ul>
+          </Section>
+
+          <Section id="pitfalls" title="9. Common mistakes">
+            <ul className="space-y-2 list-disc pl-5">
+              <li>
+                Treating a signal as a recommendation. It is a mapped exposure
+                with a tracked outcome — nothing more.
+              </li>
+              <li>
+                Chasing a big "move since flagging" number. A large favourable
+                move means the opportunity has already been taken, not that the
+                idea is stronger.
+              </li>
+              <li>
+                Ignoring the conflict flag and picking the side you already
+                liked.
+              </li>
+              <li>
+                Reading delayed prices as executable prices, especially outside
+                US market hours.
+              </li>
+              <li>
+                Judging performance by win rate. A high win rate with negative
+                alpha means the index did the work.
+              </li>
+              <li>
+                Moving a stop after the fact. The evaluation engine will not; you
+                should not either.
+              </li>
+            </ul>
+          </Section>
+
+          <Section id="glossary" title="10. Glossary">
+            <dl className="space-y-2">
+              {[
+                ["Ripple", "A world event that reaches company earnings through an identifiable mechanism."],
+                ["Ripple strength", "How much market relevance the event carries: Low, Medium or High."],
+                ["Transmission channel", "The route from event to earnings — input costs, freight rates, rate margins, supply substitution and so on."],
+                ["Tailwind / headwind", "Mechanically helped / mechanically hurt by the event."],
+                ["Signal", "One ticker plus one direction, arising from one event, with levels attached."],
+                ["Conviction score", "0–100 rubric of severity, directness, historical hit rate and freshness."],
+                ["ATR(14)", "Average true range over 14 days — the ticker's typical daily range, used to scale stops and targets."],
+                ["Stop", "Level 1.5× ATR against the idea; crossing it closes the signal as stopped."],
+                ["Target", "Level 2.0× ATR in favour; reaching it closes the signal as a hit."],
+                ["Invalidation / kill condition", "A written, machine-checked condition that ends the idea regardless of price drift."],
+                ["R", "Reward measured in units of the risked distance from entry to stop."],
+                ["Alpha", "Signal return minus the index return over the identical holding window."],
+                ["Priced-in", "More than 60% of the expected move has already happened."],
+                ["Conflicted ticker", "Open signals point both long and short on the same name."],
+                ["Paper mode", "All positions are hypothetical; no broker is connected anywhere in the app."],
+              ].map(([term, def]) => (
+                <div key={term}>
+                  <dt className="text-foreground font-medium">{term}</dt>
+                  <dd>{def}</dd>
+                </div>
+              ))}
+            </dl>
+          </Section>
+
+          <Section id="faq" title="11. Troubleshooting & FAQ">
+            <div className="space-y-3">
+              <div>
+                <p className="text-foreground font-medium">
+                  The feed looks old — nothing new for hours.
+                </p>
+                <p>
+                  Press <Term>Refresh now</Term> on Today. If the status line
+                  reports an error, news interpretation is temporarily
+                  unavailable and the next scheduled run will retry.
+                </p>
+              </div>
+              <div>
+                <p className="text-foreground font-medium">
+                  Market moves is empty or says no price received.
+                </p>
+                <p>
+                  Open <Term>Feed status</Term> in that panel. It shows the
+                  source, the last fetch time, how many symbols were priced and
+                  the exact error if the provider refused the request — which is
+                  a different problem from the market being closed.
+                </p>
+              </div>
+              <div>
+                <p className="text-foreground font-medium">
+                  A ticker shows no price at all.
+                </p>
+                <p>
+                  It is likely private, unlisted, or a foreign line with no
+                  liquid US-listed equivalent. Those are shown for context but
+                  cannot be tracked.
+                </p>
+              </div>
+              <div>
+                <p className="text-foreground font-medium">
+                  Why does the same company appear on both sides?
+                </p>
+                <p>
+                  Because two different events genuinely pull it in opposite
+                  directions. Tickers shows the net stance; conflicted means
+                  wait.
+                </p>
+              </div>
+              <div>
+                <p className="text-foreground font-medium">
+                  Can I connect a broker or go live?
+                </p>
+                <p>
+                  No. Everything is paper by design, and no screen in the app
+                  can change that.
+                </p>
+              </div>
+            </div>
+          </Section>
+
+          <div className="rounded-xl border border-border/70 bg-card/60 p-4 text-sm text-muted-foreground">
+            <p>
+              <span className="text-foreground font-medium">Reminder.</span> The
+              Ripple Effect is an educational research tool. It maps mechanical
+              exposure and tracks hypothetical outcomes. It does not predict
+              prices and it is not investment advice. Verify liquidity and
+              borrow availability before acting on any short idea.
+            </p>
+          </div>
+        </div>
+      </article>
+    </SiteShell>
+  );
+}
