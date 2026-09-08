@@ -16,6 +16,7 @@ import {
   rMultiple,
 } from "@/lib/signal-metrics";
 import { ConvictionBreakdownList } from "@/components/conviction-chip";
+import { TradingViewChart } from "@/components/tradingview";
 
 import { useLiveEvents } from "@/hooks/use-live-events";
 import { ArrowLeft, Clock } from "lucide-react";
