@@ -449,6 +449,7 @@ export type Database = {
           benchmark_entry_estimated: boolean
           benchmark_entry_price: number | null
           benchmark_exit_price: number | null
+          benchmark_source: string
           benchmark_symbol: string
           close_reason: string | null
           closed_at: string | null
@@ -486,6 +487,7 @@ export type Database = {
           benchmark_entry_estimated?: boolean
           benchmark_entry_price?: number | null
           benchmark_exit_price?: number | null
+          benchmark_source?: string
           benchmark_symbol?: string
           close_reason?: string | null
           closed_at?: string | null
@@ -523,6 +525,7 @@ export type Database = {
           benchmark_entry_estimated?: boolean
           benchmark_entry_price?: number | null
           benchmark_exit_price?: number | null
+          benchmark_source?: string
           benchmark_symbol?: string
           close_reason?: string | null
           closed_at?: string | null
