@@ -16,6 +16,7 @@ import { Route as ScorecardRouteImport } from './routes/scorecard'
 import { Route as PlaybooksRouteImport } from './routes/playbooks'
 import { Route as ManualRouteImport } from './routes/manual'
 import { Route as CalendarRouteImport } from './routes/calendar'
+import { Route as BrokerRouteImport } from './routes/broker'
 import { Route as AnalyzeRouteImport } from './routes/analyze'
 import { Route as AnaloguesRouteImport } from './routes/analogues'
 import { Route as IndexRouteImport } from './routes/index'
@@ -27,6 +28,8 @@ import { Route as ApiPublicStreamQuotesRouteImport } from './routes/api/public/s
 import { Route as ApiPublicHooksIngestNewsRouteImport } from './routes/api/public/hooks/ingest-news'
 import { Route as ApiPublicHooksEvaluateSignalsRouteImport } from './routes/api/public/hooks/evaluate-signals'
 import { Route as ApiPublicHooksBackfillBenchmarksRouteImport } from './routes/api/public/hooks/backfill-benchmarks'
+import { Route as ApiPublicBridgeOrdersRouteImport } from './routes/api/public/bridge/orders'
+import { Route as ApiPublicBridgeFillsRouteImport } from './routes/api/public/bridge/fills'
 
 const WatchlistRoute = WatchlistRouteImport.update({
   id: '/watchlist',
@@ -61,6 +64,11 @@ const ManualRoute = ManualRouteImport.update({
 const CalendarRoute = CalendarRouteImport.update({
   id: '/calendar',
   path: '/calendar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BrokerRoute = BrokerRouteImport.update({
+  id: '/broker',
+  path: '/broker',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AnalyzeRoute = AnalyzeRouteImport.update({
@@ -121,11 +129,22 @@ const ApiPublicHooksBackfillBenchmarksRoute =
     path: '/api/public/hooks/backfill-benchmarks',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicBridgeOrdersRoute = ApiPublicBridgeOrdersRouteImport.update({
+  id: '/api/public/bridge/orders',
+  path: '/api/public/bridge/orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicBridgeFillsRoute = ApiPublicBridgeFillsRouteImport.update({
+  id: '/api/public/bridge/fills',
+  path: '/api/public/bridge/fills',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/analogues': typeof AnaloguesRoute
   '/analyze': typeof AnalyzeRoute
+  '/broker': typeof BrokerRoute
   '/calendar': typeof CalendarRoute
   '/manual': typeof ManualRoute
   '/playbooks': typeof PlaybooksRoute
@@ -137,6 +156,8 @@ export interface FileRoutesByFullPath {
   '/signal/$id': typeof SignalIdRoute
   '/tickers/$symbol': typeof TickersSymbolRoute
   '/tickers/': typeof TickersIndexRoute
+  '/api/public/bridge/fills': typeof ApiPublicBridgeFillsRoute
+  '/api/public/bridge/orders': typeof ApiPublicBridgeOrdersRoute
   '/api/public/hooks/backfill-benchmarks': typeof ApiPublicHooksBackfillBenchmarksRoute
   '/api/public/hooks/evaluate-signals': typeof ApiPublicHooksEvaluateSignalsRoute
   '/api/public/hooks/ingest-news': typeof ApiPublicHooksIngestNewsRoute
@@ -146,6 +167,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analogues': typeof AnaloguesRoute
   '/analyze': typeof AnalyzeRoute
+  '/broker': typeof BrokerRoute
   '/calendar': typeof CalendarRoute
   '/manual': typeof ManualRoute
   '/playbooks': typeof PlaybooksRoute
@@ -157,6 +179,8 @@ export interface FileRoutesByTo {
   '/signal/$id': typeof SignalIdRoute
   '/tickers/$symbol': typeof TickersSymbolRoute
   '/tickers': typeof TickersIndexRoute
+  '/api/public/bridge/fills': typeof ApiPublicBridgeFillsRoute
+  '/api/public/bridge/orders': typeof ApiPublicBridgeOrdersRoute
   '/api/public/hooks/backfill-benchmarks': typeof ApiPublicHooksBackfillBenchmarksRoute
   '/api/public/hooks/evaluate-signals': typeof ApiPublicHooksEvaluateSignalsRoute
   '/api/public/hooks/ingest-news': typeof ApiPublicHooksIngestNewsRoute
@@ -167,6 +191,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/analogues': typeof AnaloguesRoute
   '/analyze': typeof AnalyzeRoute
+  '/broker': typeof BrokerRoute
   '/calendar': typeof CalendarRoute
   '/manual': typeof ManualRoute
   '/playbooks': typeof PlaybooksRoute
@@ -178,6 +203,8 @@ export interface FileRoutesById {
   '/signal/$id': typeof SignalIdRoute
   '/tickers/$symbol': typeof TickersSymbolRoute
   '/tickers/': typeof TickersIndexRoute
+  '/api/public/bridge/fills': typeof ApiPublicBridgeFillsRoute
+  '/api/public/bridge/orders': typeof ApiPublicBridgeOrdersRoute
   '/api/public/hooks/backfill-benchmarks': typeof ApiPublicHooksBackfillBenchmarksRoute
   '/api/public/hooks/evaluate-signals': typeof ApiPublicHooksEvaluateSignalsRoute
   '/api/public/hooks/ingest-news': typeof ApiPublicHooksIngestNewsRoute
@@ -189,6 +216,7 @@ export interface FileRouteTypes {
     | '/'
     | '/analogues'
     | '/analyze'
+    | '/broker'
     | '/calendar'
     | '/manual'
     | '/playbooks'
@@ -200,6 +228,8 @@ export interface FileRouteTypes {
     | '/signal/$id'
     | '/tickers/$symbol'
     | '/tickers/'
+    | '/api/public/bridge/fills'
+    | '/api/public/bridge/orders'
     | '/api/public/hooks/backfill-benchmarks'
     | '/api/public/hooks/evaluate-signals'
     | '/api/public/hooks/ingest-news'
@@ -209,6 +239,7 @@ export interface FileRouteTypes {
     | '/'
     | '/analogues'
     | '/analyze'
+    | '/broker'
     | '/calendar'
     | '/manual'
     | '/playbooks'
@@ -220,6 +251,8 @@ export interface FileRouteTypes {
     | '/signal/$id'
     | '/tickers/$symbol'
     | '/tickers'
+    | '/api/public/bridge/fills'
+    | '/api/public/bridge/orders'
     | '/api/public/hooks/backfill-benchmarks'
     | '/api/public/hooks/evaluate-signals'
     | '/api/public/hooks/ingest-news'
@@ -229,6 +262,7 @@ export interface FileRouteTypes {
     | '/'
     | '/analogues'
     | '/analyze'
+    | '/broker'
     | '/calendar'
     | '/manual'
     | '/playbooks'
@@ -240,6 +274,8 @@ export interface FileRouteTypes {
     | '/signal/$id'
     | '/tickers/$symbol'
     | '/tickers/'
+    | '/api/public/bridge/fills'
+    | '/api/public/bridge/orders'
     | '/api/public/hooks/backfill-benchmarks'
     | '/api/public/hooks/evaluate-signals'
     | '/api/public/hooks/ingest-news'
@@ -250,6 +286,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnaloguesRoute: typeof AnaloguesRoute
   AnalyzeRoute: typeof AnalyzeRoute
+  BrokerRoute: typeof BrokerRoute
   CalendarRoute: typeof CalendarRoute
   ManualRoute: typeof ManualRoute
   PlaybooksRoute: typeof PlaybooksRoute
@@ -261,6 +298,8 @@ export interface RootRouteChildren {
   SignalIdRoute: typeof SignalIdRoute
   TickersSymbolRoute: typeof TickersSymbolRoute
   TickersIndexRoute: typeof TickersIndexRoute
+  ApiPublicBridgeFillsRoute: typeof ApiPublicBridgeFillsRoute
+  ApiPublicBridgeOrdersRoute: typeof ApiPublicBridgeOrdersRoute
   ApiPublicHooksBackfillBenchmarksRoute: typeof ApiPublicHooksBackfillBenchmarksRoute
   ApiPublicHooksEvaluateSignalsRoute: typeof ApiPublicHooksEvaluateSignalsRoute
   ApiPublicHooksIngestNewsRoute: typeof ApiPublicHooksIngestNewsRoute
@@ -316,6 +355,13 @@ declare module '@tanstack/react-router' {
       path: '/calendar'
       fullPath: '/calendar'
       preLoaderRoute: typeof CalendarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/broker': {
+      id: '/broker'
+      path: '/broker'
+      fullPath: '/broker'
+      preLoaderRoute: typeof BrokerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/analyze': {
@@ -395,6 +441,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksBackfillBenchmarksRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/bridge/orders': {
+      id: '/api/public/bridge/orders'
+      path: '/api/public/bridge/orders'
+      fullPath: '/api/public/bridge/orders'
+      preLoaderRoute: typeof ApiPublicBridgeOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/bridge/fills': {
+      id: '/api/public/bridge/fills'
+      path: '/api/public/bridge/fills'
+      fullPath: '/api/public/bridge/fills'
+      preLoaderRoute: typeof ApiPublicBridgeFillsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -402,6 +462,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnaloguesRoute: AnaloguesRoute,
   AnalyzeRoute: AnalyzeRoute,
+  BrokerRoute: BrokerRoute,
   CalendarRoute: CalendarRoute,
   ManualRoute: ManualRoute,
   PlaybooksRoute: PlaybooksRoute,
@@ -413,6 +474,8 @@ const rootRouteChildren: RootRouteChildren = {
   SignalIdRoute: SignalIdRoute,
   TickersSymbolRoute: TickersSymbolRoute,
   TickersIndexRoute: TickersIndexRoute,
+  ApiPublicBridgeFillsRoute: ApiPublicBridgeFillsRoute,
+  ApiPublicBridgeOrdersRoute: ApiPublicBridgeOrdersRoute,
   ApiPublicHooksBackfillBenchmarksRoute: ApiPublicHooksBackfillBenchmarksRoute,
   ApiPublicHooksEvaluateSignalsRoute: ApiPublicHooksEvaluateSignalsRoute,
   ApiPublicHooksIngestNewsRoute: ApiPublicHooksIngestNewsRoute,

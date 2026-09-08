@@ -50,6 +50,128 @@ export type Database = {
         }
         Relationships: []
       }
+      broker_bridge_heartbeats: {
+        Row: {
+          account_is_demo: boolean | null
+          account_login: string | null
+          account_server: string | null
+          balance: number | null
+          bridge_version: string | null
+          currency: string | null
+          equity: number | null
+          id: string
+          note: string | null
+          open_positions: number | null
+          seen_at: string
+        }
+        Insert: {
+          account_is_demo?: boolean | null
+          account_login?: string | null
+          account_server?: string | null
+          balance?: number | null
+          bridge_version?: string | null
+          currency?: string | null
+          equity?: number | null
+          id?: string
+          note?: string | null
+          open_positions?: number | null
+          seen_at?: string
+        }
+        Update: {
+          account_is_demo?: boolean | null
+          account_login?: string | null
+          account_server?: string | null
+          balance?: number | null
+          bridge_version?: string | null
+          currency?: string | null
+          equity?: number | null
+          id?: string
+          note?: string | null
+          open_positions?: number | null
+          seen_at?: string
+        }
+        Relationships: []
+      }
+      broker_orders: {
+        Row: {
+          broker_symbol: string | null
+          broker_ticket: string | null
+          claimed_at: string | null
+          conviction_score: number | null
+          created_at: string
+          error: string | null
+          filled_at: string | null
+          filled_price: number | null
+          filled_volume: number | null
+          id: string
+          intent: string
+          mode: string
+          reference_price: number | null
+          side: string
+          signal_id: string
+          status: string
+          stop_price: number | null
+          suggested_size_pct: number | null
+          target_price: number | null
+          ticker: string
+          updated_at: string
+        }
+        Insert: {
+          broker_symbol?: string | null
+          broker_ticket?: string | null
+          claimed_at?: string | null
+          conviction_score?: number | null
+          created_at?: string
+          error?: string | null
+          filled_at?: string | null
+          filled_price?: number | null
+          filled_volume?: number | null
+          id?: string
+          intent?: string
+          mode?: string
+          reference_price?: number | null
+          side: string
+          signal_id: string
+          status?: string
+          stop_price?: number | null
+          suggested_size_pct?: number | null
+          target_price?: number | null
+          ticker: string
+          updated_at?: string
+        }
+        Update: {
+          broker_symbol?: string | null
+          broker_ticket?: string | null
+          claimed_at?: string | null
+          conviction_score?: number | null
+          created_at?: string
+          error?: string | null
+          filled_at?: string | null
+          filled_price?: number | null
+          filled_volume?: number | null
+          id?: string
+          intent?: string
+          mode?: string
+          reference_price?: number | null
+          side?: string
+          signal_id?: string
+          status?: string
+          stop_price?: number | null
+          suggested_size_pct?: number | null
+          target_price?: number | null
+          ticker?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "broker_orders_signal_id_fkey"
+            columns: ["signal_id"]
+            isOneToOne: false
+            referencedRelation: "signals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       evaluation_runs: {
         Row: {
           created_at: string
