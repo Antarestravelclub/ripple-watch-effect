@@ -180,20 +180,8 @@ export function useLiveQuotes(tickers: string[]) {
     };
   }, [key.join(",")]);
 
-  const restDiag: FeedDiagnostics | null = null;
-  const diagnostics = useMemo(() => {
-    if (!streamDiag) return restDiag;
-    if (!restDiag) return streamDiag;
-    const newer = (a: string | null, b: string | null) =>
-      (a ?? "") >= (b ?? "") ? a : b;
-    const streamWins =
-      (streamDiag.lastAttemptAt ?? "") >= (restDiag.lastAttemptAt ?? "");
-    return {
-      ...(streamWins ? streamDiag : restDiag),
-      lastSuccessAt: newer(streamDiag.lastSuccessAt, restDiag.lastSuccessAt),
-      lastAttemptAt: newer(streamDiag.lastAttemptAt, restDiag.lastAttemptAt),
-    } as FeedDiagnostics;
-  }, [streamDiag, restDiag]);
+  const diagnostics = streamDiag;
+
 
   return {
     quotes: live,
