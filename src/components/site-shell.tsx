@@ -70,6 +70,13 @@ export function SiteShell({ children }: { children: ReactNode }) {
             not investment advice. Signals shown are hypothetical historical correlations —
             never a recommendation to buy or sell.
           </p>
+          <p>
+            New here?{" "}
+            <Link to="/manual" className="text-primary hover:underline">
+              Read the user manual
+            </Link>
+            .
+          </p>
           <p className="opacity-70">Prices are delayed. Past behaviour does not predict future prices.</p>
           <p className="opacity-70">
             Signals reflect mechanical exposure mapping, not predictions. Verify liquidity and
