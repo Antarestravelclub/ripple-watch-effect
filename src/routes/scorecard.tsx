@@ -481,12 +481,17 @@ function BenchmarkSection({
   });
   const notional = settings?.notional_value ?? DEFAULT_PORTFOLIO.notional_value;
 
-  const closed = useMemo(
+  // Exact = index price captured at signal creation; backfilled rows use the
+  // index's daily close on that date, so they're approximate.
+  const [exactOnly, setExactOnly] = useState(false);
+
+  const all = useMemo(
     () =>
       signals
         .filter((r) => r.signal.status !== "open" && alphaPct(r.signal) != null)
         .map((r) => ({
           ...r,
+          exact: (r.signal.benchmark_source ?? "exact") === "exact",
           ret: realisedPct(r.signal) ?? 0,
           bench: benchmarkPct(r.signal) ?? 0,
           alpha: alphaPct(r.signal) ?? 0,
@@ -495,6 +500,12 @@ function BenchmarkSection({
         })),
     [signals, notional],
   );
+  const exactCount = all.filter((c) => c.exact).length;
+  const closed = useMemo(
+    () => (exactOnly ? all.filter((c) => c.exact) : all),
+    [all, exactOnly],
+  );
+
 
   const n = closed.length;
   const cumulativeAlpha = closed.reduce((a, b) => a + b.alpha, 0);
