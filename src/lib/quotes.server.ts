@@ -40,20 +40,110 @@ export interface QuoteResult {
 
 const BASE = "https://finnhub.io/api/v1";
 
-type Fetched<T> = { data: T | null; status: QuoteStatus };
+export const QUOTE_PROVIDER = "Finnhub (finnhub.io)";
+
+export interface FeedDiagnostics {
+  provider: string;
+  lastAttemptAt: string | null;
+  lastSuccessAt: string | null;
+  lastErrorAt: string | null;
+  lastError: string | null;
+  attempts: number;
+  successes: number;
+  failures: number;
+  cachedSymbols: number;
+}
+
+/** Per-isolate feed telemetry. Survives across requests in the same worker. */
+const diag = {
+  lastAttemptAt: null as string | null,
+  lastSuccessAt: null as string | null,
+  lastErrorAt: null as string | null,
+  lastError: null as string | null,
+  attempts: 0,
+  successes: 0,
+  failures: 0,
+};
+
+export function getFeedDiagnostics(): FeedDiagnostics {
+  return { provider: QUOTE_PROVIDER, ...diag, cachedSymbols: quoteCache.size };
+}
+
+/** Short-lived quote cache — keeps burst refreshes under the provider's limit. */
+const quoteCache = new Map<string, { quote: Quote; at: number }>();
+const CACHE_TTL_MS = 15_000;
+
+type Fetched<T> = { data: T | null; status: QuoteStatus; error?: string };
 
 async function get<T>(path: string, apiKey: string): Promise<Fetched<T>> {
+  diag.attempts += 1;
+  diag.lastAttemptAt = new Date().toISOString();
+  const fail = (status: QuoteStatus, error: string): Fetched<T> => {
+    diag.failures += 1;
+    diag.lastErrorAt = new Date().toISOString();
+    diag.lastError = error;
+    return { data: null, status, error };
+  };
   try {
     const res = await fetch(`${BASE}${path}&token=${apiKey}`);
-    if (res.status === 429) return { data: null, status: "rate_limited" };
-    if (res.status === 401 || res.status === 403)
-      return { data: null, status: "no_key" };
-    if (!res.ok) return { data: null, status: "unsupported_symbol" };
-    return { data: (await res.json()) as T, status: "ok" };
-  } catch {
-    return { data: null, status: "network_error" };
+    if (!res.ok) {
+      const body = (await res.text().catch(() => "")).slice(0, 180);
+      const detail = `HTTP ${res.status}${body ? ` — ${body}` : ""}`;
+      if (res.status === 429) return fail("rate_limited", detail);
+      if (res.status === 401 || res.status === 403) return fail("no_key", detail);
+      return fail("unsupported_symbol", detail);
+    }
+    const data = (await res.json()) as T;
+    diag.successes += 1;
+    diag.lastSuccessAt = new Date().toISOString();
+    diag.lastError = null;
+    return { data, status: "ok" };
+  } catch (e) {
+    return fail("network_error", e instanceof Error ? e.message : "network error");
   }
 }
+
+/**
+ * Batch quotes with bounded concurrency and a short cache, so a page with many
+ * tickers cannot exhaust the provider's per-minute allowance.
+ */
+export async function fetchQuotesBatch(
+  tickers: string[],
+  apiKey: string,
+): Promise<{ quotes: Record<string, Quote | null>; status: QuoteStatus }> {
+  const out: Record<string, Quote | null> = {};
+  let status: QuoteStatus = "ok";
+  const pending: string[] = [];
+  const now = Date.now();
+  for (const t of tickers) {
+    const hit = quoteCache.get(t);
+    if (hit && now - hit.at < CACHE_TTL_MS) out[t] = hit.quote;
+    else pending.push(t);
+  }
+  const CONCURRENCY = 3;
+  for (let i = 0; i < pending.length; i += CONCURRENCY) {
+    const slice = pending.slice(i, i + CONCURRENCY);
+    const results = await Promise.all(
+      slice.map(async (t) => [t, await fetchQuote(t, apiKey)] as const),
+    );
+    for (const [t, r] of results) {
+      out[t] = r.quote;
+      if (r.quote) quoteCache.set(t, { quote: r.quote, at: Date.now() });
+      if (r.status === "rate_limited" || r.status === "no_key") status = r.status;
+      else if (r.status === "network_error" && status === "ok") status = r.status;
+    }
+    // Stop hammering a provider that is already refusing us.
+    if (status === "rate_limited" || status === "no_key") {
+      for (const t of pending.slice(i + CONCURRENCY)) {
+        const hit = quoteCache.get(t);
+        out[t] = hit?.quote ?? null;
+      }
+      break;
+    }
+  }
+  return { quotes: out, status };
+}
+
 
 /**
  * Symbol search across every exchange Finnhub knows about, so non-US
