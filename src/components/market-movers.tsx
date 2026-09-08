@@ -93,15 +93,19 @@ export function MarketMovers() {
             : "no price received yet"}
         </span>
       </div>
-
+      <FeedDiagnosticsCard diagnostics={diagnostics} blocked={feedBlocked} />
 
       {isLoading ? (
         <p className="text-xs text-muted-foreground">Loading price moves…</p>
       ) : empty ? (
         <p className="text-xs text-muted-foreground">
           No fresh moves right now —{" "}
-          {marketOpen ? "awaiting the next price refresh" : "market closed"}. Open signals
-          appear here once a current price is received.
+          {feedBlocked
+            ? "the price provider is refusing our requests (see feed diagnostics)"
+            : marketOpen
+              ? "awaiting the next price refresh"
+              : "market closed"}
+          . Open signals appear here once a current price is received.
         </p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
@@ -109,6 +113,7 @@ export function MarketMovers() {
           <MoverList title="Drops" icon="down" movers={decliners} />
         </div>
       )}
+
       <p className="mt-3 text-[11px] text-muted-foreground/80">
         Observed movement only — historical context, not a prediction or advice.
       </p>
