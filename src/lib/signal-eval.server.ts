@@ -95,21 +95,22 @@ export async function runEvaluation(): Promise<EvalResult> {
     }
   }
 
-  // 2. Refresh prices once per unique quote symbol.
-  const symbols = new Set<string>();
+  // 2. ONE batched provider fetch per run: the deduplicated set of open-signal
+  //    symbols plus the benchmark. Everything below reads latest_prices.
+  const symbols = new Set<string>([BENCHMARK_SYMBOL]);
   for (const s of open) {
     const sym = s.quote_symbol ?? tickerMeta(s.ticker).quote;
     if (sym) symbols.add(sym);
   }
+  const { quotes } = await refreshLatestPrices([...symbols]);
   const priceBySymbol = new Map<string, number>();
   const rangeBySymbol = new Map<string, { high: number | null; low: number | null }>();
-  for (const sym of symbols) {
-    const q = await fetchQuoteWithRetry(sym, apiKey);
-    if (q.price != null) priceBySymbol.set(sym, q.price);
-    rangeBySymbol.set(sym, { high: q.dayHigh ?? null, low: q.dayLow ?? null });
-    await sleep(120);
+  for (const [sym, q] of quotes) {
+    priceBySymbol.set(sym, q.price);
+    rangeBySymbol.set(sym, { high: q.dayHigh, low: q.dayLow });
   }
   out.priced = priceBySymbol.size;
+
 
   // Events that have been archived or superseded kill their own signals.
   const eventIds = [...new Set(open.map((s) => s.event_id))];
