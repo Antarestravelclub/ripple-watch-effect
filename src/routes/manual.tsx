@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteShell } from "@/components/site-shell";
 import type { ReactNode } from "react";
+import { Printer } from "lucide-react";
 
 export const Route = createFileRoute("/manual")({
   head: () => ({
@@ -75,11 +76,22 @@ const CONTENTS = [
 function ManualPage() {
   return (
     <SiteShell>
-      <article className="max-w-3xl">
+      <article className="max-w-3xl print-doc">
         <header className="mb-6">
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-            User Manual
-          </h1>
+          <div className="flex items-start justify-between gap-3">
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+              User Manual
+            </h1>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="no-print shrink-0 inline-flex items-center gap-1.5 rounded-md border border-border/70 bg-card/60 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-card transition-colors"
+              title="Print or save this manual as a PDF"
+            >
+              <Printer className="h-3.5 w-3.5" />
+              Print / Save as PDF
+            </button>
+          </div>
           <p className="text-sm text-muted-foreground mt-1">
             Everything the app does, why it does it, and how to use it well.
             Written to be read once from top to bottom, then dipped into.

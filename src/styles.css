@@ -106,3 +106,41 @@
   background: radial-gradient(circle at 20% 0%, oklch(0.28 0.06 210 / 0.6), transparent 60%),
               radial-gradient(circle at 80% 100%, oklch(0.28 0.06 260 / 0.5), transparent 60%);
 }
+
+@media print {
+  .no-print,
+  header nav,
+  nav {
+    display: none !important;
+  }
+  footer {
+    color: #444 !important;
+    background: transparent !important;
+    border-color: #bbb !important;
+  }
+  html,
+  body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+  .print-doc,
+  .print-doc * {
+    color: #111 !important;
+    background: transparent !important;
+    border-color: #bbb !important;
+    box-shadow: none !important;
+  }
+  .print-doc {
+    max-width: none !important;
+  }
+  .print-doc section,
+  .print-doc h1,
+  .print-doc h2,
+  .print-doc h3 {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  @page {
+    margin: 16mm;
+  }
+}
