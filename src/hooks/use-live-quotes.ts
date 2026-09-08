@@ -180,7 +180,7 @@ export function useLiveQuotes(tickers: string[]) {
     };
   }, [key.join(",")]);
 
-  const restDiag = (data?.diagnostics ?? null) as FeedDiagnostics | null;
+  const restDiag: FeedDiagnostics | null = null;
   const diagnostics = useMemo(() => {
     if (!streamDiag) return restDiag;
     if (!restDiag) return streamDiag;
