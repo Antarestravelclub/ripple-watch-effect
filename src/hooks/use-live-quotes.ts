@@ -41,6 +41,7 @@ export function useLiveQuotes(tickers: string[]) {
   const fetchQuotes = useServerFn(getQuotes);
   const [live, setLive] = useState<Record<string, LiveQuote>>({});
   const [streaming, setStreaming] = useState(false);
+  const [streamMarketOpen, setStreamMarketOpen] = useState<boolean | null>(null);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const prevCloseRef = useRef<Record<string, number>>({});
 
@@ -137,8 +138,12 @@ export function useLiveQuotes(tickers: string[]) {
 
     const onStatus = (e: MessageEvent) => {
       try {
-        const s = JSON.parse(e.data) as { streaming?: boolean };
+        const s = JSON.parse(e.data) as {
+          streaming?: boolean;
+          marketOpen?: boolean;
+        };
         setStreaming(Boolean(s.streaming));
+        if (typeof s.marketOpen === "boolean") setStreamMarketOpen(s.marketOpen);
       } catch {
         /* ignore */
       }
@@ -152,6 +157,7 @@ export function useLiveQuotes(tickers: string[]) {
     return () => {
       es.close();
       setStreaming(false);
+      setStreamMarketOpen(null);
     };
   }, [key.join(",")]);
 
@@ -159,7 +165,9 @@ export function useLiveQuotes(tickers: string[]) {
     quotes: live,
     isLoading: isLoading && Object.keys(live).length === 0,
     status: (data?.status ?? "ok") as LiveStatus,
-    marketOpen: data?.marketOpen ?? false,
+    // The stream evaluates market hours when it connects. Prefer that fresh
+    // value over a potentially cached REST snapshot from SSR/query hydration.
+    marketOpen: streamMarketOpen ?? data?.marketOpen ?? false,
     streaming,
     updatedAt: updatedAt ?? (dataUpdatedAt || null),
   };
