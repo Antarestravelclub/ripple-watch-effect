@@ -199,3 +199,56 @@ async function logRun(stats: PriceRunStats) {
     error: stats.error,
   });
 }
+
+/**
+ * Reads the shared price store and batch-refreshes any symbol that is missing
+ * or older than `maxAgeMs`. This is the ONLY path to the provider.
+ */
+export async function quotesFor(
+  rawSymbols: string[],
+  maxAgeMs = 15 * 60_000,
+): Promise<Map<string, BatchQuote>> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const symbols = [...new Set(rawSymbols.map((s) => s.trim().toUpperCase()).filter(Boolean))];
+  const out = new Map<string, BatchQuote>();
+  if (symbols.length === 0) return out;
+
+  const { data } = await supabaseAdmin
+    .from("latest_prices")
+    .select("symbol,price,day_high,day_low,prev_close,quote_time,fetch_time")
+    .in("symbol", symbols);
+
+  const cutoff = Date.now() - maxAgeMs;
+  const stale: string[] = [];
+  const bySymbol = new Map(
+    (data ?? []).map((r) => [
+      r.symbol,
+      {
+        row: r,
+        fresh: new Date(r.fetch_time).getTime() >= cutoff,
+      },
+    ]),
+  );
+  for (const s of symbols) {
+    const hit = bySymbol.get(s);
+    if (!hit) {
+      stale.push(s);
+      continue;
+    }
+    out.set(s, {
+      symbol: s,
+      price: Number(hit.row.price),
+      dayHigh: hit.row.day_high != null ? Number(hit.row.day_high) : null,
+      dayLow: hit.row.day_low != null ? Number(hit.row.day_low) : null,
+      prevClose: hit.row.prev_close != null ? Number(hit.row.prev_close) : null,
+      quoteTime: hit.row.quote_time,
+    });
+    if (!hit.fresh) stale.push(s);
+  }
+
+  if (stale.length > 0) {
+    const { quotes } = await refreshLatestPrices(stale);
+    for (const [sym, q] of quotes) out.set(sym, q);
+  }
+  return out;
+}
