@@ -100,10 +100,17 @@ export const Route = createFileRoute("/api/public/stream/quotes")({
             }
 
             if (!socket) {
-              send("status", { status: "ok", streaming: false, marketOpen: open });
+              send("status", {
+                status: "ok",
+                streaming: false,
+                marketOpen: open,
+                diagnostics: getFeedDiagnostics(),
+              });
             }
 
-            const pollMs = socket ? 30_000 : open ? 10_000 : 60_000;
+            // Slower than the provider's per-minute allowance allows for bursts.
+            const pollMs = socket ? 30_000 : open ? 25_000 : 60_000;
+
             const timer = setInterval(async () => {
               if (closed || Date.now() - started > MAX_MS) {
                 clearInterval(timer);
