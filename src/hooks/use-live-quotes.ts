@@ -34,6 +34,18 @@ interface StreamQuote {
  * server-sent stream that applies trades as they print. Falls back to polling
  * when the stream is unavailable or the market is closed.
  */
+export interface FeedDiagnostics {
+  provider: string;
+  lastAttemptAt: string | null;
+  lastSuccessAt: string | null;
+  lastErrorAt: string | null;
+  lastError: string | null;
+  attempts: number;
+  successes: number;
+  failures: number;
+  cachedSymbols: number;
+}
+
 export function useLiveQuotes(tickers: string[]) {
   const key = useMemo(() => [...new Set(tickers.map((t) => t.toUpperCase()))].sort(), [
     tickers.join(","),
@@ -42,8 +54,11 @@ export function useLiveQuotes(tickers: string[]) {
   const [live, setLive] = useState<Record<string, LiveQuote>>({});
   const [streaming, setStreaming] = useState(false);
   const [streamMarketOpen, setStreamMarketOpen] = useState<boolean | null>(null);
+  const [streamStatus, setStreamStatus] = useState<LiveStatus | null>(null);
+  const [streamDiag, setStreamDiag] = useState<FeedDiagnostics | null>(null);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const prevCloseRef = useRef<Record<string, number>>({});
+
 
   const { data, isLoading, dataUpdatedAt } = useQuery({
     queryKey: ["quotes", key.join(",")],
