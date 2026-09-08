@@ -2,6 +2,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { SiteShell } from "@/components/site-shell";
+import { TickerLink } from "@/components/ticker-link";
 import { Sparkline } from "@/components/sparkline";
 import { getSignal } from "@/lib/signals.functions";
 import {
@@ -87,7 +88,7 @@ function SignalDetail() {
           </span>
         </div>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight font-mono">
-          {signal.ticker}
+          <TickerLink symbol={signal.ticker} />
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">{signal.rationale}</p>
         {event && (

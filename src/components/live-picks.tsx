@@ -3,6 +3,7 @@ import { useLiveQuotes, statusLabel } from "@/hooks/use-live-quotes";
 import { LivePrice } from "./live-price";
 import { tickerMeta } from "@/lib/ticker-registry";
 import { NoDataBadge, TickerLabel } from "./ticker-meta-chips";
+import { TickerLink } from "./ticker-link";
 
 function tone(pct: number | null) {
   if (pct === null) return "text-muted-foreground";
@@ -55,7 +56,9 @@ export function LivePicks({
             }
             title={r.thesis}
           >
-            <TickerLabel ticker={r.ticker} showAlt={false} />
+            <TickerLink symbol={r.ticker}>
+              <TickerLabel ticker={r.ticker} showAlt={false} />
+            </TickerLink>
             {r.price !== null ? (
               <>
                 <LivePrice
@@ -99,7 +102,9 @@ export function LivePicks({
             className="flex items-start gap-3 rounded-lg border border-border/60 bg-background/40 px-3 py-2"
           >
             <div className="min-w-[64px]">
-              <TickerLabel ticker={r.ticker} className="text-sm flex-wrap" />
+              <TickerLink symbol={r.ticker}>
+                <TickerLabel ticker={r.ticker} className="text-sm flex-wrap" />
+              </TickerLink>
               <div
                 className={
                   "text-[10px] uppercase tracking-wider " +

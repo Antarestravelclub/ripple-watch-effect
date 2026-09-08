@@ -1,5 +1,6 @@
 import { useLiveQuotes, statusLabel } from "@/hooks/use-live-quotes";
 import { LivePrice } from "./live-price";
+import { TickerLink } from "./ticker-link";
 
 export function WatchlistQuotes({ tickers }: { tickers: string[] }) {
   const { quotes, isLoading, status, streaming, marketOpen, updatedAt } =
@@ -23,7 +24,7 @@ export function WatchlistQuotes({ tickers }: { tickers: string[] }) {
             const q = quotes[t.toUpperCase()];
             return (
               <li key={t} className="flex items-center justify-between gap-3 py-1.5">
-                <span className="font-mono text-xs">{t}</span>
+                <TickerLink symbol={t} className="font-mono text-xs" />
                 {q ? (
                   <span className="flex items-center gap-3 tabular-nums">
                     <LivePrice
