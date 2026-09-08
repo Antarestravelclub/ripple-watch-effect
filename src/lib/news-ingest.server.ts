@@ -152,7 +152,7 @@ export async function runNewsIngest(): Promise<IngestResult> {
   const fresh = candidates.filter((i) => !seen.has(dedupeKeyFor(i)));
   stages.duplicates = candidates.length - fresh.length;
 
-  const { fetchQuoteWithRetry, sleep } = await import("./signal-prices.server");
+  const { fetchQuoteWithRetry } = await import("./signal-prices.server");
   const { tickerMeta } = await import("./ticker-registry");
   const { createSignal, portfolioSettings } = await import("./signal-create.server");
   const portfolio = await portfolioSettings();
@@ -162,9 +162,8 @@ export async function runNewsIngest(): Promise<IngestResult> {
   async function priceFor(symbol: string) {
     const hit = priceCache.get(symbol);
     if (hit) return hit;
-    const out = await fetchQuoteWithRetry(symbol, feedKey);
+    const out = await fetchQuoteWithRetry(symbol);
     priceCache.set(symbol, out);
-    await sleep(200);
     return out;
   }
 

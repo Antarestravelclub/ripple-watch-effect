@@ -4,8 +4,8 @@
 import { eventMagnitudes } from "./event-magnitude.server";
 import { tickerMeta } from "./ticker-registry";
 import { levelsFor, tradingDaysBetween, EXPIRY_TRADING_DAYS, type RippleMagnitude } from "./signal-levels";
-import { fetchQuoteWithRetry, sleep } from "./signal-prices.server";
-import { benchmarkPrice } from "./benchmark.server";
+import { refreshLatestPrices } from "./latest-prices.server";
+import { benchmarkPrice, BENCHMARK_SYMBOL } from "./benchmark.server";
 
 export interface EvalResult {
   evaluated: number;
@@ -28,7 +28,6 @@ interface InvalidationParams {
 
 export async function runEvaluation(): Promise<EvalResult> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const apiKey = process.env.FINNHUB_API_KEY ?? "";
 
   const out: EvalResult = {
     evaluated: 0,
@@ -124,7 +123,7 @@ export async function runEvaluation(): Promise<EvalResult> {
   }
 
   // One benchmark read per run, recorded on every close so alpha is computable.
-  const benchmarkNow = await benchmarkPrice();
+  const benchmarkNow = priceBySymbol.get(BENCHMARK_SYMBOL) ?? (await benchmarkPrice());
 
   const snapshots: Array<{
     signal_id: string;

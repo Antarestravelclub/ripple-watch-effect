@@ -13,7 +13,7 @@ function convictionFromStrength(s: "Low" | "Medium" | "High"): number {
 /** Idempotently seed signals for every event in EVENTS, with a snapshot price. */
 export const ensureSignals = createServerFn({ method: "POST" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { fetchQuoteWithRetry, sleep } = await import("./signal-prices.server");
+  const { fetchQuoteWithRetry } = await import("./signal-prices.server");
   const { levelsFor } = await import("./signal-levels");
   const apiKey = process.env.FINNHUB_API_KEY ?? "";
 
@@ -30,9 +30,8 @@ export const ensureSignals = createServerFn({ method: "POST" }).handler(async ()
   const cache = new Map<string, Outcome>();
   async function getPrice(symbol: string): Promise<Outcome> {
     if (cache.has(symbol)) return cache.get(symbol)!;
-    const r = await fetchQuoteWithRetry(symbol, apiKey);
+    const r = await fetchQuoteWithRetry(symbol);
     cache.set(symbol, r);
-    await sleep(250);
     return r;
   }
 
@@ -100,7 +99,7 @@ export const ensureSignals = createServerFn({ method: "POST" }).handler(async ()
  */
 export const repairSignalPrices = createServerFn({ method: "POST" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { fetchQuoteWithRetry, sleep } = await import("./signal-prices.server");
+  const { fetchQuoteWithRetry } = await import("./signal-prices.server");
   const { levelsFor } = await import("./signal-levels");
   const { eventMagnitudes } = await import("./event-magnitude.server");
   const magnitudeByEvent = await eventMagnitudes();
@@ -141,9 +140,8 @@ export const repairSignalPrices = createServerFn({ method: "POST" }).handler(asy
     }
     let out = cache.get(meta.quote);
     if (!out) {
-      out = await fetchQuoteWithRetry(meta.quote, apiKey);
+      out = await fetchQuoteWithRetry(meta.quote);
       cache.set(meta.quote, out);
-      await sleep(250);
     }
     report.push({ ticker: s.ticker, status: out.status, message: out.message });
 
