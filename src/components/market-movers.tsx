@@ -4,13 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { listSignals } from "@/lib/signals.functions";
+import { getLatestPrices, type PriceFeedRun } from "@/lib/prices.functions";
 import { fmtPct, fmtPrice, pctTone } from "@/lib/signal-metrics";
-import {
-  statusLabel,
-  useLiveQuotes,
-  type FeedDiagnostics,
-} from "@/hooks/use-live-quotes";
-
 
 interface Mover {
   id: string;
@@ -24,12 +19,22 @@ const MAX_SNAPSHOT_AGE_MS = 24 * 60 * 60 * 1000;
 
 export function MarketMovers() {
   const list = useServerFn(listSignals);
+  const prices = useServerFn(getLatestPrices);
+
   const { data, isLoading } = useQuery({
     queryKey: ["signals", "all"],
     queryFn: () => list(),
     staleTime: 30_000,
     refetchInterval: 60_000,
     refetchOnWindowFocus: true,
+  });
+
+  // Single shared price store — this panel never calls the data provider.
+  const { data: feed } = useQuery({
+    queryKey: ["latest-prices"],
+    queryFn: () => prices(),
+    staleTime: 30_000,
+    refetchInterval: 60_000,
   });
 
   // Only open signals with a recent snapshot qualify as "live" moves.
@@ -43,22 +48,11 @@ export function MarketMovers() {
     });
   }, [data]);
 
-  const symbols = useMemo(
-    () => tracked.map((s) => (s.quote_symbol || s.ticker).toUpperCase()),
-    [tracked],
-  );
-  const { quotes, streaming, marketOpen, status, updatedAt, diagnostics } =
-    useLiveQuotes(symbols);
-  const feedBlocked =
-    status === "rate_limited" || status === "no_key" || status === "network_error";
-
-
   const { gainers, decliners } = useMemo(() => {
     const byTicker = new Map<string, Mover>();
     for (const s of tracked) {
       const symbol = (s.quote_symbol || s.ticker).toUpperCase();
-      // Prefer the streamed last price; fall back to the stored snapshot.
-      const price = quotes[symbol]?.price ?? data?.latest[s.id]?.price;
+      const price = feed?.prices[symbol]?.price ?? data?.latest[s.id]?.price;
       if (price == null || !s.signal_price) continue;
       const pct = ((price - s.signal_price) / s.signal_price) * 100;
       if (!isFinite(pct)) continue;
@@ -70,35 +64,42 @@ export function MarketMovers() {
       gainers: all.filter((m) => m.pct > 0).sort((a, b) => b.pct - a.pct).slice(0, 5),
       decliners: all.filter((m) => m.pct < 0).sort((a, b) => a.pct - b.pct).slice(0, 5),
     };
-  }, [tracked, quotes, data]);
+  }, [tracked, feed, data]);
 
   const empty = !isLoading && gainers.length === 0 && decliners.length === 0;
+  const lastRun = feed?.lastRun ?? null;
+  const feedBlocked = Boolean(lastRun && (!lastRun.ok || lastRun.rateLimited > 0));
 
-  // Timestamp on the most recent price actually received, so a stale feed is
-  // visibly different from the market simply being closed.
+  // Timestamp of the newest stored price, so a stale feed is visibly different
+  // from the market simply being closed.
   const lastPriceAt = useMemo(() => {
     let newest = 0;
-    for (const q of Object.values(quotes)) {
-      const t = q?.at ? new Date(q.at).getTime() : 0;
+    for (const p of Object.values(feed?.prices ?? {})) {
+      const t = p.quoteTime ? new Date(p.quoteTime).getTime() : new Date(p.fetchTime).getTime();
       if (t > newest) newest = t;
     }
     return newest || null;
-  }, [quotes]);
+  }, [feed]);
 
   return (
     <section className="rounded-xl border border-border/70 bg-card/60 p-4 mb-5">
       <div className="flex items-baseline justify-between gap-3 mb-3">
         <h2 className="text-sm font-semibold tracking-tight">Market moves</h2>
         <span className="text-[11px] text-muted-foreground">
-          Move since signal snapshot · open signals only ·{" "}
-          {statusLabel(status, { streaming, marketOpen, updatedAt })}
+          Move since signal snapshot · open signals only · delayed
           {" · "}
           {lastPriceAt
             ? `last price ${new Date(lastPriceAt).toLocaleTimeString()}`
             : "no price received yet"}
         </span>
       </div>
-      <FeedDiagnosticsCard diagnostics={diagnostics} blocked={feedBlocked} />
+      <FeedDiagnosticsCard
+        run={lastRun}
+        runs={feed?.runs ?? []}
+        successRate={feed?.successRate ?? null}
+        storedSymbols={Object.keys(feed?.prices ?? {}).length}
+        blocked={feedBlocked}
+      />
 
       {isLoading ? (
         <p className="text-xs text-muted-foreground">Loading price moves…</p>
@@ -106,11 +107,9 @@ export function MarketMovers() {
         <p className="text-xs text-muted-foreground">
           No fresh moves right now —{" "}
           {feedBlocked
-            ? "the price provider is refusing our requests (see feed diagnostics)"
-            : marketOpen
-              ? "awaiting the next price refresh"
-              : "market closed"}
-          . Open signals appear here once a current price is received.
+            ? "the last price fetch did not complete (see feed diagnostics)"
+            : "awaiting the next price refresh"}
+          . Open signals appear here once a current price is stored.
         </p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
@@ -125,7 +124,6 @@ export function MarketMovers() {
     </section>
   );
 }
-
 
 function MoverList({
   title,
@@ -177,18 +175,24 @@ function MoverList({
   );
 }
 
-function timeOrDash(iso: string | null) {
+function timeOrDash(iso: string | null | undefined) {
   return iso ? new Date(iso).toLocaleTimeString() : "—";
 }
 
 function FeedDiagnosticsCard({
-  diagnostics,
+  run,
+  runs,
+  successRate,
+  storedSymbols,
   blocked,
 }: {
-  diagnostics: FeedDiagnostics | null;
+  run: PriceFeedRun | null;
+  runs: PriceFeedRun[];
+  successRate: number | null;
+  storedSymbols: number;
   blocked: boolean;
 }) {
-  if (!diagnostics) return null;
+  const rateLimited = runs.reduce((n, r) => n + r.rateLimited, 0);
   return (
     <div
       className={
@@ -200,30 +204,35 @@ function FeedDiagnosticsCard({
     >
       <div className="font-medium mb-1">Feed diagnostics</div>
       <dl className="grid gap-x-4 gap-y-0.5 sm:grid-cols-2">
-        <div className="flex justify-between gap-2">
-          <dt>Provider</dt>
-          <dd className="font-mono">{diagnostics.provider}</dd>
-        </div>
-        <div className="flex justify-between gap-2">
-          <dt>Last fetch attempt</dt>
-          <dd className="font-mono">{timeOrDash(diagnostics.lastAttemptAt)}</dd>
-        </div>
-        <div className="flex justify-between gap-2">
-          <dt>Last successful price</dt>
-          <dd className="font-mono">{timeOrDash(diagnostics.lastSuccessAt)}</dd>
-        </div>
-        <div className="flex justify-between gap-2">
-          <dt>Attempts / ok / failed</dt>
-          <dd className="font-mono">
-            {diagnostics.attempts} / {diagnostics.successes} / {diagnostics.failures}
-          </dd>
-        </div>
+        <Item label="Source" value={run?.source ?? "—"} />
+        <Item label="Last fetch" value={timeOrDash(run?.finishedAt)} />
+        <Item
+          label="Symbols / requests (last run)"
+          value={run ? `${run.symbolsRequested} / ${run.requestsMade}` : "—"}
+        />
+        <Item
+          label="Priced / missed (last run)"
+          value={run ? `${run.succeeded} / ${run.failed}` : "—"}
+        />
+        <Item label="Rate limits (last 10 runs)" value={String(rateLimited)} />
+        <Item
+          label="Success rate (last 10 runs)"
+          value={successRate == null ? "—" : `${successRate}%`}
+        />
+        <Item label="Symbols stored" value={String(storedSymbols)} />
       </dl>
-      {diagnostics.lastError ? (
-        <p className="mt-1 font-mono text-headwind">
-          Last error {timeOrDash(diagnostics.lastErrorAt)}: {diagnostics.lastError}
-        </p>
+      {run?.error ? (
+        <p className="mt-1 font-mono text-headwind">Last error: {run.error}</p>
       ) : null}
+    </div>
+  );
+}
+
+function Item({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between gap-2">
+      <dt>{label}</dt>
+      <dd className="font-mono">{value}</dd>
     </div>
   );
 }

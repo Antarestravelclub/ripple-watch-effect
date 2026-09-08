@@ -16,6 +16,7 @@ import {
   rMultiple,
 } from "@/lib/signal-metrics";
 import { ConvictionBreakdownList } from "@/components/conviction-chip";
+import { TradingViewChart } from "@/components/tradingview";
 
 import { useLiveEvents } from "@/hooks/use-live-events";
 import { ArrowLeft, Clock } from "lucide-react";
@@ -220,6 +221,29 @@ function SignalDetail() {
           direction={signal.direction}
         />
       </div>
+
+      <div className="rounded-xl border border-border/70 bg-card/60 p-4 mb-4">
+        <TradingViewChart symbol={signal.quote_symbol || signal.ticker} />
+        <dl className="mt-3 grid gap-x-6 gap-y-1 sm:grid-cols-2 text-xs">
+          <Row label="Our entry reference" value={fmtPrice(signal.signal_price)} />
+          <Row label="Our stop" value={fmtPrice(signal.stop_price ?? null)} />
+          <Row label="Our target" value={fmtPrice(signal.target_price)} />
+          <Row
+            label="Our invalidation"
+            value={fmtPrice(signal.invalidation_price ?? null)}
+          />
+        </dl>
+        {signal.invalidation_text && (
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            Kill condition: {signal.invalidation_text}
+          </p>
+        )}
+        <p className="mt-2 text-[11px] text-muted-foreground/80">
+          The chart above is an external display pane. Our levels come from the signal
+          record, not from the chart.
+        </p>
+      </div>
+
 
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">

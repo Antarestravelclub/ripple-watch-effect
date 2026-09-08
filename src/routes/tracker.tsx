@@ -11,6 +11,7 @@ import { type EventCategory } from "@/lib/ripple-data";
 import { useLiveEvents } from "@/hooks/use-live-events";
 import { useWatchlist } from "@/lib/watchlist-store";
 import { RefreshCw } from "lucide-react";
+import { TradingViewWatchlist } from "@/components/tradingview";
 
 export const Route = createFileRoute("/tracker")({
   head: () => ({
@@ -71,6 +72,20 @@ function TrackerPage() {
     () => new Map(liveEvents.map((e) => [e.id, e])),
     [liveEvents],
   );
+
+  // Up to 20 highest-conviction open tickers, for the display-only chart pane.
+  const chartSymbols = useMemo(() => {
+    const open = data.signals
+      .filter((s) => s.status === "open")
+      .sort((a, b) => (b.conviction_score ?? 0) - (a.conviction_score ?? 0));
+    const out: string[] = [];
+    for (const s of open) {
+      const sym = (s.quote_symbol || s.ticker).toUpperCase();
+      if (!out.includes(sym)) out.push(sym);
+      if (out.length >= 20) break;
+    }
+    return out;
+  }, [data.signals]);
 
   const rows = useMemo(() => {
     const enriched = data.signals.map((s) => {
@@ -189,6 +204,15 @@ function TrackerPage() {
           Watchlist only
         </label>
       </div>
+
+      {chartSymbols.length > 0 && (
+        <div className="mb-4 rounded-xl border border-border/70 bg-card/60 p-4">
+          <TradingViewWatchlist symbols={chartSymbols} />
+          <p className="mt-2 text-[11px] text-muted-foreground/80">
+            External display pane — our engine prices come from our own price store.
+          </p>
+        </div>
+      )}
 
       {empty ? (
         <div className="rounded-xl border border-dashed border-border/70 bg-card/40 p-8 text-center text-sm text-muted-foreground">

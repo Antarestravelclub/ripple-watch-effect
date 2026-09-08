@@ -13,9 +13,8 @@ function convictionFromStrength(s: "Low" | "Medium" | "High"): number {
 /** Idempotently seed signals for every event in EVENTS, with a snapshot price. */
 export const ensureSignals = createServerFn({ method: "POST" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { fetchQuoteWithRetry, sleep } = await import("./signal-prices.server");
+  const { fetchQuoteWithRetry } = await import("./signal-prices.server");
   const { levelsFor } = await import("./signal-levels");
-  const apiKey = process.env.FINNHUB_API_KEY ?? "";
 
   const { data: existing } = await supabaseAdmin
     .from("signals")
@@ -30,9 +29,8 @@ export const ensureSignals = createServerFn({ method: "POST" }).handler(async ()
   const cache = new Map<string, Outcome>();
   async function getPrice(symbol: string): Promise<Outcome> {
     if (cache.has(symbol)) return cache.get(symbol)!;
-    const r = await fetchQuoteWithRetry(symbol, apiKey);
+    const r = await fetchQuoteWithRetry(symbol);
     cache.set(symbol, r);
-    await sleep(250);
     return r;
   }
 
@@ -100,17 +98,10 @@ export const ensureSignals = createServerFn({ method: "POST" }).handler(async ()
  */
 export const repairSignalPrices = createServerFn({ method: "POST" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { fetchQuoteWithRetry, sleep } = await import("./signal-prices.server");
+  const { fetchQuoteWithRetry } = await import("./signal-prices.server");
   const { levelsFor } = await import("./signal-levels");
   const { eventMagnitudes } = await import("./event-magnitude.server");
   const magnitudeByEvent = await eventMagnitudes();
-  const apiKey = process.env.FINNHUB_API_KEY ?? "";
-  if (!apiKey)
-    return {
-      repaired: 0,
-      flagged: 0,
-      report: [{ ticker: "*", status: "no_key", message: "Market feed key not configured" }],
-    };
 
   const { data: rows, error } = await supabaseAdmin
     .from("signals")
@@ -141,9 +132,8 @@ export const repairSignalPrices = createServerFn({ method: "POST" }).handler(asy
     }
     let out = cache.get(meta.quote);
     if (!out) {
-      out = await fetchQuoteWithRetry(meta.quote, apiKey);
+      out = await fetchQuoteWithRetry(meta.quote);
       cache.set(meta.quote, out);
-      await sleep(250);
     }
     report.push({ ticker: s.ticker, status: out.status, message: out.message });
 
@@ -190,7 +180,6 @@ export const repairSignalPrices = createServerFn({ method: "POST" }).handler(asy
 /** Validates every ticker used by the app against the price source. */
 export const validateTickers = createServerFn({ method: "POST" }).handler(async () => {
   const { resolveMany } = await import("./signal-prices.server");
-  const apiKey = process.env.FINNHUB_API_KEY ?? "";
   const keys = new Set<string>();
   for (const ev of EVENTS)
     for (const g of [...ev.tailwinds, ...ev.headwinds])
@@ -198,10 +187,7 @@ export const validateTickers = createServerFn({ method: "POST" }).handler(async 
 
   const metas = [...keys].map((k) => tickerMeta(k));
   const quotable = metas.filter((m) => m.tradable);
-  const resolved = await resolveMany(
-    quotable.map((m) => m.quote),
-    apiKey,
-  );
+  const resolved = await resolveMany(quotable.map((m) => m.quote));
 
   const rows = metas.map((m) => {
     if (!m.tradable)
