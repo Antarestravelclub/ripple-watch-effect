@@ -2,6 +2,14 @@
 // No secrets, no server-only imports — safe to import from React components.
 import type { ConvictionBreakdown } from "./conviction";
 
+/** Machine-checkable kill conditions attached to a signal. */
+export interface InvalidationParams {
+  max_days_open?: number;
+  close_beyond?: number;
+  direction?: "above" | "below";
+  event_reversed?: boolean;
+}
+
 /** Every state a tracked signal can be in. */
 export type SignalStatus = "open" | "closed" | "stopped" | "invalidated";
 
@@ -33,7 +41,7 @@ export interface SignalRow {
   atr_at_signal?: number | null;
   stop_price?: number | null;
   invalidation_text?: string | null;
-  invalidation_params?: Record<string, unknown> | null;
+  invalidation_params?: InvalidationParams | null;
   benchmark_symbol?: string | null;
   benchmark_entry_price?: number | null;
   benchmark_entry_estimated?: boolean | null;

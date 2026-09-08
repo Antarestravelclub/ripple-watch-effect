@@ -117,7 +117,7 @@ export async function createSignal(
       direction: input.direction,
       conviction: input.confidence === "High" ? 5 : input.confidence === "Medium" ? 3 : 2,
       conviction_score: breakdown.total,
-      conviction_breakdown: breakdown,
+      conviction_breakdown: { ...breakdown } as unknown as Record<string, number | boolean | null>,
       rationale: input.rationale,
       generated_by: input.generatedBy,
       signal_price: input.entryPrice,

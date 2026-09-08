@@ -21,7 +21,12 @@ export async function backfillBenchmarks(limit = 500): Promise<BackfillResult> {
 
   for (const s of rows ?? []) {
     out.scanned++;
-    const patch: Record<string, unknown> = {};
+    const patch: {
+      benchmark_symbol?: string;
+      benchmark_entry_price?: number;
+      benchmark_entry_estimated?: boolean;
+      benchmark_exit_price?: number;
+    } = {};
     if (s.benchmark_entry_price == null) {
       const entry = await benchmarkCloseAt(s.signal_timestamp);
       if (entry != null) {
