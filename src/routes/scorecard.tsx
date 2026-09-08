@@ -445,3 +445,163 @@ function PerfList({
     </div>
   );
 }
+
+/**
+ * Benchmark section — the honest number. Every closed signal is measured
+ * against the index over the identical holding window; alpha is the headline.
+ */
+function BenchmarkSection({
+  signals,
+}: {
+  signals: Array<{ signal: SignalRow; category: string }>;
+}) {
+  const getSettings = useServerFn(getPortfolioSettings);
+  const { data: settings } = useQuery({
+    queryKey: ["portfolio-settings"],
+    queryFn: () => getSettings(),
+    staleTime: 600_000,
+  });
+  const notional = settings?.notional_value ?? DEFAULT_PORTFOLIO.notional_value;
+
+  const closed = useMemo(
+    () =>
+      signals
+        .filter((r) => r.signal.status !== "open" && alphaPct(r.signal) != null)
+        .map((r) => ({
+          ...r,
+          ret: realisedPct(r.signal) ?? 0,
+          bench: benchmarkPct(r.signal) ?? 0,
+          alpha: alphaPct(r.signal) ?? 0,
+          r: rMultiple(r.signal),
+          pnl: paperPnl(r.signal, notional),
+        })),
+    [signals, notional],
+  );
+
+  const n = closed.length;
+  const cumulativeAlpha = closed.reduce((a, b) => a + b.alpha, 0);
+  const totalPnl = closed.reduce((a, b) => a + (b.pnl ?? 0), 0);
+  const wins = closed.filter((c) => c.ret > 0).length;
+  const winRate = n > 0 ? (wins / n) * 100 : null;
+  const rValues = closed.map((c) => c.r).filter((v): v is number => v != null);
+  const avgR =
+    rValues.length > 0 ? rValues.reduce((a, b) => a + b, 0) / rValues.length : null;
+
+  const byCategory = useMemo(() => {
+    const m = new Map<string, { n: number; alpha: number }>();
+    for (const c of closed) {
+      const rec = m.get(c.category) ?? { n: 0, alpha: 0 };
+      rec.n++;
+      rec.alpha += c.alpha;
+      m.set(c.category, rec);
+    }
+    return [...m.entries()].sort((a, b) => b[1].alpha - a[1].alpha);
+  }, [closed]);
+
+  const byBand = useMemo(() => {
+    const bands: ConvictionBand[] = ["high", "medium", "low", "below"];
+    return bands.map((band) => {
+      const rows = closed.filter(
+        (c) =>
+          (c.signal.below_threshold ? "below" : convictionBand(c.signal.conviction_score)) ===
+          band,
+      );
+      return {
+        band,
+        n: rows.length,
+        alpha: rows.reduce((a, b) => a + b.alpha, 0),
+      };
+    });
+  }, [closed]);
+
+  return (
+    <section className="mb-6">
+      <div className="rounded-xl border border-primary/40 bg-primary/5 p-5">
+        <div className="flex items-baseline justify-between gap-3 flex-wrap">
+          <div>
+            <h2 className="text-xs uppercase tracking-wider text-muted-foreground">
+              Cumulative alpha vs {closed[0]?.signal.benchmark_symbol ?? "SPY"}
+            </h2>
+            <div
+              className={
+                "mt-1 text-4xl font-mono tabular-nums " + pctTone(n > 0 ? cumulativeAlpha : null)
+              }
+            >
+              {n > 0 ? fmtPct(cumulativeAlpha) : "—"}
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Sum of each closed paper signal's return minus the index over the
+              identical holding window · {n} closed signal{n === 1 ? "" : "s"}
+            </p>
+          </div>
+          <div className="grid grid-cols-3 gap-3 min-w-[260px]">
+            <Kpi
+              label="Paper P/L"
+              value={n > 0 ? "$" + Math.round(totalPnl).toLocaleString() : "—"}
+              tone={pctTone(n > 0 ? totalPnl : null)}
+              sub={`on $${Math.round(notional).toLocaleString()} notional`}
+            />
+            <Kpi
+              label="Win rate"
+              value={winRate == null ? "—" : winRate.toFixed(0) + "%"}
+            />
+            <Kpi label="Avg R" value={avgR == null ? "—" : avgR.toFixed(2) + "R"} />
+          </div>
+        </div>
+
+        {n > 0 && cumulativeAlpha < 0 && (
+          <p className="mt-4 rounded-md border border-headwind/40 bg-headwind/10 px-3 py-2 text-xs text-headwind">
+            Strategy currently underperforms holding the index.
+          </p>
+        )}
+
+        <div className="mt-4 grid md:grid-cols-2 gap-4">
+          <div>
+            <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
+              Alpha by event category
+            </h3>
+            <ul className="space-y-1 text-xs">
+              {byCategory.length === 0 && (
+                <li className="text-muted-foreground">No closed signals yet.</li>
+              )}
+              {byCategory.map(([cat, rec]) => (
+                <li key={cat} className="flex items-baseline justify-between gap-3">
+                  <span>
+                    {cat}{" "}
+                    <span className="text-muted-foreground">({rec.n})</span>
+                  </span>
+                  <span className={"font-mono tabular-nums " + pctTone(rec.alpha)}>
+                    {fmtPct(rec.alpha)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
+              Alpha by conviction band
+            </h3>
+            <ul className="space-y-1 text-xs">
+              {byBand.map((b) => (
+                <li key={b.band} className="flex items-baseline justify-between gap-3">
+                  <span>
+                    {BAND_LABEL[b.band]}{" "}
+                    <span className="text-muted-foreground">({b.n})</span>
+                  </span>
+                  <span className={"font-mono tabular-nums " + pctTone(b.n ? b.alpha : null)}>
+                    {b.n ? fmtPct(b.alpha) : "—"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <p className="mt-4 text-[11px] text-muted-foreground italic">
+          All signals are paper only — no orders are placed anywhere. Alpha is
+          computed from delayed prices and is not a track record.
+        </p>
+      </div>
+    </section>
+  );
+}
