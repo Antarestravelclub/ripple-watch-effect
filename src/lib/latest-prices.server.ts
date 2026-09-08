@@ -88,10 +88,19 @@ async function fetchChunk(
         continue;
       }
       if (!res.ok) {
+        // A single unknown symbol makes the provider reject the whole batch.
+        // Bisect so one bad ticker can't cost us the other 49 prices.
+        if (symbols.length > 1) {
+          const mid = Math.ceil(symbols.length / 2);
+          const left = await fetchChunk(symbols.slice(0, mid), stats);
+          const right = await fetchChunk(symbols.slice(mid), stats);
+          return [...left, ...right];
+        }
         stats.failed += symbols.length;
-        stats.error = `HTTP ${res.status} from ${PRICE_SOURCE}`;
+        stats.error = `HTTP ${res.status} from ${PRICE_SOURCE} (${symbols[0]})`;
         return [];
       }
+
       const json = (await res.json()) as {
         spark?: { result?: Array<{ response?: Array<{ meta?: SparkMeta }> }> };
       };
