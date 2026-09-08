@@ -232,6 +232,45 @@ export type Database = {
         }
         Relationships: []
       }
+      latest_prices: {
+        Row: {
+          created_at: string
+          day_high: number | null
+          day_low: number | null
+          fetch_time: string
+          prev_close: number | null
+          price: number
+          quote_time: string | null
+          source: string
+          symbol: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_high?: number | null
+          day_low?: number | null
+          fetch_time?: string
+          prev_close?: number | null
+          price: number
+          quote_time?: string | null
+          source?: string
+          symbol: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_high?: number | null
+          day_low?: number | null
+          fetch_time?: string
+          prev_close?: number | null
+          price?: number
+          quote_time?: string | null
+          source?: string
+          symbol?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       live_event_exposures: {
         Row: {
           company_name: string | null
@@ -363,6 +402,48 @@ export type Database = {
           notional_value?: number
           risk_per_trade_pct?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      price_fetch_runs: {
+        Row: {
+          created_at: string
+          error: string | null
+          failed: number
+          finished_at: string
+          id: string
+          ok: boolean
+          rate_limited: number
+          requests_made: number
+          source: string
+          succeeded: number
+          symbols_requested: number
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          failed?: number
+          finished_at?: string
+          id?: string
+          ok?: boolean
+          rate_limited?: number
+          requests_made?: number
+          source?: string
+          succeeded?: number
+          symbols_requested?: number
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          failed?: number
+          finished_at?: string
+          id?: string
+          ok?: boolean
+          rate_limited?: number
+          requests_made?: number
+          source?: string
+          succeeded?: number
+          symbols_requested?: number
         }
         Relationships: []
       }
