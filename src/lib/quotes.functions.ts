@@ -36,43 +36,61 @@ export const getQuote = createServerFn({ method: "POST" })
     return { quote, profile, status: res.status, marketOpen: isUsMarketOpen() };
   });
 
+/**
+ * Multi-symbol quotes, served from the shared latest_prices store. Display
+ * components never call the market-data provider directly — one batched fetch
+ * fills the store and everyone reads from it.
+ */
 export const getQuotes = createServerFn({ method: "POST" })
   .inputValidator((data: { tickers: string[] }) => ({
     tickers: (data.tickers ?? [])
-      .slice(0, 25)
+      .slice(0, 60)
       .map((t) => String(t).toUpperCase().slice(0, 16))
       .filter(Boolean),
   }))
   .handler(async ({ data }) => {
-    const apiKey = process.env.FINNHUB_API_KEY;
-    const { fetchQuotesBatch, isUsMarketOpen, getFeedDiagnostics, QUOTE_PROVIDER } =
-      await import("./quotes.server");
-    type Q = Awaited<ReturnType<typeof fetchQuotesBatch>>["quotes"][string];
-    if (!apiKey)
-      return {
-        quotes: {} as Record<string, Q>,
-        status: "no_key" as const,
-        marketOpen: false,
-        at: new Date().toISOString(),
-        diagnostics: {
-          provider: QUOTE_PROVIDER,
-          lastAttemptAt: null,
-          lastSuccessAt: null,
-          lastErrorAt: new Date().toISOString(),
-          lastError: "No provider API key configured",
-          attempts: 0,
-          successes: 0,
-          failures: 0,
-          cachedSymbols: 0,
-        },
+    const { quotesFor } = await import("./latest-prices.server");
+    const { isUsMarketOpen } = await import("./quotes.server");
+    type Q = {
+      price: number;
+      change: number;
+      changePct: number;
+      high: number;
+      low: number;
+      open: number;
+      prevClose: number;
+      currency: string | null;
+      at: string;
+    };
+    const stored = await quotesFor(data.tickers);
+    const quotes: Record<string, Q | null> = {};
+    for (const t of data.tickers) {
+      const q = stored.get(t);
+      if (!q) {
+        quotes[t] = null;
+        continue;
+      }
+      const prev = q.prevClose ?? q.price;
+      quotes[t] = {
+        price: q.price,
+        change: +(q.price - prev).toFixed(4),
+        changePct: prev ? +(((q.price - prev) / prev) * 100).toFixed(3) : 0,
+        high: q.dayHigh ?? q.price,
+        low: q.dayLow ?? q.price,
+        open: prev,
+        prevClose: prev,
+        currency: null,
+        at: q.quoteTime ?? new Date().toISOString(),
       };
-    const { quotes, status } = await fetchQuotesBatch(data.tickers, apiKey);
+    }
     return {
       quotes,
-      status,
+      status: (Object.values(quotes).some(Boolean) ? "ok" : "unsupported_symbol") as
+        | "ok"
+        | "unsupported_symbol",
       marketOpen: isUsMarketOpen(),
       at: new Date().toISOString(),
-      diagnostics: getFeedDiagnostics(),
     };
   });
+
 
