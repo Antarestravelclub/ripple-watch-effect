@@ -128,7 +128,7 @@ function SignalDetail() {
               <Row label="Entry reference" value={fmtPrice(signal.signal_price)} />
               <Row
                 label="Stop (1.5× ATR)"
-                value={fmtPrice(signal.stop_price)}
+                value={fmtPrice(signal.stop_price ?? null)}
                 tone="text-headwind"
               />
               <Row
