@@ -34,6 +34,18 @@ interface StreamQuote {
  * server-sent stream that applies trades as they print. Falls back to polling
  * when the stream is unavailable or the market is closed.
  */
+export interface FeedDiagnostics {
+  provider: string;
+  lastAttemptAt: string | null;
+  lastSuccessAt: string | null;
+  lastErrorAt: string | null;
+  lastError: string | null;
+  attempts: number;
+  successes: number;
+  failures: number;
+  cachedSymbols: number;
+}
+
 export function useLiveQuotes(tickers: string[]) {
   const key = useMemo(() => [...new Set(tickers.map((t) => t.toUpperCase()))].sort(), [
     tickers.join(","),
@@ -42,8 +54,11 @@ export function useLiveQuotes(tickers: string[]) {
   const [live, setLive] = useState<Record<string, LiveQuote>>({});
   const [streaming, setStreaming] = useState(false);
   const [streamMarketOpen, setStreamMarketOpen] = useState<boolean | null>(null);
+  const [streamStatus, setStreamStatus] = useState<LiveStatus | null>(null);
+  const [streamDiag, setStreamDiag] = useState<FeedDiagnostics | null>(null);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const prevCloseRef = useRef<Record<string, number>>({});
+
 
   const { data, isLoading, dataUpdatedAt } = useQuery({
     queryKey: ["quotes", key.join(",")],
@@ -141,9 +156,13 @@ export function useLiveQuotes(tickers: string[]) {
         const s = JSON.parse(e.data) as {
           streaming?: boolean;
           marketOpen?: boolean;
+          status?: LiveStatus;
+          diagnostics?: FeedDiagnostics;
         };
         setStreaming(Boolean(s.streaming));
         if (typeof s.marketOpen === "boolean") setStreamMarketOpen(s.marketOpen);
+        if (s.status) setStreamStatus(s.status);
+        if (s.diagnostics) setStreamDiag(s.diagnostics);
       } catch {
         /* ignore */
       }
@@ -161,17 +180,34 @@ export function useLiveQuotes(tickers: string[]) {
     };
   }, [key.join(",")]);
 
+  const restDiag = (data?.diagnostics ?? null) as FeedDiagnostics | null;
+  const diagnostics = useMemo(() => {
+    if (!streamDiag) return restDiag;
+    if (!restDiag) return streamDiag;
+    const newer = (a: string | null, b: string | null) =>
+      (a ?? "") >= (b ?? "") ? a : b;
+    const streamWins =
+      (streamDiag.lastAttemptAt ?? "") >= (restDiag.lastAttemptAt ?? "");
+    return {
+      ...(streamWins ? streamDiag : restDiag),
+      lastSuccessAt: newer(streamDiag.lastSuccessAt, restDiag.lastSuccessAt),
+      lastAttemptAt: newer(streamDiag.lastAttemptAt, restDiag.lastAttemptAt),
+    } as FeedDiagnostics;
+  }, [streamDiag, restDiag]);
+
   return {
     quotes: live,
     isLoading: isLoading && Object.keys(live).length === 0,
-    status: (data?.status ?? "ok") as LiveStatus,
+    status: (streamStatus ?? data?.status ?? "ok") as LiveStatus,
     // The stream evaluates market hours when it connects. Prefer that fresh
     // value over a potentially cached REST snapshot from SSR/query hydration.
     marketOpen: streamMarketOpen ?? data?.marketOpen ?? false,
     streaming,
     updatedAt: updatedAt ?? (dataUpdatedAt || null),
+    diagnostics,
   };
 }
+
 
 export function statusLabel(
   status: LiveStatus,

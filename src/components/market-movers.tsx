@@ -5,7 +5,12 @@ import { Link } from "@tanstack/react-router";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { listSignals } from "@/lib/signals.functions";
 import { fmtPct, fmtPrice, pctTone } from "@/lib/signal-metrics";
-import { statusLabel, useLiveQuotes } from "@/hooks/use-live-quotes";
+import {
+  statusLabel,
+  useLiveQuotes,
+  type FeedDiagnostics,
+} from "@/hooks/use-live-quotes";
+
 
 interface Mover {
   id: string;
@@ -42,7 +47,11 @@ export function MarketMovers() {
     () => tracked.map((s) => (s.quote_symbol || s.ticker).toUpperCase()),
     [tracked],
   );
-  const { quotes, streaming, marketOpen, status, updatedAt } = useLiveQuotes(symbols);
+  const { quotes, streaming, marketOpen, status, updatedAt, diagnostics } =
+    useLiveQuotes(symbols);
+  const feedBlocked =
+    status === "rate_limited" || status === "no_key" || status === "network_error";
+
 
   const { gainers, decliners } = useMemo(() => {
     const byTicker = new Map<string, Mover>();
@@ -89,15 +98,19 @@ export function MarketMovers() {
             : "no price received yet"}
         </span>
       </div>
-
+      <FeedDiagnosticsCard diagnostics={diagnostics} blocked={feedBlocked} />
 
       {isLoading ? (
         <p className="text-xs text-muted-foreground">Loading price moves…</p>
       ) : empty ? (
         <p className="text-xs text-muted-foreground">
           No fresh moves right now —{" "}
-          {marketOpen ? "awaiting the next price refresh" : "market closed"}. Open signals
-          appear here once a current price is received.
+          {feedBlocked
+            ? "the price provider is refusing our requests (see feed diagnostics)"
+            : marketOpen
+              ? "awaiting the next price refresh"
+              : "market closed"}
+          . Open signals appear here once a current price is received.
         </p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
@@ -105,6 +118,7 @@ export function MarketMovers() {
           <MoverList title="Drops" icon="down" movers={decliners} />
         </div>
       )}
+
       <p className="mt-3 text-[11px] text-muted-foreground/80">
         Observed movement only — historical context, not a prediction or advice.
       </p>
@@ -159,6 +173,57 @@ function MoverList({
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+function timeOrDash(iso: string | null) {
+  return iso ? new Date(iso).toLocaleTimeString() : "—";
+}
+
+function FeedDiagnosticsCard({
+  diagnostics,
+  blocked,
+}: {
+  diagnostics: FeedDiagnostics | null;
+  blocked: boolean;
+}) {
+  if (!diagnostics) return null;
+  return (
+    <div
+      className={
+        "mb-3 rounded-lg border px-3 py-2 text-[11px] " +
+        (blocked
+          ? "border-headwind/50 bg-headwind/10 text-foreground"
+          : "border-border/60 bg-background/40 text-muted-foreground")
+      }
+    >
+      <div className="font-medium mb-1">Feed diagnostics</div>
+      <dl className="grid gap-x-4 gap-y-0.5 sm:grid-cols-2">
+        <div className="flex justify-between gap-2">
+          <dt>Provider</dt>
+          <dd className="font-mono">{diagnostics.provider}</dd>
+        </div>
+        <div className="flex justify-between gap-2">
+          <dt>Last fetch attempt</dt>
+          <dd className="font-mono">{timeOrDash(diagnostics.lastAttemptAt)}</dd>
+        </div>
+        <div className="flex justify-between gap-2">
+          <dt>Last successful price</dt>
+          <dd className="font-mono">{timeOrDash(diagnostics.lastSuccessAt)}</dd>
+        </div>
+        <div className="flex justify-between gap-2">
+          <dt>Attempts / ok / failed</dt>
+          <dd className="font-mono">
+            {diagnostics.attempts} / {diagnostics.successes} / {diagnostics.failures}
+          </dd>
+        </div>
+      </dl>
+      {diagnostics.lastError ? (
+        <p className="mt-1 font-mono text-headwind">
+          Last error {timeOrDash(diagnostics.lastErrorAt)}: {diagnostics.lastError}
+        </p>
+      ) : null}
     </div>
   );
 }

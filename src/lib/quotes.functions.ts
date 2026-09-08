@@ -45,23 +45,34 @@ export const getQuotes = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }) => {
     const apiKey = process.env.FINNHUB_API_KEY;
-    const { fetchQuote, isUsMarketOpen } = await import("./quotes.server");
-    type Q = Awaited<ReturnType<typeof fetchQuote>>["quote"];
+    const { fetchQuotesBatch, isUsMarketOpen, getFeedDiagnostics, QUOTE_PROVIDER } =
+      await import("./quotes.server");
+    type Q = Awaited<ReturnType<typeof fetchQuotesBatch>>["quotes"][string];
     if (!apiKey)
       return {
         quotes: {} as Record<string, Q>,
         status: "no_key" as const,
         marketOpen: false,
         at: new Date().toISOString(),
+        diagnostics: {
+          provider: QUOTE_PROVIDER,
+          lastAttemptAt: null,
+          lastSuccessAt: null,
+          lastErrorAt: new Date().toISOString(),
+          lastError: "No provider API key configured",
+          attempts: 0,
+          successes: 0,
+          failures: 0,
+          cachedSymbols: 0,
+        },
       };
-    const results = await Promise.all(
-      data.tickers.map(async (t) => [t, await fetchQuote(t, apiKey)] as const),
-    );
-    const quotes: Record<string, Q> = {};
-    let status: (typeof results)[number][1]["status"] = "ok";
-    for (const [t, r] of results) {
-      quotes[t] = r.quote;
-      if (r.status === "rate_limited" || r.status === "network_error") status = r.status;
-    }
-    return { quotes, status, marketOpen: isUsMarketOpen(), at: new Date().toISOString() };
+    const { quotes, status } = await fetchQuotesBatch(data.tickers, apiKey);
+    return {
+      quotes,
+      status,
+      marketOpen: isUsMarketOpen(),
+      at: new Date().toISOString(),
+      diagnostics: getFeedDiagnostics(),
+    };
   });
+
