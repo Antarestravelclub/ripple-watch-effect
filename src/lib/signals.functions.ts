@@ -15,7 +15,6 @@ export const ensureSignals = createServerFn({ method: "POST" }).handler(async ()
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { fetchQuoteWithRetry } = await import("./signal-prices.server");
   const { levelsFor } = await import("./signal-levels");
-  const apiKey = process.env.FINNHUB_API_KEY ?? "";
 
   const { data: existing } = await supabaseAdmin
     .from("signals")
@@ -103,13 +102,6 @@ export const repairSignalPrices = createServerFn({ method: "POST" }).handler(asy
   const { levelsFor } = await import("./signal-levels");
   const { eventMagnitudes } = await import("./event-magnitude.server");
   const magnitudeByEvent = await eventMagnitudes();
-  const apiKey = process.env.FINNHUB_API_KEY ?? "";
-  if (!apiKey)
-    return {
-      repaired: 0,
-      flagged: 0,
-      report: [{ ticker: "*", status: "no_key", message: "Market feed key not configured" }],
-    };
 
   const { data: rows, error } = await supabaseAdmin
     .from("signals")
@@ -188,7 +180,6 @@ export const repairSignalPrices = createServerFn({ method: "POST" }).handler(asy
 /** Validates every ticker used by the app against the price source. */
 export const validateTickers = createServerFn({ method: "POST" }).handler(async () => {
   const { resolveMany } = await import("./signal-prices.server");
-  const apiKey = process.env.FINNHUB_API_KEY ?? "";
   const keys = new Set<string>();
   for (const ev of EVENTS)
     for (const g of [...ev.tailwinds, ...ev.headwinds])
@@ -196,10 +187,7 @@ export const validateTickers = createServerFn({ method: "POST" }).handler(async 
 
   const metas = [...keys].map((k) => tickerMeta(k));
   const quotable = metas.filter((m) => m.tradable);
-  const resolved = await resolveMany(
-    quotable.map((m) => m.quote),
-    apiKey,
-  );
+  const resolved = await resolveMany(quotable.map((m) => m.quote));
 
   const rows = metas.map((m) => {
     if (!m.tradable)
