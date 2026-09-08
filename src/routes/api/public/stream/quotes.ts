@@ -31,7 +31,9 @@ export const Route = createFileRoute("/api/public/stream/quotes")({
           );
         }
 
-        const { fetchQuote, isUsMarketOpen } = await import("@/lib/quotes.server");
+        const { fetchQuotesBatch, isUsMarketOpen, getFeedDiagnostics } = await import(
+          "@/lib/quotes.server"
+        );
         const MAX_MS = 4 * 60_000;
         const started = Date.now();
 
@@ -53,19 +55,18 @@ export const Route = createFileRoute("/api/public/stream/quotes")({
             let socket: WebSocket | null = null;
 
             const snapshot = async () => {
-              const entries = await Promise.all(
-                symbols.map(async (s) => {
-                  const r = await fetchQuote(s, apiKey);
-                  return [s, r.quote] as const;
-                }),
-              );
-              send("snapshot", {
-                quotes: Object.fromEntries(entries),
-                at: new Date().toISOString(),
+              const { quotes, status } = await fetchQuotesBatch(symbols, apiKey);
+              send("snapshot", { quotes, at: new Date().toISOString() });
+              send("status", {
+                status,
+                streaming: Boolean(socket),
+                marketOpen: open,
+                diagnostics: getFeedDiagnostics(),
               });
             };
 
             await snapshot();
+
 
             if (open && typeof WebSocket !== "undefined") {
               try {
