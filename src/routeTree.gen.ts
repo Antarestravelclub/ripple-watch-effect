@@ -16,6 +16,7 @@ import { Route as ScorecardRouteImport } from './routes/scorecard'
 import { Route as PlaybooksRouteImport } from './routes/playbooks'
 import { Route as ManualRouteImport } from './routes/manual'
 import { Route as CalendarRouteImport } from './routes/calendar'
+import { Route as BrokerRouteImport } from './routes/broker'
 import { Route as AnalyzeRouteImport } from './routes/analyze'
 import { Route as AnaloguesRouteImport } from './routes/analogues'
 import { Route as IndexRouteImport } from './routes/index'
@@ -63,6 +64,11 @@ const ManualRoute = ManualRouteImport.update({
 const CalendarRoute = CalendarRouteImport.update({
   id: '/calendar',
   path: '/calendar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BrokerRoute = BrokerRouteImport.update({
+  id: '/broker',
+  path: '/broker',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AnalyzeRoute = AnalyzeRouteImport.update({
@@ -138,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/analogues': typeof AnaloguesRoute
   '/analyze': typeof AnalyzeRoute
+  '/broker': typeof BrokerRoute
   '/calendar': typeof CalendarRoute
   '/manual': typeof ManualRoute
   '/playbooks': typeof PlaybooksRoute
@@ -160,6 +167,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analogues': typeof AnaloguesRoute
   '/analyze': typeof AnalyzeRoute
+  '/broker': typeof BrokerRoute
   '/calendar': typeof CalendarRoute
   '/manual': typeof ManualRoute
   '/playbooks': typeof PlaybooksRoute
@@ -183,6 +191,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/analogues': typeof AnaloguesRoute
   '/analyze': typeof AnalyzeRoute
+  '/broker': typeof BrokerRoute
   '/calendar': typeof CalendarRoute
   '/manual': typeof ManualRoute
   '/playbooks': typeof PlaybooksRoute
@@ -207,6 +216,7 @@ export interface FileRouteTypes {
     | '/'
     | '/analogues'
     | '/analyze'
+    | '/broker'
     | '/calendar'
     | '/manual'
     | '/playbooks'
@@ -229,6 +239,7 @@ export interface FileRouteTypes {
     | '/'
     | '/analogues'
     | '/analyze'
+    | '/broker'
     | '/calendar'
     | '/manual'
     | '/playbooks'
@@ -251,6 +262,7 @@ export interface FileRouteTypes {
     | '/'
     | '/analogues'
     | '/analyze'
+    | '/broker'
     | '/calendar'
     | '/manual'
     | '/playbooks'
@@ -274,6 +286,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnaloguesRoute: typeof AnaloguesRoute
   AnalyzeRoute: typeof AnalyzeRoute
+  BrokerRoute: typeof BrokerRoute
   CalendarRoute: typeof CalendarRoute
   ManualRoute: typeof ManualRoute
   PlaybooksRoute: typeof PlaybooksRoute
@@ -342,6 +355,13 @@ declare module '@tanstack/react-router' {
       path: '/calendar'
       fullPath: '/calendar'
       preLoaderRoute: typeof CalendarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/broker': {
+      id: '/broker'
+      path: '/broker'
+      fullPath: '/broker'
+      preLoaderRoute: typeof BrokerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/analyze': {
@@ -442,6 +462,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnaloguesRoute: AnaloguesRoute,
   AnalyzeRoute: AnalyzeRoute,
+  BrokerRoute: BrokerRoute,
   CalendarRoute: CalendarRoute,
   ManualRoute: ManualRoute,
   PlaybooksRoute: PlaybooksRoute,

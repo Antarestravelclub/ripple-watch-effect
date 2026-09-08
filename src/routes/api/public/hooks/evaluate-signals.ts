@@ -13,7 +13,15 @@ export const Route = createFileRoute("/api/public/hooks/evaluate-signals")({
         try {
           const { runEvaluation } = await import("@/lib/signal-eval.server");
           const result = await runEvaluation();
-          return Response.json({ ok: true, ...result });
+          // Mirror the resulting signal book into the demo order queue.
+          let broker: unknown = null;
+          try {
+            const { syncBrokerOrders } = await import("@/lib/broker-queue.server");
+            broker = await syncBrokerOrders();
+          } catch (e) {
+            broker = { error: e instanceof Error ? e.message : "queue sync failed" };
+          }
+          return Response.json({ ok: true, ...result, broker });
         } catch (e) {
           return Response.json(
             { ok: false, error: e instanceof Error ? e.message : "Evaluation failed" },
