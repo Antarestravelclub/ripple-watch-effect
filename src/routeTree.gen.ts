@@ -27,6 +27,8 @@ import { Route as ApiPublicStreamQuotesRouteImport } from './routes/api/public/s
 import { Route as ApiPublicHooksIngestNewsRouteImport } from './routes/api/public/hooks/ingest-news'
 import { Route as ApiPublicHooksEvaluateSignalsRouteImport } from './routes/api/public/hooks/evaluate-signals'
 import { Route as ApiPublicHooksBackfillBenchmarksRouteImport } from './routes/api/public/hooks/backfill-benchmarks'
+import { Route as ApiPublicBridgeOrdersRouteImport } from './routes/api/public/bridge/orders'
+import { Route as ApiPublicBridgeFillsRouteImport } from './routes/api/public/bridge/fills'
 
 const WatchlistRoute = WatchlistRouteImport.update({
   id: '/watchlist',
@@ -121,6 +123,16 @@ const ApiPublicHooksBackfillBenchmarksRoute =
     path: '/api/public/hooks/backfill-benchmarks',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicBridgeOrdersRoute = ApiPublicBridgeOrdersRouteImport.update({
+  id: '/api/public/bridge/orders',
+  path: '/api/public/bridge/orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicBridgeFillsRoute = ApiPublicBridgeFillsRouteImport.update({
+  id: '/api/public/bridge/fills',
+  path: '/api/public/bridge/fills',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -137,6 +149,8 @@ export interface FileRoutesByFullPath {
   '/signal/$id': typeof SignalIdRoute
   '/tickers/$symbol': typeof TickersSymbolRoute
   '/tickers/': typeof TickersIndexRoute
+  '/api/public/bridge/fills': typeof ApiPublicBridgeFillsRoute
+  '/api/public/bridge/orders': typeof ApiPublicBridgeOrdersRoute
   '/api/public/hooks/backfill-benchmarks': typeof ApiPublicHooksBackfillBenchmarksRoute
   '/api/public/hooks/evaluate-signals': typeof ApiPublicHooksEvaluateSignalsRoute
   '/api/public/hooks/ingest-news': typeof ApiPublicHooksIngestNewsRoute
@@ -157,6 +171,8 @@ export interface FileRoutesByTo {
   '/signal/$id': typeof SignalIdRoute
   '/tickers/$symbol': typeof TickersSymbolRoute
   '/tickers': typeof TickersIndexRoute
+  '/api/public/bridge/fills': typeof ApiPublicBridgeFillsRoute
+  '/api/public/bridge/orders': typeof ApiPublicBridgeOrdersRoute
   '/api/public/hooks/backfill-benchmarks': typeof ApiPublicHooksBackfillBenchmarksRoute
   '/api/public/hooks/evaluate-signals': typeof ApiPublicHooksEvaluateSignalsRoute
   '/api/public/hooks/ingest-news': typeof ApiPublicHooksIngestNewsRoute
@@ -178,6 +194,8 @@ export interface FileRoutesById {
   '/signal/$id': typeof SignalIdRoute
   '/tickers/$symbol': typeof TickersSymbolRoute
   '/tickers/': typeof TickersIndexRoute
+  '/api/public/bridge/fills': typeof ApiPublicBridgeFillsRoute
+  '/api/public/bridge/orders': typeof ApiPublicBridgeOrdersRoute
   '/api/public/hooks/backfill-benchmarks': typeof ApiPublicHooksBackfillBenchmarksRoute
   '/api/public/hooks/evaluate-signals': typeof ApiPublicHooksEvaluateSignalsRoute
   '/api/public/hooks/ingest-news': typeof ApiPublicHooksIngestNewsRoute
@@ -200,6 +218,8 @@ export interface FileRouteTypes {
     | '/signal/$id'
     | '/tickers/$symbol'
     | '/tickers/'
+    | '/api/public/bridge/fills'
+    | '/api/public/bridge/orders'
     | '/api/public/hooks/backfill-benchmarks'
     | '/api/public/hooks/evaluate-signals'
     | '/api/public/hooks/ingest-news'
@@ -220,6 +240,8 @@ export interface FileRouteTypes {
     | '/signal/$id'
     | '/tickers/$symbol'
     | '/tickers'
+    | '/api/public/bridge/fills'
+    | '/api/public/bridge/orders'
     | '/api/public/hooks/backfill-benchmarks'
     | '/api/public/hooks/evaluate-signals'
     | '/api/public/hooks/ingest-news'
@@ -240,6 +262,8 @@ export interface FileRouteTypes {
     | '/signal/$id'
     | '/tickers/$symbol'
     | '/tickers/'
+    | '/api/public/bridge/fills'
+    | '/api/public/bridge/orders'
     | '/api/public/hooks/backfill-benchmarks'
     | '/api/public/hooks/evaluate-signals'
     | '/api/public/hooks/ingest-news'
@@ -261,6 +285,8 @@ export interface RootRouteChildren {
   SignalIdRoute: typeof SignalIdRoute
   TickersSymbolRoute: typeof TickersSymbolRoute
   TickersIndexRoute: typeof TickersIndexRoute
+  ApiPublicBridgeFillsRoute: typeof ApiPublicBridgeFillsRoute
+  ApiPublicBridgeOrdersRoute: typeof ApiPublicBridgeOrdersRoute
   ApiPublicHooksBackfillBenchmarksRoute: typeof ApiPublicHooksBackfillBenchmarksRoute
   ApiPublicHooksEvaluateSignalsRoute: typeof ApiPublicHooksEvaluateSignalsRoute
   ApiPublicHooksIngestNewsRoute: typeof ApiPublicHooksIngestNewsRoute
@@ -395,6 +421,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksBackfillBenchmarksRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/bridge/orders': {
+      id: '/api/public/bridge/orders'
+      path: '/api/public/bridge/orders'
+      fullPath: '/api/public/bridge/orders'
+      preLoaderRoute: typeof ApiPublicBridgeOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/bridge/fills': {
+      id: '/api/public/bridge/fills'
+      path: '/api/public/bridge/fills'
+      fullPath: '/api/public/bridge/fills'
+      preLoaderRoute: typeof ApiPublicBridgeFillsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -413,6 +453,8 @@ const rootRouteChildren: RootRouteChildren = {
   SignalIdRoute: SignalIdRoute,
   TickersSymbolRoute: TickersSymbolRoute,
   TickersIndexRoute: TickersIndexRoute,
+  ApiPublicBridgeFillsRoute: ApiPublicBridgeFillsRoute,
+  ApiPublicBridgeOrdersRoute: ApiPublicBridgeOrdersRoute,
   ApiPublicHooksBackfillBenchmarksRoute: ApiPublicHooksBackfillBenchmarksRoute,
   ApiPublicHooksEvaluateSignalsRoute: ApiPublicHooksEvaluateSignalsRoute,
   ApiPublicHooksIngestNewsRoute: ApiPublicHooksIngestNewsRoute,
