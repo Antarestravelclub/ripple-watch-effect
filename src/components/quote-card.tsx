@@ -5,6 +5,7 @@ import { getQuote } from "@/lib/quotes.functions";
 import { useLiveQuotes, statusLabel } from "@/hooks/use-live-quotes";
 import { LivePrice } from "./live-price";
 import { TickerChip } from "./ticker-chip";
+import { TickerLink } from "./ticker-link";
 
 function tone(v: number) {
   return v > 0 ? "text-tailwind" : v < 0 ? "text-headwind" : "text-muted-foreground";
@@ -53,7 +54,9 @@ export function QuoteCard({ ticker }: { ticker: string }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <h2 className="font-mono text-lg font-semibold tracking-tight">{symbol}</h2>
+            <h2 className="font-mono text-lg font-semibold tracking-tight">
+              <TickerLink symbol={symbol} />
+            </h2>
             <TickerChip ticker={symbol} />
           </div>
           <p className="text-xs text-muted-foreground mt-0.5 truncate">

@@ -8,6 +8,7 @@ import { getLatestPrices, type PriceFeedRun } from "@/lib/prices.functions";
 import { fmtPct, fmtPrice, pctTone } from "@/lib/signal-metrics";
 import { useLiveEvents } from "@/hooks/use-live-events";
 import { CategoryBadge } from "@/components/badges";
+import { TickerLink } from "@/components/ticker-link";
 import { ageLabel } from "@/lib/event-freshness";
 import { REGIONS, eventRegions } from "@/lib/ripple-regions";
 import type { RippleEvent } from "@/lib/ripple-data";
@@ -249,7 +250,7 @@ function MoverColumn({
                       className="flex items-center justify-between gap-3 py-1.5 hover:bg-accent/40 rounded-md px-1 transition-colors"
                     >
                       <span className="flex items-center gap-2">
-                        <span className="font-mono text-xs">{m.ticker}</span>
+                        <TickerLink symbol={m.ticker} className="font-mono text-xs" />
                         <span
                           className={
                             "text-[10px] uppercase tracking-wider " +

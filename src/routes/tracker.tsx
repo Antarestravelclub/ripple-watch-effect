@@ -3,6 +3,7 @@ import { useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-q
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { SiteShell } from "@/components/site-shell";
+import { TickerLink } from "@/components/ticker-link";
 import { ensureSignals, listSignals } from "@/lib/signals.functions";
 import { computeMetrics, fmtPct, fmtPrice, pctTone, STATUS_LABEL } from "@/lib/signal-metrics";
 import { ConvictionChip } from "@/components/conviction-chip";
@@ -252,9 +253,7 @@ function TrackerPage() {
                   className="border-b border-border/40 last:border-b-0 hover:bg-background/40"
                 >
                   <td className="p-2 font-mono font-semibold">
-                    <Link to="/signal/$id" params={{ id: signal.id }} className="hover:text-primary">
-                      {signal.ticker}
-                    </Link>
+                    <TickerLink symbol={signal.ticker} className="font-mono" />
                   </td>
                   <td className="p-2 max-w-[220px] truncate text-muted-foreground">
                     {event ? (

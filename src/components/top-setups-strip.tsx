@@ -7,6 +7,7 @@ import { useLiveQuotes } from "@/hooks/use-live-quotes";
 import { useTickerRollups } from "@/hooks/use-ticker-rollups";
 import { buildSetups, dedupeByTicker, scoreTone } from "@/lib/swing-setups";
 import { fmtPrice } from "@/lib/signal-metrics";
+import { TickerLink } from "./ticker-link";
 import type { RippleEvent } from "@/lib/ripple-data";
 
 /** Compact strip of the highest-scoring swing setups, linking to /setups. */
@@ -64,7 +65,9 @@ export function TopSetupsStrip({ events }: { events: RippleEvent[] }) {
             className="rounded-lg border border-border/60 bg-background/40 px-3 py-2 hover:border-primary/50 transition-colors"
           >
             <div className="flex items-center justify-between gap-2">
-              <span className="font-mono text-sm font-semibold">{s.displaySymbol}</span>
+              <TickerLink symbol={s.ticker} className="font-mono text-sm font-semibold">
+                {s.displaySymbol}
+              </TickerLink>
               <span className={"text-[10px] px-1.5 py-0.5 rounded-full border " + scoreTone(s.score)}>
                 {s.score}
               </span>
