@@ -192,7 +192,7 @@ export const openPaperTrade = createServerFn({ method: "POST" })
 export const manualTradePrefill = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { symbol: string; direction: "long" | "short" }) => d)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { quotesFor } = await import("./latest-prices.server");
     const { atrFor } = await import("./atr.server");
     const { atrLevels } = await import("./signal-levels");
@@ -208,13 +208,32 @@ export const manualTradePrefill = createServerFn({ method: "POST" })
     const atr = await atrFor(symbol);
     const levels = atr != null && entry > 0 ? atrLevels(entry, data.direction, atr) : null;
 
-    const notional = await notionalValue();
+    const { paperAccount, lotRuleFor } = await import("./paper-account.server");
+    const { checkSizing } = await import("./paper-account");
+    const account = await paperAccount(context.userId);
+    const notional = account.startingBalance;
     // Manual trades have no conviction score, so they size at the medium band.
     const sizePct =
       atr != null && entry > 0
-        ? suggestedSizePct(entry, atr, 70, { ...DEFAULT_PORTFOLIO, notional_value: notional })
+        ? suggestedSizePct(entry, atr, 70, {
+            ...DEFAULT_PORTFOLIO,
+            notional_value: notional,
+            risk_per_trade_pct: account.riskPerTradePct,
+            max_position_pct: account.maxPositionPct,
+          })
         : 0;
-    const size = sizePct > 0 && entry > 0 ? +((notional * (sizePct / 100)) / entry).toFixed(4) : 0;
+    const rawSize =
+      sizePct > 0 && entry > 0 ? +((notional * (sizePct / 100)) / entry).toFixed(4) : 0;
+
+    const lot = await lotRuleFor(symbol, account.defaultMinLot);
+    const sizing = checkSizing({
+      rawSize,
+      entry,
+      stop: levels?.stop ?? null,
+      balance: notional,
+      minLot: lot.minLot,
+      lotStep: lot.lotStep,
+    });
 
     const quoteTime = q.quoteTime ?? null;
     const ageMs = quoteTime ? Date.now() - new Date(quoteTime).getTime() : null;
@@ -229,9 +248,12 @@ export const manualTradePrefill = createServerFn({ method: "POST" })
       stopPrice: levels?.stop ?? null,
       targetPrice: levels?.target ?? null,
       atr,
-      positionSize: size,
+      positionSize: sizing.sizedLots,
       suggestedSizePct: sizePct,
       notional,
+      sizing,
+      lotSource: lot.source,
+      brokerSymbol: lot.brokerSymbol,
     };
   });
 
