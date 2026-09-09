@@ -10,6 +10,7 @@ import {
 } from "@/lib/paper-trades.functions";
 import { useAuth } from "@/hooks/use-auth";
 import { fmtDuration, fmtMoney } from "@/lib/paper-trades";
+import type { SizingCheck } from "@/lib/paper-account";
 import { Loader2, NotebookPen, X } from "lucide-react";
 
 
