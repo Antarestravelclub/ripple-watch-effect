@@ -347,22 +347,37 @@ function OpenTable({
   );
 }
 
-function ClosedTable({ trades }: { trades: PaperTradeRow[] }) {
-  const [reason, setReason] = useState<"all" | ExitReason>("all");
-  const [source, setSource] = useState<"all" | TradeSource>("all");
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
+/** Filter state lives on the page so the Accumulated Results strip matches. */
+export interface ClosedFilters {
+  reason: "all" | ExitReason;
+  source: "all" | TradeSource;
+  from: string;
+  to: string;
+}
 
-  const rows = useMemo(
-    () =>
-      trades
-        .filter((t) => (reason === "all" ? true : t.exit_reason === reason))
-        .filter((t) => (source === "all" ? true : t.source === source))
-        .filter((t) => (from ? (t.exit_time ?? "") >= from : true))
-        .filter((t) => (to ? (t.exit_time ?? "") <= to + "T23:59:59Z" : true))
-        .sort((a, b) => (b.exit_time ?? "").localeCompare(a.exit_time ?? "")),
-    [trades, reason, source, from, to],
-  );
+export function applyClosedFilters(trades: PaperTradeRow[], f: ClosedFilters) {
+  return trades
+    .filter((t) => (f.reason === "all" ? true : t.exit_reason === f.reason))
+    .filter((t) => (f.source === "all" ? true : t.source === f.source))
+    .filter((t) => (f.from ? (t.exit_time ?? "") >= f.from : true))
+    .filter((t) => (f.to ? (t.exit_time ?? "") <= f.to + "T23:59:59Z" : true))
+    .sort((a, b) => (b.exit_time ?? "").localeCompare(a.exit_time ?? ""));
+}
+
+function ClosedTable({
+  rows,
+  filters,
+  setFilters,
+}: {
+  rows: PaperTradeRow[];
+  filters: ClosedFilters;
+  setFilters: (f: ClosedFilters) => void;
+}) {
+  const { reason, source, from, to } = filters;
+  const setReason = (v: "all" | ExitReason) => setFilters({ ...filters, reason: v });
+  const setSource = (v: "all" | TradeSource) => setFilters({ ...filters, source: v });
+  const setFrom = (v: string) => setFilters({ ...filters, from: v });
+  const setTo = (v: string) => setFilters({ ...filters, to: v });
 
   return (
     <div className="mt-5">
