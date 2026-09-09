@@ -128,6 +128,10 @@ function BlotterPage() {
         </div>
       )}
 
+      <div className="mt-5">
+        <DemoAccountPanel />
+      </div>
+
       <div className="mt-5 flex items-center gap-1 border-b border-border/60">
         {(
           [
