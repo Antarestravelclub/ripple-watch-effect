@@ -13,12 +13,6 @@ export const listEtfReference = createServerFn({ method: "GET" }).handler(async 
   return { rows };
 });
 
-async function assertAdmin(supabase: {
-  rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
-}) {
-  const { data, error } = await supabase.rpc("has_role", { _role: "admin", _user_id: undefined });
-  if (error || data !== true) throw new Error("Admins only");
-}
 
 const upsertSchema = z.object({
   ticker: z.string().min(1).max(12),
