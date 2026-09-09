@@ -176,7 +176,10 @@ function BlotterPage() {
       )}
       {!isLoading && tab === "closed" && <ClosedTable trades={closedTrades} />}
       {!isLoading && tab === "stats" && (
-        <StatsView trades={closedTrades} notional={data?.notional ?? 100_000} />
+        <>
+          <StatsView trades={closedTrades} notional={data?.notional ?? 100_000} />
+          <MirrorStats trades={data?.trades ?? []} />
+        </>
       )}
 
       {confirm && (
