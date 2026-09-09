@@ -30,7 +30,7 @@
 - [x] Report every outcome with retry/backoff; rotating local log
 
 ## Accumulated Results (Blotter footer)
-- [ ] Persistent summary below the tables: realized $/% of notional, unrealized, combined
-- [ ] Counts, win rate, avg win/loss ($ and R), expectancy, best/worst, paper equity
-- [ ] Demo realized row when mirrored trades exist (slippage gap)
-- [ ] Respects closed-trade filters, stale-feed warning on unrealized, muted n = X
+- [x] Persistent summary below the tables: realized $/% of notional, unrealized, combined
+- [x] Counts, win rate, avg win/loss ($ and R), expectancy, best/worst, paper equity
+- [x] Demo realized row when mirrored trades exist (slippage gap)
+- [x] Respects closed-trade filters, stale-feed warning on unrealized, muted n = X
