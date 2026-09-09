@@ -156,6 +156,9 @@ export async function runNewsIngest(): Promise<IngestResult> {
   const { tickerMeta } = await import("./ticker-registry");
   const { createSignal, portfolioSettings } = await import("./signal-create.server");
   const portfolio = await portfolioSettings();
+  // ETF universe for theme matching. Leveraged/inverse funds are excluded at source.
+  const { suggestableEtfs, matchEtfs } = await import("./etf-reference.server");
+  const etfUniverse = await suggestableEtfs().catch(() => []);
 
 
   const priceCache = new Map<string, Awaited<ReturnType<typeof fetchQuoteWithRetry>>>();
