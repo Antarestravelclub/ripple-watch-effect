@@ -171,6 +171,14 @@ function PaperTradeForm({
               </p>
             )}
 
+            <UndersizedNotice
+              sizing={prefill.sizing}
+              balance={prefill.notional}
+              lotSource={prefill.lotSource}
+              onTakeMinLot={() => setSize(String(prefill.sizing.minLot))}
+              onSkip={onClose}
+            />
+
             <div className="mt-4 grid grid-cols-2 gap-3">
               <Field label="Entry price" value={entry} onChange={setEntry} />
               <Field label="Lots (1 lot = 1 unit)" value={size} onChange={setSize} />
