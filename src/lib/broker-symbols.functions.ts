@@ -52,7 +52,7 @@ const TRADE_MODE_PRIORITY: Record<string, number> = {
   unknown: 4,
 };
 
-async function loadAppTickers(supabase: { from: (table: string) => { select: (columns: string) => Promise<{ data: { ticker: string }[] | null }> } }) {
+async function loadAppTickers(supabase: { from: (table: string) => { select: (columns: string) => any } }) {
   const [signals, exposures] = await Promise.all([
     supabase.from("signals").select("ticker"),
     supabase.from("live_event_exposures").select("ticker"),
