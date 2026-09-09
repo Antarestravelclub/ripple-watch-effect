@@ -5,7 +5,7 @@ talks to a terminal running on a machine. So the app publishes orders, and this
 small helper, running next to your demo terminal, carries them out.
 
 ```
-The Ripple Effect  ->  order queue  ->  mt5_bridge.py  ->  MT5 DEMO terminal
+The Ripple Effect  ->  order queue  ->  ripple_bridge_helper.py  ->  MT5 DEMO terminal
                     <-   fills      <-
 ```
 
@@ -38,7 +38,7 @@ pip install MetaTrader5 requests
 set RIPPLE_BASE_URL=https://ripple-watch-effect.lovable.app
 set RIPPLE_BRIDGE_KEY=your-bridge-key
 set RIPPLE_LOT=0.10
-python mt5_bridge.py
+python ripple_bridge_helper.py
 ```
 
 Optional settings:
