@@ -22,9 +22,9 @@
 - [x] Cron expires stale instructions
 
 ## Windows bridge helper (spec v2)
-- [ ] Config: SITE_BASE_URL, BRIDGE_SECRET, ALLOWED_ACCOUNT, EXECUTION_ENABLED (default false), MAX_LOTS_PER_ORDER
-- [ ] Startup allowlist + demo check; post one snapshot then refuse execution on mismatch
-- [ ] Reporting loop: account/positions 30-60s, deals 60s with local high-water mark, backoff on failure
-- [ ] Execution loop 10-15s: per-cycle re-check, symbol exists, volume min/max/step, disk ledger idempotency
-- [ ] Close by ticket; already-closed reports filled from history
-- [ ] Report every outcome with retry/backoff; rotating local log
+- [x] Config: SITE_BASE_URL, BRIDGE_SECRET, ALLOWED_ACCOUNT, EXECUTION_ENABLED (default false), MAX_LOTS_PER_ORDER
+- [x] Startup allowlist + demo check; post one snapshot then refuse execution on mismatch
+- [x] Reporting loop: account/positions 30-60s, deals 60s with local high-water mark, backoff on failure
+- [x] Execution loop 10-15s: per-cycle re-check, symbol exists, volume min/max/step, disk ledger idempotency
+- [x] Close by ticket; already-closed reports filled from history
+- [x] Report every outcome with retry/backoff; rotating local log
