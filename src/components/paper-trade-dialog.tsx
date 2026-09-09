@@ -172,10 +172,18 @@ function PaperTradeForm({
 
             <div className="mt-4 grid grid-cols-2 gap-3">
               <Field label="Entry price" value={entry} onChange={setEntry} />
-              <Field label="Position size (units)" value={size} onChange={setSize} />
+              <Field label="Lots (1 lot = 1 unit)" value={size} onChange={setSize} />
               <Field label="Stop price" value={stop} onChange={setStop} />
               <Field label="Target price" value={target} onChange={setTarget} />
             </div>
+
+            <LotOutcome
+              direction={prefill.direction}
+              entry={Number(entry)}
+              stop={Number(stop)}
+              target={Number(target)}
+              lots={Number(size)}
+            />
 
             <p className="mt-3 text-[11px] text-muted-foreground">
               Pre-filled from the signal's ATR stop/target and risk-based sizing
