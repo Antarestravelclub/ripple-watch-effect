@@ -3,6 +3,8 @@
 // never routes an order anywhere. Paper only, by construction.
 
 /** A stored quote older than this is stale — matches the feed diagnostics. */
+import type { InstrumentType } from "./instrument";
+
 export const STALE_QUOTE_MS = 20 * 60_000;
 
 export type TradeDirection = "long" | "short";
@@ -36,6 +38,8 @@ export interface PaperTradeRow {
   category: string | null;
   conviction_score: number | null;
   cohort: "atr_v1" | "legacy_pct";
+  /** Single stock or exchange-traded fund. */
+  instrument_type: InstrumentType;
   tradable: boolean;
   /** Demo-account mirroring (opt-in per trade). */
   mirrored: boolean;
@@ -300,7 +304,8 @@ export type SplitKey =
   | "exit_reason"
   | "overrides"
   | "direction"
-  | "source";
+  | "source"
+  | "instrument";
 
 export const SPLIT_LABEL: Record<SplitKey, string> = {
   category: "Event category",
@@ -311,6 +316,7 @@ export const SPLIT_LABEL: Record<SplitKey, string> = {
   overrides: "As-signalled vs overridden",
   direction: "Direction",
   source: "Signal vs manual",
+  instrument: "Stocks vs ETFs",
 };
 
 
@@ -338,6 +344,8 @@ function bucketOf(t: PaperTradeRow, key: SplitKey): string {
       return t.direction === "long" ? "Long" : "Short";
     case "source":
       return SOURCE_LABEL[t.source];
+    case "instrument":
+      return t.instrument_type === "etf" ? "ETFs" : "Stocks";
   }
 }
 

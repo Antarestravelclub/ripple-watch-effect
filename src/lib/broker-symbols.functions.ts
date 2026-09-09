@@ -64,13 +64,17 @@ const TRADE_MODE_PRIORITY: Record<string, number> = {
 };
 
 async function loadAppTickers(supabase: { from: (table: string) => { select: (columns: string) => any } }) {
-  const [signals, exposures] = await Promise.all([
+  const [signals, exposures, etfs] = await Promise.all([
     supabase.from("signals").select("ticker"),
     supabase.from("live_event_exposures").select("ticker"),
+    // Every reference fund counts as part of the app universe, so a broker
+    // upload can report which ETFs the demo account can actually trade.
+    supabase.from("etf_reference").select("ticker"),
   ]);
   const set = new Set<string>();
   for (const row of signals.data ?? []) if (row.ticker) set.add(row.ticker.toUpperCase());
   for (const row of exposures.data ?? []) if (row.ticker) set.add(row.ticker.toUpperCase());
+  for (const row of etfs.data ?? []) if (row.ticker) set.add(row.ticker.toUpperCase());
   return Array.from(set);
 }
 
