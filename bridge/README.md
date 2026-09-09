@@ -1,3 +1,7 @@
+> Easiest path: sign in and open the **Bridge** page on the site. It walks through
+> these steps with copy buttons and hands you a pre-filled `bridge_config.json`
+> containing your own private bridge secret.
+
 # Ripple Bridge Helper — Setup & Run (Windows)
 
 ## What this is
