@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteShell } from "@/components/site-shell";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { Printer } from "lucide-react";
 
 export const Route = createFileRoute("/manual")({
@@ -74,6 +74,11 @@ const CONTENTS = [
 ] as const;
 
 function ManualPage() {
+  useEffect(() => {
+    document.body.classList.add("manual-print");
+    return () => document.body.classList.remove("manual-print");
+  }, []);
+
   return (
     <SiteShell>
       <article className="max-w-3xl print-doc">
