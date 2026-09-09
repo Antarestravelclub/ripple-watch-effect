@@ -71,6 +71,9 @@ function NavLink({ to, children }: { to: string; children: ReactNode }) {
 
 export function SiteShell({ children }: { children: ReactNode }) {
   const { events } = useLiveEvents();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  // Blotter needs the full page width for its trade tables.
+  const showSidebar = !pathname.startsWith("/blotter");
   return (
     <div className="min-h-screen flex flex-col bg-background gradient-radial">
       <header className="sticky top-0 z-30 border-b border-border/60 backdrop-blur bg-background/70">
