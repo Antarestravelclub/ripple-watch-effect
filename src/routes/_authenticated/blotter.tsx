@@ -329,6 +329,13 @@ function OpenTable({
                     >
                       Close now
                     </button>
+
+                    <MirrorTradeButton
+                      paperTradeId={t.id}
+                      lots={t.position_size}
+                      mirrored={t.mirrored}
+                      ticket={t.mirror_ticket}
+                    />
                   </div>
                 </Td>
               </tr>
