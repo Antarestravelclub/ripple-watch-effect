@@ -52,10 +52,12 @@ const TRADE_MODE_PRIORITY: Record<string, number> = {
   unknown: 4,
 };
 
-async function loadAppTickers(supabase: { from: (t: string) => unknown }) {
+async function loadAppTickers(
+  supabase: { from: (table: string) => { select: (columns: string) => Promise<{ data: { ticker: string }[] | null }> } },
+) {
   const [signals, exposures] = await Promise.all([
-    (supabase as never as { from: (t: string) => { select: (c: string) => Promise<{ data: { ticker: string }[] | null }> } }).from("signals").select("ticker"),
-    (supabase as never as { from: (t: string) => { select: (c: string) => Promise<{ data: { ticker: string }[] | null }> } }).from("live_event_exposures").select("ticker"),
+    supabase.from("signals").select("ticker"),
+    supabase.from("live_event_exposures").select("ticker"),
   ]);
   const set = new Set<string>();
   for (const row of signals.data ?? []) if (row.ticker) set.add(row.ticker.toUpperCase());
