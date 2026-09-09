@@ -37,6 +37,59 @@ export interface PaperTradeRow {
   conviction_score: number | null;
   cohort: "atr_v1" | "legacy_pct";
   tradable: boolean;
+  /** Demo-account mirroring (opt-in per trade). */
+  mirrored: boolean;
+  mirror_ticket: number | null;
+  demo_fill_price: number | null;
+  demo_close_price: number | null;
+  demo_realized_pnl: number | null;
+}
+
+/** Signed slippage between the paper level and the demo fill. */
+export function slippage(
+  direction: TradeDirection,
+  paperPrice: number,
+  demoPrice: number | null,
+  side: "entry" | "exit",
+) {
+  if (demoPrice == null || !(paperPrice > 0)) return null;
+  // Positive = the demo fill was better than the paper assumption.
+  const raw = demoPrice - paperPrice;
+  const favourable =
+    side === "entry" ? (direction === "long" ? -raw : raw) : direction === "long" ? raw : -raw;
+  return { dollars: favourable, pct: (favourable / paperPrice) * 100 };
+}
+
+export interface MirrorComparison {
+  trade: PaperTradeRow;
+  entry: { dollars: number; pct: number } | null;
+  exit: { dollars: number; pct: number } | null;
+  paperPnl: number | null;
+  demoPnl: number | null;
+}
+
+export function mirrorComparisons(trades: PaperTradeRow[]): MirrorComparison[] {
+  return trades
+    .filter((t) => t.mirrored)
+    .map((t) => ({
+      trade: t,
+      entry: slippage(t.direction, t.entry_price, t.demo_fill_price, "entry"),
+      exit: t.exit_price != null ? slippage(t.direction, t.exit_price, t.demo_close_price, "exit") : null,
+      paperPnl: t.realized_pnl,
+      demoPnl: t.demo_realized_pnl,
+    }));
+}
+
+export function averageSlippage(rows: MirrorComparison[], side: "entry" | "exit") {
+  const values = rows
+    .map((r) => (side === "entry" ? r.entry : r.exit))
+    .filter((v): v is { dollars: number; pct: number } => v !== null);
+  if (values.length === 0) return null;
+  return {
+    count: values.length,
+    dollars: values.reduce((s, v) => s + v.dollars, 0) / values.length,
+    pct: values.reduce((s, v) => s + v.pct, 0) / values.length,
+  };
 }
 
 export const SOURCE_LABEL: Record<TradeSource, string> = {

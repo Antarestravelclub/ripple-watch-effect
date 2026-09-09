@@ -32,8 +32,13 @@ import { Route as ApiPublicStreamQuotesRouteImport } from './routes/api/public/s
 import { Route as ApiPublicHooksIngestNewsRouteImport } from './routes/api/public/hooks/ingest-news'
 import { Route as ApiPublicHooksEvaluateSignalsRouteImport } from './routes/api/public/hooks/evaluate-signals'
 import { Route as ApiPublicHooksBackfillBenchmarksRouteImport } from './routes/api/public/hooks/backfill-benchmarks'
+import { Route as ApiPublicBridgePositionsRouteImport } from './routes/api/public/bridge/positions'
 import { Route as ApiPublicBridgeOrdersRouteImport } from './routes/api/public/bridge/orders'
+import { Route as ApiPublicBridgeInstructionsRouteImport } from './routes/api/public/bridge/instructions'
 import { Route as ApiPublicBridgeFillsRouteImport } from './routes/api/public/bridge/fills'
+import { Route as ApiPublicBridgeDealsRouteImport } from './routes/api/public/bridge/deals'
+import { Route as ApiPublicBridgeAccountRouteImport } from './routes/api/public/bridge/account'
+import { Route as ApiPublicBridgeInstructionsIdResultRouteImport } from './routes/api/public/bridge/instructions.$id.result'
 
 const WatchlistRoute = WatchlistRouteImport.update({
   id: '/watchlist',
@@ -152,16 +157,44 @@ const ApiPublicHooksBackfillBenchmarksRoute =
     path: '/api/public/hooks/backfill-benchmarks',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicBridgePositionsRoute =
+  ApiPublicBridgePositionsRouteImport.update({
+    id: '/api/public/bridge/positions',
+    path: '/api/public/bridge/positions',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicBridgeOrdersRoute = ApiPublicBridgeOrdersRouteImport.update({
   id: '/api/public/bridge/orders',
   path: '/api/public/bridge/orders',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicBridgeInstructionsRoute =
+  ApiPublicBridgeInstructionsRouteImport.update({
+    id: '/api/public/bridge/instructions',
+    path: '/api/public/bridge/instructions',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicBridgeFillsRoute = ApiPublicBridgeFillsRouteImport.update({
   id: '/api/public/bridge/fills',
   path: '/api/public/bridge/fills',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicBridgeDealsRoute = ApiPublicBridgeDealsRouteImport.update({
+  id: '/api/public/bridge/deals',
+  path: '/api/public/bridge/deals',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicBridgeAccountRoute = ApiPublicBridgeAccountRouteImport.update({
+  id: '/api/public/bridge/account',
+  path: '/api/public/bridge/account',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicBridgeInstructionsIdResultRoute =
+  ApiPublicBridgeInstructionsIdResultRouteImport.update({
+    id: '/$id/result',
+    path: '/$id/result',
+    getParentRoute: () => ApiPublicBridgeInstructionsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -182,12 +215,17 @@ export interface FileRoutesByFullPath {
   '/signal/$id': typeof SignalIdRoute
   '/tickers/$symbol': typeof TickersSymbolRoute
   '/tickers/': typeof TickersIndexRoute
+  '/api/public/bridge/account': typeof ApiPublicBridgeAccountRoute
+  '/api/public/bridge/deals': typeof ApiPublicBridgeDealsRoute
   '/api/public/bridge/fills': typeof ApiPublicBridgeFillsRoute
+  '/api/public/bridge/instructions': typeof ApiPublicBridgeInstructionsRouteWithChildren
   '/api/public/bridge/orders': typeof ApiPublicBridgeOrdersRoute
+  '/api/public/bridge/positions': typeof ApiPublicBridgePositionsRoute
   '/api/public/hooks/backfill-benchmarks': typeof ApiPublicHooksBackfillBenchmarksRoute
   '/api/public/hooks/evaluate-signals': typeof ApiPublicHooksEvaluateSignalsRoute
   '/api/public/hooks/ingest-news': typeof ApiPublicHooksIngestNewsRoute
   '/api/public/stream/quotes': typeof ApiPublicStreamQuotesRoute
+  '/api/public/bridge/instructions/$id/result': typeof ApiPublicBridgeInstructionsIdResultRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -208,12 +246,17 @@ export interface FileRoutesByTo {
   '/signal/$id': typeof SignalIdRoute
   '/tickers/$symbol': typeof TickersSymbolRoute
   '/tickers': typeof TickersIndexRoute
+  '/api/public/bridge/account': typeof ApiPublicBridgeAccountRoute
+  '/api/public/bridge/deals': typeof ApiPublicBridgeDealsRoute
   '/api/public/bridge/fills': typeof ApiPublicBridgeFillsRoute
+  '/api/public/bridge/instructions': typeof ApiPublicBridgeInstructionsRouteWithChildren
   '/api/public/bridge/orders': typeof ApiPublicBridgeOrdersRoute
+  '/api/public/bridge/positions': typeof ApiPublicBridgePositionsRoute
   '/api/public/hooks/backfill-benchmarks': typeof ApiPublicHooksBackfillBenchmarksRoute
   '/api/public/hooks/evaluate-signals': typeof ApiPublicHooksEvaluateSignalsRoute
   '/api/public/hooks/ingest-news': typeof ApiPublicHooksIngestNewsRoute
   '/api/public/stream/quotes': typeof ApiPublicStreamQuotesRoute
+  '/api/public/bridge/instructions/$id/result': typeof ApiPublicBridgeInstructionsIdResultRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -236,12 +279,17 @@ export interface FileRoutesById {
   '/signal/$id': typeof SignalIdRoute
   '/tickers/$symbol': typeof TickersSymbolRoute
   '/tickers/': typeof TickersIndexRoute
+  '/api/public/bridge/account': typeof ApiPublicBridgeAccountRoute
+  '/api/public/bridge/deals': typeof ApiPublicBridgeDealsRoute
   '/api/public/bridge/fills': typeof ApiPublicBridgeFillsRoute
+  '/api/public/bridge/instructions': typeof ApiPublicBridgeInstructionsRouteWithChildren
   '/api/public/bridge/orders': typeof ApiPublicBridgeOrdersRoute
+  '/api/public/bridge/positions': typeof ApiPublicBridgePositionsRoute
   '/api/public/hooks/backfill-benchmarks': typeof ApiPublicHooksBackfillBenchmarksRoute
   '/api/public/hooks/evaluate-signals': typeof ApiPublicHooksEvaluateSignalsRoute
   '/api/public/hooks/ingest-news': typeof ApiPublicHooksIngestNewsRoute
   '/api/public/stream/quotes': typeof ApiPublicStreamQuotesRoute
+  '/api/public/bridge/instructions/$id/result': typeof ApiPublicBridgeInstructionsIdResultRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -264,12 +312,17 @@ export interface FileRouteTypes {
     | '/signal/$id'
     | '/tickers/$symbol'
     | '/tickers/'
+    | '/api/public/bridge/account'
+    | '/api/public/bridge/deals'
     | '/api/public/bridge/fills'
+    | '/api/public/bridge/instructions'
     | '/api/public/bridge/orders'
+    | '/api/public/bridge/positions'
     | '/api/public/hooks/backfill-benchmarks'
     | '/api/public/hooks/evaluate-signals'
     | '/api/public/hooks/ingest-news'
     | '/api/public/stream/quotes'
+    | '/api/public/bridge/instructions/$id/result'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -290,12 +343,17 @@ export interface FileRouteTypes {
     | '/signal/$id'
     | '/tickers/$symbol'
     | '/tickers'
+    | '/api/public/bridge/account'
+    | '/api/public/bridge/deals'
     | '/api/public/bridge/fills'
+    | '/api/public/bridge/instructions'
     | '/api/public/bridge/orders'
+    | '/api/public/bridge/positions'
     | '/api/public/hooks/backfill-benchmarks'
     | '/api/public/hooks/evaluate-signals'
     | '/api/public/hooks/ingest-news'
     | '/api/public/stream/quotes'
+    | '/api/public/bridge/instructions/$id/result'
   id:
     | '__root__'
     | '/'
@@ -317,12 +375,17 @@ export interface FileRouteTypes {
     | '/signal/$id'
     | '/tickers/$symbol'
     | '/tickers/'
+    | '/api/public/bridge/account'
+    | '/api/public/bridge/deals'
     | '/api/public/bridge/fills'
+    | '/api/public/bridge/instructions'
     | '/api/public/bridge/orders'
+    | '/api/public/bridge/positions'
     | '/api/public/hooks/backfill-benchmarks'
     | '/api/public/hooks/evaluate-signals'
     | '/api/public/hooks/ingest-news'
     | '/api/public/stream/quotes'
+    | '/api/public/bridge/instructions/$id/result'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -344,8 +407,12 @@ export interface RootRouteChildren {
   SignalIdRoute: typeof SignalIdRoute
   TickersSymbolRoute: typeof TickersSymbolRoute
   TickersIndexRoute: typeof TickersIndexRoute
+  ApiPublicBridgeAccountRoute: typeof ApiPublicBridgeAccountRoute
+  ApiPublicBridgeDealsRoute: typeof ApiPublicBridgeDealsRoute
   ApiPublicBridgeFillsRoute: typeof ApiPublicBridgeFillsRoute
+  ApiPublicBridgeInstructionsRoute: typeof ApiPublicBridgeInstructionsRouteWithChildren
   ApiPublicBridgeOrdersRoute: typeof ApiPublicBridgeOrdersRoute
+  ApiPublicBridgePositionsRoute: typeof ApiPublicBridgePositionsRoute
   ApiPublicHooksBackfillBenchmarksRoute: typeof ApiPublicHooksBackfillBenchmarksRoute
   ApiPublicHooksEvaluateSignalsRoute: typeof ApiPublicHooksEvaluateSignalsRoute
   ApiPublicHooksIngestNewsRoute: typeof ApiPublicHooksIngestNewsRoute
@@ -515,11 +582,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksBackfillBenchmarksRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/bridge/positions': {
+      id: '/api/public/bridge/positions'
+      path: '/api/public/bridge/positions'
+      fullPath: '/api/public/bridge/positions'
+      preLoaderRoute: typeof ApiPublicBridgePositionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/bridge/orders': {
       id: '/api/public/bridge/orders'
       path: '/api/public/bridge/orders'
       fullPath: '/api/public/bridge/orders'
       preLoaderRoute: typeof ApiPublicBridgeOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/bridge/instructions': {
+      id: '/api/public/bridge/instructions'
+      path: '/api/public/bridge/instructions'
+      fullPath: '/api/public/bridge/instructions'
+      preLoaderRoute: typeof ApiPublicBridgeInstructionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/bridge/fills': {
@@ -528,6 +609,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/public/bridge/fills'
       preLoaderRoute: typeof ApiPublicBridgeFillsRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/public/bridge/deals': {
+      id: '/api/public/bridge/deals'
+      path: '/api/public/bridge/deals'
+      fullPath: '/api/public/bridge/deals'
+      preLoaderRoute: typeof ApiPublicBridgeDealsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/bridge/account': {
+      id: '/api/public/bridge/account'
+      path: '/api/public/bridge/account'
+      fullPath: '/api/public/bridge/account'
+      preLoaderRoute: typeof ApiPublicBridgeAccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/bridge/instructions/$id/result': {
+      id: '/api/public/bridge/instructions/$id/result'
+      path: '/$id/result'
+      fullPath: '/api/public/bridge/instructions/$id/result'
+      preLoaderRoute: typeof ApiPublicBridgeInstructionsIdResultRouteImport
+      parentRoute: typeof ApiPublicBridgeInstructionsRoute
     }
   }
 }
@@ -542,6 +644,21 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
+interface ApiPublicBridgeInstructionsRouteChildren {
+  ApiPublicBridgeInstructionsIdResultRoute: typeof ApiPublicBridgeInstructionsIdResultRoute
+}
+
+const ApiPublicBridgeInstructionsRouteChildren: ApiPublicBridgeInstructionsRouteChildren =
+  {
+    ApiPublicBridgeInstructionsIdResultRoute:
+      ApiPublicBridgeInstructionsIdResultRoute,
+  }
+
+const ApiPublicBridgeInstructionsRouteWithChildren =
+  ApiPublicBridgeInstructionsRoute._addFileChildren(
+    ApiPublicBridgeInstructionsRouteChildren,
+  )
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -562,8 +679,13 @@ const rootRouteChildren: RootRouteChildren = {
   SignalIdRoute: SignalIdRoute,
   TickersSymbolRoute: TickersSymbolRoute,
   TickersIndexRoute: TickersIndexRoute,
+  ApiPublicBridgeAccountRoute: ApiPublicBridgeAccountRoute,
+  ApiPublicBridgeDealsRoute: ApiPublicBridgeDealsRoute,
   ApiPublicBridgeFillsRoute: ApiPublicBridgeFillsRoute,
+  ApiPublicBridgeInstructionsRoute:
+    ApiPublicBridgeInstructionsRouteWithChildren,
   ApiPublicBridgeOrdersRoute: ApiPublicBridgeOrdersRoute,
+  ApiPublicBridgePositionsRoute: ApiPublicBridgePositionsRoute,
   ApiPublicHooksBackfillBenchmarksRoute: ApiPublicHooksBackfillBenchmarksRoute,
   ApiPublicHooksEvaluateSignalsRoute: ApiPublicHooksEvaluateSignalsRoute,
   ApiPublicHooksIngestNewsRoute: ApiPublicHooksIngestNewsRoute,

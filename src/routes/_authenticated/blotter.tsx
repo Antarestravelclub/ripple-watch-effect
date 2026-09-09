@@ -5,6 +5,9 @@ import { useMemo, useState } from "react";
 import { SiteShell } from "@/components/site-shell";
 import { TickerLink } from "@/components/ticker-link";
 import { ManualPaperTradeButton } from "@/components/paper-trade-dialog";
+import { DemoAccountPanel } from "@/components/demo-account-panel";
+import { MirrorTradeButton } from "@/components/mirror-trade-button";
+import { averageSlippage, mirrorComparisons } from "@/lib/paper-trades";
 import { closePaperTrade, listPaperTrades } from "@/lib/paper-trades.functions";
 import {
   computeStats,
@@ -125,6 +128,10 @@ function BlotterPage() {
         </div>
       )}
 
+      <div className="mt-5">
+        <DemoAccountPanel />
+      </div>
+
       <div className="mt-5 flex items-center gap-1 border-b border-border/60">
         {(
           [
@@ -169,7 +176,10 @@ function BlotterPage() {
       )}
       {!isLoading && tab === "closed" && <ClosedTable trades={closedTrades} />}
       {!isLoading && tab === "stats" && (
-        <StatsView trades={closedTrades} notional={data?.notional ?? 100_000} />
+        <>
+          <StatsView trades={closedTrades} notional={data?.notional ?? 100_000} />
+          <MirrorStats trades={data?.trades ?? []} />
+        </>
       )}
 
       {confirm && (
@@ -319,6 +329,13 @@ function OpenTable({
                     >
                       Close now
                     </button>
+
+                    <MirrorTradeButton
+                      paperTradeId={t.id}
+                      lots={t.position_size}
+                      mirrored={t.mirrored}
+                      ticket={t.mirror_ticket}
+                    />
                   </div>
                 </Td>
               </tr>
@@ -721,5 +738,89 @@ function Th({ children }: { children?: React.ReactNode }) {
 function Td({ children, mono }: { children?: React.ReactNode; mono?: boolean }) {
   return (
     <td className={"px-3 py-2 whitespace-nowrap " + (mono ? "font-mono" : "")}>{children}</td>
+  );
+}
+
+/** Paper assumption vs what the demo account actually filled. */
+function MirrorStats({ trades }: { trades: PaperTradeRow[] }) {
+  const rows = useMemo(() => mirrorComparisons(trades), [trades]);
+  const entryAvg = useMemo(() => averageSlippage(rows, "entry"), [rows]);
+  const exitAvg = useMemo(() => averageSlippage(rows, "exit"), [rows]);
+
+  if (rows.length === 0) {
+    return (
+      <section className="mt-8">
+        <h2 className="text-sm font-semibold">Demo mirror comparison</h2>
+        <p className="mt-2 text-xs text-muted-foreground">
+          No trades have been mirrored to the demo account yet. Mirror an open trade to start
+          measuring spread and slippage against the paper assumption.
+        </p>
+      </section>
+    );
+  }
+
+  const fmtSlip = (v: { dollars: number; pct: number } | null) =>
+    v == null ? "—" : `${v.dollars >= 0 ? "+" : ""}${v.dollars.toFixed(4)} (${v.pct >= 0 ? "+" : ""}${v.pct.toFixed(3)}%)`;
+
+  return (
+    <section className="mt-8 space-y-3">
+      <h2 className="text-sm font-semibold">Demo mirror comparison</h2>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Kpi
+          label="Avg entry slippage"
+          value={fmtSlip(entryAvg)}
+          sub={entryAvg ? `${entryAvg.count} mirrored entries · positive is in your favour` : "—"}
+        />
+        <Kpi
+          label="Avg exit slippage"
+          value={fmtSlip(exitAvg)}
+          sub={exitAvg ? `${exitAvg.count} mirrored exits · positive is in your favour` : "—"}
+        />
+      </div>
+      <div className="overflow-x-auto rounded-xl border border-border/70">
+        <table className="w-full text-sm">
+          <thead className="bg-card/60 text-[10px] uppercase tracking-wider text-muted-foreground">
+            <tr>
+              <Th>Symbol</Th>
+              <Th>Dir</Th>
+              <Th>Paper entry</Th>
+              <Th>Demo fill</Th>
+              <Th>Entry slip</Th>
+              <Th>Paper exit</Th>
+              <Th>Demo close</Th>
+              <Th>Exit slip</Th>
+              <Th>Paper P&L</Th>
+              <Th>Demo P&L</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.trade.id} className="border-t border-border/50">
+                <Td>
+                  <TickerLink symbol={r.trade.ticker} />
+                </Td>
+                <Td>{r.trade.direction}</Td>
+                <Td mono>{r.trade.entry_price.toFixed(2)}</Td>
+                <Td mono>{r.trade.demo_fill_price?.toFixed(4) ?? "—"}</Td>
+                <Td mono>{fmtSlip(r.entry)}</Td>
+                <Td mono>{r.trade.exit_price?.toFixed(2) ?? "—"}</Td>
+                <Td mono>{r.trade.demo_close_price?.toFixed(4) ?? "—"}</Td>
+                <Td mono>{fmtSlip(r.exit)}</Td>
+                <Td>
+                  <span className={pctTone(r.paperPnl)}>{fmtMoney(r.paperPnl)}</span>
+                </Td>
+                <Td>
+                  <span className={pctTone(r.demoPnl)}>{fmtMoney(r.demoPnl)}</span>
+                </Td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-[11px] text-muted-foreground">
+        Paper results stay the system of record. The demo column exists to show what spread,
+        commission and slippage do to the same idea.
+      </p>
+    </section>
   );
 }

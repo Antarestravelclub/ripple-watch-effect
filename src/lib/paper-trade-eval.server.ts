@@ -171,6 +171,15 @@ export async function runPaperTradeExits(): Promise<PaperExitResult> {
       continue;
     }
 
+    // Mirrored trades get a matching close instruction; the demo position may
+    // already have closed on its own stop/target — deals reconcile that.
+    try {
+      const { createCloseInstruction } = await import("./bridge-mirror.server");
+      await createCloseInstruction(t.id);
+    } catch (e) {
+      console.warn(`[mirror] close instruction failed for ${t.id}: ${String(e)}`);
+    }
+
     if (bothTouched) out.bothTouched++;
     if (reason === "stop_hit") out.stopHits++;
     else if (reason === "target_hit") out.targetHits++;

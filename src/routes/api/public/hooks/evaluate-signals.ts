@@ -30,7 +30,15 @@ export const Route = createFileRoute("/api/public/hooks/evaluate-signals")({
           } catch (e) {
             broker = { error: e instanceof Error ? e.message : "queue sync failed" };
           }
-          return Response.json({ ok: true, ...result, paper, broker });
+          // Mirror instructions nobody picked up are expired, never silently dropped.
+          let expiredInstructions: number | string = 0;
+          try {
+            const { expireInstructions } = await import("@/lib/bridge-mirror.server");
+            expiredInstructions = await expireInstructions();
+          } catch (e) {
+            expiredInstructions = e instanceof Error ? e.message : "expiry failed";
+          }
+          return Response.json({ ok: true, ...result, paper, broker, expiredInstructions });
         } catch (e) {
           return Response.json(
             { ok: false, error: e instanceof Error ? e.message : "Evaluation failed" },
