@@ -106,13 +106,20 @@ export function SiteShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <div className="flex-1 mx-auto w-full max-w-7xl px-4 py-6 grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
+      <div
+        className={
+          "flex-1 mx-auto w-full max-w-7xl px-4 py-6 grid gap-6 " +
+          (showSidebar ? "grid-cols-1 lg:grid-cols-[1fr_280px]" : "grid-cols-1")
+        }
+      >
         <main className="min-w-0">{children}</main>
-        <aside className="hidden lg:block">
-          <div className="sticky top-20">
-            <SectorHeat events={events} />
-          </div>
-        </aside>
+        {showSidebar && (
+          <aside className="hidden lg:block">
+            <div className="sticky top-20">
+              <SectorHeat events={events} />
+            </div>
+          </aside>
+        )}
       </div>
 
       <footer className="border-t border-border/60 mt-8">
