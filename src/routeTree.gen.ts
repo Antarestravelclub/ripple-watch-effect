@@ -24,6 +24,7 @@ import { Route as TickersIndexRouteImport } from './routes/tickers.index'
 import { Route as TickersSymbolRouteImport } from './routes/tickers.$symbol'
 import { Route as SignalIdRouteImport } from './routes/signal.$id'
 import { Route as EventIdRouteImport } from './routes/event.$id'
+import { Route as AdminBrokerSymbolsRouteImport } from './routes/admin.broker-symbols'
 import { Route as ApiPublicStreamQuotesRouteImport } from './routes/api/public/stream/quotes'
 import { Route as ApiPublicHooksIngestNewsRouteImport } from './routes/api/public/hooks/ingest-news'
 import { Route as ApiPublicHooksEvaluateSignalsRouteImport } from './routes/api/public/hooks/evaluate-signals'
@@ -106,6 +107,11 @@ const EventIdRoute = EventIdRouteImport.update({
   path: '/event/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminBrokerSymbolsRoute = AdminBrokerSymbolsRouteImport.update({
+  id: '/admin/broker-symbols',
+  path: '/admin/broker-symbols',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicStreamQuotesRoute = ApiPublicStreamQuotesRouteImport.update({
   id: '/api/public/stream/quotes',
   path: '/api/public/stream/quotes',
@@ -152,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/setups': typeof SetupsRoute
   '/tracker': typeof TrackerRoute
   '/watchlist': typeof WatchlistRoute
+  '/admin/broker-symbols': typeof AdminBrokerSymbolsRoute
   '/event/$id': typeof EventIdRoute
   '/signal/$id': typeof SignalIdRoute
   '/tickers/$symbol': typeof TickersSymbolRoute
@@ -175,6 +182,7 @@ export interface FileRoutesByTo {
   '/setups': typeof SetupsRoute
   '/tracker': typeof TrackerRoute
   '/watchlist': typeof WatchlistRoute
+  '/admin/broker-symbols': typeof AdminBrokerSymbolsRoute
   '/event/$id': typeof EventIdRoute
   '/signal/$id': typeof SignalIdRoute
   '/tickers/$symbol': typeof TickersSymbolRoute
@@ -199,6 +207,7 @@ export interface FileRoutesById {
   '/setups': typeof SetupsRoute
   '/tracker': typeof TrackerRoute
   '/watchlist': typeof WatchlistRoute
+  '/admin/broker-symbols': typeof AdminBrokerSymbolsRoute
   '/event/$id': typeof EventIdRoute
   '/signal/$id': typeof SignalIdRoute
   '/tickers/$symbol': typeof TickersSymbolRoute
@@ -224,6 +233,7 @@ export interface FileRouteTypes {
     | '/setups'
     | '/tracker'
     | '/watchlist'
+    | '/admin/broker-symbols'
     | '/event/$id'
     | '/signal/$id'
     | '/tickers/$symbol'
@@ -247,6 +257,7 @@ export interface FileRouteTypes {
     | '/setups'
     | '/tracker'
     | '/watchlist'
+    | '/admin/broker-symbols'
     | '/event/$id'
     | '/signal/$id'
     | '/tickers/$symbol'
@@ -270,6 +281,7 @@ export interface FileRouteTypes {
     | '/setups'
     | '/tracker'
     | '/watchlist'
+    | '/admin/broker-symbols'
     | '/event/$id'
     | '/signal/$id'
     | '/tickers/$symbol'
@@ -294,6 +306,7 @@ export interface RootRouteChildren {
   SetupsRoute: typeof SetupsRoute
   TrackerRoute: typeof TrackerRoute
   WatchlistRoute: typeof WatchlistRoute
+  AdminBrokerSymbolsRoute: typeof AdminBrokerSymbolsRoute
   EventIdRoute: typeof EventIdRoute
   SignalIdRoute: typeof SignalIdRoute
   TickersSymbolRoute: typeof TickersSymbolRoute
@@ -413,6 +426,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EventIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/broker-symbols': {
+      id: '/admin/broker-symbols'
+      path: '/admin/broker-symbols'
+      fullPath: '/admin/broker-symbols'
+      preLoaderRoute: typeof AdminBrokerSymbolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/stream/quotes': {
       id: '/api/public/stream/quotes'
       path: '/api/public/stream/quotes'
@@ -470,6 +490,7 @@ const rootRouteChildren: RootRouteChildren = {
   SetupsRoute: SetupsRoute,
   TrackerRoute: TrackerRoute,
   WatchlistRoute: WatchlistRoute,
+  AdminBrokerSymbolsRoute: AdminBrokerSymbolsRoute,
   EventIdRoute: EventIdRoute,
   SignalIdRoute: SignalIdRoute,
   TickersSymbolRoute: TickersSymbolRoute,

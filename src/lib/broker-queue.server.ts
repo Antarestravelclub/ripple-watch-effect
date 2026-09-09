@@ -48,6 +48,26 @@ export async function syncBrokerOrders(): Promise<QueueResult> {
       .map((o) => o.signal_id),
   );
 
+  // Load the latest broker-symbol mapping so queued orders carry the exact broker symbol.
+  const { data: latestUpload } = await supabaseAdmin
+    .from("broker_symbol_uploads")
+    .select("id")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  const brokerSymbolMap = new Map<string, string>();
+  if (latestUpload) {
+    const { data: mappedSymbols } = await supabaseAdmin
+      .from("broker_symbols")
+      .select("mapped_app_ticker,broker_symbol")
+      .eq("upload_id", latestUpload.id)
+      .in("mapping_status", ["auto_mapped", "manual_mapped"]);
+    for (const m of mappedSymbols ?? []) {
+      if (m.mapped_app_ticker) brokerSymbolMap.set(m.mapped_app_ticker.toUpperCase(), m.broker_symbol);
+    }
+  }
+
   const rows: Record<string, unknown>[] = [];
 
   for (const s of signals) {
@@ -70,6 +90,7 @@ export async function syncBrokerOrders(): Promise<QueueResult> {
       rows.push({
         signal_id: s.id,
         ticker: s.ticker,
+        broker_symbol: brokerSymbolMap.get(s.ticker.toUpperCase()) ?? null,
         side: s.direction === "long" ? "buy" : "sell",
         intent: "open",
         mode: "demo",
@@ -85,6 +106,7 @@ export async function syncBrokerOrders(): Promise<QueueResult> {
       rows.push({
         signal_id: s.id,
         ticker: s.ticker,
+        broker_symbol: brokerSymbolMap.get(s.ticker.toUpperCase()) ?? null,
         // Closing reverses the original side.
         side: s.direction === "long" ? "sell" : "buy",
         intent: "close",

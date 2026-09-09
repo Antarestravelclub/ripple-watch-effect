@@ -172,6 +172,98 @@ export type Database = {
           },
         ]
       }
+      broker_symbol_uploads: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          filename: string | null
+          id: string
+          mapped_count: number
+          source: string | null
+          symbol_count: number
+          unmapped_count: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          filename?: string | null
+          id?: string
+          mapped_count?: number
+          source?: string | null
+          symbol_count?: number
+          unmapped_count?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          filename?: string | null
+          id?: string
+          mapped_count?: number
+          source?: string | null
+          symbol_count?: number
+          unmapped_count?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      broker_symbols: {
+        Row: {
+          broker_symbol: string
+          created_at: string
+          currency_profit: string | null
+          description: string | null
+          id: string
+          mapped_app_ticker: string | null
+          mapping_status: string
+          normalized_base: string | null
+          path: string | null
+          review_reason: string | null
+          trade_mode: string | null
+          updated_at: string
+          upload_id: string
+        }
+        Insert: {
+          broker_symbol: string
+          created_at?: string
+          currency_profit?: string | null
+          description?: string | null
+          id?: string
+          mapped_app_ticker?: string | null
+          mapping_status?: string
+          normalized_base?: string | null
+          path?: string | null
+          review_reason?: string | null
+          trade_mode?: string | null
+          updated_at?: string
+          upload_id: string
+        }
+        Update: {
+          broker_symbol?: string
+          created_at?: string
+          currency_profit?: string | null
+          description?: string | null
+          id?: string
+          mapped_app_ticker?: string | null
+          mapping_status?: string
+          normalized_base?: string | null
+          path?: string | null
+          review_reason?: string | null
+          trade_mode?: string | null
+          updated_at?: string
+          upload_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "broker_symbols_upload_id_fkey"
+            columns: ["upload_id"]
+            isOneToOne: false
+            referencedRelation: "broker_symbol_uploads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       evaluation_runs: {
         Row: {
           created_at: string
@@ -762,14 +854,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
+      app_role: "admin" | "moderator" | "user"
       event_archetype:
         | "armed_conflict"
         | "terror_attack"
@@ -915,6 +1032,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "moderator", "user"],
       event_archetype: [
         "armed_conflict",
         "terror_attack",

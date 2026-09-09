@@ -71,8 +71,17 @@ def heartbeat(info):
     }
 
 
-def resolve_symbol(ticker: str):
-    """Find a tradeable symbol on this broker for the app's ticker."""
+def resolve_symbol(order: dict):
+    """Find a tradeable symbol on this broker for the app's ticker.
+
+    Prefer the broker_symbol supplied by the server mapping; fall back to
+    app ticker + optional suffix, then plain app ticker.
+    """
+    server_symbol = order.get("broker_symbol")
+    if server_symbol and mt5.symbol_info(server_symbol) is not None and mt5.symbol_select(server_symbol, True):
+        return server_symbol
+
+    ticker = order["ticker"]
     for candidate in (ticker + SUFFIX, ticker):
         if mt5.symbol_info(candidate) is not None and mt5.symbol_select(candidate, True):
             return candidate
@@ -80,7 +89,7 @@ def resolve_symbol(ticker: str):
 
 
 def place(order):
-    symbol = resolve_symbol(order["ticker"])
+    symbol = resolve_symbol(order)
     if symbol is None:
         return {
             "id": order["id"],
