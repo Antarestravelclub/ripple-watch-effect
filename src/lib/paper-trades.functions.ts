@@ -428,6 +428,11 @@ export const listPaperTrades = createServerFn({ method: "GET" })
         conviction_score: s?.conviction_score ?? null,
         cohort: s?.atr_at_signal != null && s?.stop_price != null ? "atr_v1" : "legacy_pct",
         tradable: tradable.has(r.ticker.toUpperCase()),
+        mirrored: Boolean(r.mirrored),
+        mirror_ticket: r.mirror_ticket != null ? Number(r.mirror_ticket) : null,
+        demo_fill_price: r.demo_fill_price != null ? Number(r.demo_fill_price) : null,
+        demo_close_price: r.demo_close_price != null ? Number(r.demo_close_price) : null,
+        demo_realized_pnl: r.demo_realized_pnl != null ? Number(r.demo_realized_pnl) : null,
       };
     });
 
