@@ -350,10 +350,11 @@ export async function runNewsIngest(): Promise<IngestResult> {
           review_reason: out.status !== "ok" ? (out.message ?? out.status) : null,
         });
 
-        if (out.status !== "ok") {
+        if (out.status !== "ok" || out.price == null) {
           detail.push(`ETF ${sym} skipped: ${out.message ?? out.status}`);
           continue;
         }
+        const entry: number = out.price;
 
         const outcome = await createSignal(
           {
@@ -362,7 +363,7 @@ export async function runNewsIngest(): Promise<IngestResult> {
             companyName: match.row.name,
             quoteSymbol: sym,
             direction: dominant,
-            entryPrice: out.price,
+            entryPrice: entry,
             dayHigh: out.dayHigh ?? null,
             dayLow: out.dayLow ?? null,
             rationale: mechanism,

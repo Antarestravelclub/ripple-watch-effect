@@ -84,7 +84,7 @@ export const verifyEtfFeeds = createServerFn({ method: "POST" })
     if (isAdmin !== true) throw new Error("Admins only");
 
     const { allEtfRows } = await import("./etf-reference.server");
-    const { fetchQuoteWithRetry } = await import("./quotes.server");
+    const { fetchQuoteWithRetry } = await import("./signal-prices.server");
     const { atrFor } = await import("./atr.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
