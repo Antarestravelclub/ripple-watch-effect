@@ -78,6 +78,16 @@ function BrokerPage() {
           </span>
         </div>
 
+        <div className="mb-5 text-xs">
+          <Link
+            to="/admin/broker-symbols"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card/60 px-3 py-1.5 hover:bg-primary/10 transition-colors"
+          >
+            <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+            Manage broker symbol mapping
+          </Link>
+        </div>
+
         {/* Bridge status */}
         <section className="rounded-xl border border-border/70 bg-card/60 p-4 mb-5">
           <div className="flex items-center gap-2 mb-3">
