@@ -90,6 +90,7 @@ export async function syncBrokerOrders(): Promise<QueueResult> {
       rows.push({
         signal_id: s.id,
         ticker: s.ticker,
+        broker_symbol: brokerSymbolMap.get(s.ticker.toUpperCase()) ?? null,
         side: s.direction === "long" ? "buy" : "sell",
         intent: "open",
         mode: "demo",
@@ -105,6 +106,7 @@ export async function syncBrokerOrders(): Promise<QueueResult> {
       rows.push({
         signal_id: s.id,
         ticker: s.ticker,
+        broker_symbol: brokerSymbolMap.get(s.ticker.toUpperCase()) ?? null,
         // Closing reverses the original side.
         side: s.direction === "long" ? "sell" : "buy",
         intent: "close",
