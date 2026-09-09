@@ -36,7 +36,7 @@ export async function runPaperTradeExits(): Promise<PaperExitResult> {
   const { data: trades, error } = await supabaseAdmin
     .from("paper_trades")
     .select(
-      "id,user_id,signal_id,ticker,quote_symbol,direction,entry_price,entry_time,stop_price,target_price,position_size",
+      "id,user_id,signal_id,source,ticker,quote_symbol,direction,entry_price,entry_time,stop_price,target_price,position_size",
     )
     .eq("status", "open");
   if (error) throw new Error(error.message);
@@ -48,15 +48,20 @@ export async function runPaperTradeExits(): Promise<PaperExitResult> {
   ];
   const quotes = await quotesFor(symbols);
 
-  // Linked signals whose invalidation has already fired.
-  const signalIds = [...new Set(trades.map((t) => t.signal_id))];
-  const { data: signals } = await supabaseAdmin
-    .from("signals")
-    .select("id,status")
-    .in("id", signalIds);
-  const invalidatedSignals = new Set(
-    (signals ?? []).filter((s) => s.status === "invalidated").map((s) => s.id),
-  );
+  // Linked signals whose invalidation has already fired. Free-form manual
+  // trades have no signal, so they can only exit on stop, target or by hand.
+  const signalIds = [
+    ...new Set(trades.map((t) => t.signal_id).filter((id): id is string => Boolean(id))),
+  ];
+  const invalidatedSignals = new Set<string>();
+  if (signalIds.length > 0) {
+    const { data: signals } = await supabaseAdmin
+      .from("signals")
+      .select("id,status")
+      .in("id", signalIds);
+    for (const s of signals ?? []) if (s.status === "invalidated") invalidatedSignals.add(s.id);
+  }
+
 
   const now = new Date().toISOString();
 
@@ -72,14 +77,16 @@ export async function runPaperTradeExits(): Promise<PaperExitResult> {
       console.warn(
         `[paper-blotter] SKIPPED exit evaluation for ${symbol} (trade ${t.id}) — price feed stale or missing. No trade closed on stale data.`,
       );
-      await supabaseAdmin.from("signal_evaluation_log").insert({
-        signal_id: t.signal_id,
-        trigger: "paper_exit_skipped_stale_feed",
-        price: q?.price ?? null,
-        detail: `Paper trade ${t.id} (${symbol}) skipped: quote ${
-          quoteAge == null ? "missing" : `${Math.round(quoteAge / 60_000)}m old`
-        }`,
-      });
+      if (t.signal_id) {
+        await supabaseAdmin.from("signal_evaluation_log").insert({
+          signal_id: t.signal_id,
+          trigger: "paper_exit_skipped_stale_feed",
+          price: q?.price ?? null,
+          detail: `Paper trade ${t.id} (${symbol}) skipped: quote ${
+            quoteAge == null ? "missing" : `${Math.round(quoteAge / 60_000)}m old`
+          }`,
+        });
+      }
       continue;
     }
 
@@ -92,11 +99,16 @@ export async function runPaperTradeExits(): Promise<PaperExitResult> {
 
     // Intraday-accurate period range: the same snapshot history the signal
     // evaluator uses, restricted to the life of this trade, plus the live quote.
-    const { data: hist } = await supabaseAdmin
-      .from("price_snapshots")
-      .select("price,day_high,day_low,captured_at")
-      .eq("signal_id", t.signal_id)
-      .gte("captured_at", t.entry_time);
+    // Manual trades have no snapshot history, so they use the stored day range.
+    const hist = t.signal_id
+      ? (
+          await supabaseAdmin
+            .from("price_snapshots")
+            .select("price,day_high,day_low,captured_at")
+            .eq("signal_id", t.signal_id)
+            .gte("captured_at", t.entry_time)
+        ).data
+      : null;
 
     const bars = [
       ...(hist ?? []).map((h) => {
@@ -110,6 +122,7 @@ export async function runPaperTradeExits(): Promise<PaperExitResult> {
         low: Math.min(q.dayLow ?? q.price, q.price),
       },
     ];
+
 
     let hitStop = false;
     let hitTarget = false;
@@ -134,7 +147,7 @@ export async function runPaperTradeExits(): Promise<PaperExitResult> {
     } else if (hitTarget) {
       exitPrice = target;
       reason = "target_hit";
-    } else if (invalidatedSignals.has(t.signal_id)) {
+    } else if (t.signal_id && invalidatedSignals.has(t.signal_id)) {
       exitPrice = q.price;
       reason = "invalidated";
     }
@@ -163,14 +176,19 @@ export async function runPaperTradeExits(): Promise<PaperExitResult> {
     else if (reason === "target_hit") out.targetHits++;
     else out.invalidated++;
 
-    await supabaseAdmin.from("signal_evaluation_log").insert({
-      signal_id: t.signal_id,
-      trigger: `paper_${reason}`,
-      price: exitPrice,
-      detail: `Paper trade ${t.id} ${t.ticker} ${dir} closed at ${exitPrice} (${reason}${
-        bothTouched ? ", both levels touched — stop assumed first" : ""
-      }), P&L ${pnl}`,
-    });
+    const detail = `Paper trade ${t.id} ${t.ticker} ${dir} closed at ${exitPrice} (${reason}${
+      bothTouched ? ", both levels touched — stop assumed first" : ""
+    }), P&L ${pnl}`;
+    if (t.signal_id) {
+      await supabaseAdmin.from("signal_evaluation_log").insert({
+        signal_id: t.signal_id,
+        trigger: `paper_${reason}`,
+        price: exitPrice,
+        detail,
+      });
+    } else {
+      console.info(`[paper-blotter] manual paper_${reason}: ${detail}`);
+    }
   }
 
   return out;

@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { SiteShell } from "@/components/site-shell";
 import { TickerLink } from "@/components/ticker-link";
+import { ManualPaperTradeButton } from "@/components/paper-trade-dialog";
 import { closePaperTrade, listPaperTrades } from "@/lib/paper-trades.functions";
 import {
   computeStats,
@@ -14,13 +15,16 @@ import {
   fmtR,
   liveMetrics,
   SMALL_SAMPLE,
+  SOURCE_LABEL,
   SPLIT_LABEL,
   splitStats,
   type ExitReason,
   type PaperTradeRow,
   type SplitKey,
+  type TradeSource,
 } from "@/lib/paper-trades";
 import { AlertTriangle, Loader2, RefreshCw } from "lucide-react";
+
 
 export const Route = createFileRoute("/_authenticated/blotter")({
   head: () => ({
@@ -95,14 +99,18 @@ function BlotterPage() {
             signals as issued while the Blotter measures them as traded.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => refetch()}
-          className="inline-flex items-center gap-1.5 rounded-md border border-border/70 px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent"
-        >
-          <RefreshCw className={"w-3.5 h-3.5 " + (isFetching ? "animate-spin" : "")} />
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <ManualPaperTradeButton />
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border/70 px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent"
+          >
+            <RefreshCw className={"w-3.5 h-3.5 " + (isFetching ? "animate-spin" : "")} />
+            Refresh
+          </button>
+        </div>
+
       </div>
 
       {data?.feedStale && (
@@ -223,15 +231,20 @@ function OpenTable({
 }) {
   if (trades.length === 0) {
     return (
-      <p className="mt-6 text-sm text-muted-foreground">
-        No open paper trades. Open one from a signal on the{" "}
-        <Link to="/tracker" className="text-primary hover:underline">
-          Tracker
-        </Link>{" "}
-        or any signal page.
-      </p>
+      <div className="mt-6 space-y-3">
+        <p className="text-sm text-muted-foreground">
+          No open paper trades. Use <span className="text-foreground">New paper trade</span> above
+          for any symbol, or open one from a signal on the{" "}
+          <Link to="/tracker" className="text-primary hover:underline">
+            Tracker
+          </Link>{" "}
+          or any signal page.
+        </p>
+        <ManualPaperTradeButton />
+      </div>
     );
   }
+
   return (
     <div className="mt-5 overflow-x-auto rounded-xl border border-border/70">
       <table className="w-full text-sm">
@@ -282,13 +295,20 @@ function OpenTable({
                 <Td>{fmtDuration(t.entry_time)}</Td>
                 <Td>
                   <div className="flex items-center gap-2">
-                    <Link
-                      to="/signal/$id"
-                      params={{ id: t.signal_id }}
-                      className="text-xs text-primary hover:underline"
-                    >
-                      Signal
-                    </Link>
+                    {t.signal_id ? (
+                      <Link
+                        to="/signal/$id"
+                        params={{ id: t.signal_id }}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Signal
+                      </Link>
+                    ) : (
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                        Manual
+                      </span>
+                    )}
+
                     <button
                       type="button"
                       onClick={() => onClose(t)}
@@ -309,6 +329,7 @@ function OpenTable({
 
 function ClosedTable({ trades }: { trades: PaperTradeRow[] }) {
   const [reason, setReason] = useState<"all" | ExitReason>("all");
+  const [source, setSource] = useState<"all" | TradeSource>("all");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
 
@@ -316,15 +337,29 @@ function ClosedTable({ trades }: { trades: PaperTradeRow[] }) {
     () =>
       trades
         .filter((t) => (reason === "all" ? true : t.exit_reason === reason))
+        .filter((t) => (source === "all" ? true : t.source === source))
         .filter((t) => (from ? (t.exit_time ?? "") >= from : true))
         .filter((t) => (to ? (t.exit_time ?? "") <= to + "T23:59:59Z" : true))
         .sort((a, b) => (b.exit_time ?? "").localeCompare(a.exit_time ?? "")),
-    [trades, reason, from, to],
+    [trades, reason, source, from, to],
   );
 
   return (
     <div className="mt-5">
       <div className="flex flex-wrap items-end gap-3">
+        <label className="text-xs text-muted-foreground">
+          Came from
+          <select
+            value={source}
+            onChange={(e) => setSource(e.target.value as "all" | TradeSource)}
+            className="ml-2 rounded-md border border-border/70 bg-background px-2 py-1 text-xs text-foreground"
+          >
+            <option value="all">All</option>
+            <option value="signal">{SOURCE_LABEL.signal}</option>
+            <option value="manual">{SOURCE_LABEL.manual}</option>
+          </select>
+        </label>
+
         <label className="text-xs text-muted-foreground">
           Exit reason
           <select
@@ -368,12 +403,14 @@ function ClosedTable({ trades }: { trades: PaperTradeRow[] }) {
             <thead className="bg-card/60 text-[10px] uppercase tracking-wider text-muted-foreground">
               <tr>
                 <Th>Symbol</Th>
+                <Th>Came from</Th>
                 <Th>Dir</Th>
                 <Th>Entry</Th>
                 <Th>Exit</Th>
                 <Th>Reason</Th>
                 <Th>Realised</Th>
                 <Th>Duration</Th>
+
               </tr>
             </thead>
             <tbody>
@@ -412,6 +449,12 @@ function ClosedTable({ trades }: { trades: PaperTradeRow[] }) {
                       )}
                     </Td>
                     <Td>
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                        {SOURCE_LABEL[t.source]}
+                      </span>
+                    </Td>
+                    <Td>
+
                       <span
                         className={t.direction === "long" ? "text-tailwind" : "text-headwind"}
                       >
@@ -438,13 +481,51 @@ function ClosedTable({ trades }: { trades: PaperTradeRow[] }) {
   );
 }
 
-function StatsView({ trades, notional }: { trades: PaperTradeRow[]; notional: number }) {
+function StatsView({ trades: all, notional }: { trades: PaperTradeRow[]; notional: number }) {
+  // Signal-based results are the default: they are what measures signal quality.
+  const [set, setSet] = useState<TradeSource | "all">("signal");
+  const trades = useMemo(
+    () => (set === "all" ? all : all.filter((t) => t.source === set)),
+    [all, set],
+  );
   const stats = useMemo(() => computeStats(trades, notional), [trades, notional]);
   const curve = useMemo(() => equityCurve(trades, notional), [trades, notional]);
   const [split, setSplit] = useState<SplitKey>("conviction");
   const rows = useMemo(() => splitStats(trades, split, notional), [trades, split, notional]);
 
-  if (trades.length === 0) {
+  const counts = {
+    signal: all.filter((t) => t.source === "signal").length,
+    manual: all.filter((t) => t.source === "manual").length,
+    all: all.length,
+  };
+
+  const picker = (
+    <div className="flex items-center gap-1 flex-wrap">
+      {(
+        [
+          ["signal", `${SOURCE_LABEL.signal} (${counts.signal})`],
+          ["manual", `${SOURCE_LABEL.manual} (${counts.manual})`],
+          ["all", `All trades (${counts.all})`],
+        ] as Array<[TradeSource | "all", string]>
+      ).map(([key, label]) => (
+        <button
+          key={key}
+          type="button"
+          onClick={() => setSet(key)}
+          className={
+            "rounded-md border px-2.5 py-1 text-xs transition-colors " +
+            (set === key
+              ? "border-primary/50 bg-primary/10 text-primary"
+              : "border-border/70 text-muted-foreground hover:bg-accent")
+          }
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+
+  if (all.length === 0) {
     return (
       <p className="mt-6 text-sm text-muted-foreground">
         No closed paper trades yet — statistics appear once trades resolve.
@@ -454,13 +535,20 @@ function StatsView({ trades, notional }: { trades: PaperTradeRow[]; notional: nu
 
   return (
     <div className="mt-5 space-y-6">
-      {stats.count < SMALL_SAMPLE && (
+      {picker}
+      {trades.length === 0 && (
+        <p className="text-sm text-muted-foreground">
+          No closed trades in this set yet.
+        </p>
+      )}
+      {trades.length > 0 && stats.count < SMALL_SAMPLE && (
         <div className="flex items-start gap-2 rounded-md border border-amber/40 bg-amber/10 p-3 text-xs text-amber">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           Small sample: {stats.count} closed trade{stats.count === 1 ? "" : "s"}. Fewer than{" "}
           {SMALL_SAMPLE} is not evidence of anything.
         </div>
       )}
+
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Kpi
