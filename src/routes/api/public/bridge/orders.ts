@@ -1,26 +1,14 @@
 // Bridge endpoint: the MetaTrader 5 *demo* helper claims queued orders here.
-// Secured with the shared BRIDGE_SECRET (header x-bridge-key).
+// Secured with the owner's bridge secret (see bridge-auth.server).
 import { createFileRoute } from "@tanstack/react-router";
 
-function authorize(request: Request): Response | null {
-  const expected = process.env["BRIDGE_SECRET"] ?? "";
-  if (!expected) {
-    return Response.json(
-      { ok: false, error: "Bridge is not configured yet (BRIDGE_SECRET missing)." },
-      { status: 503 },
-    );
-  }
-  if (request.headers.get("x-bridge-key") !== expected) {
-    return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
-  }
-  return null;
-}
 
 export const Route = createFileRoute("/api/public/bridge/orders")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const denied = authorize(request);
+        const { authorizeBridge } = await import("@/lib/bridge-auth.server");
+        const denied = await authorizeBridge(request);
         if (denied) return denied;
         try {
           const body = (await request.json().catch(() => ({}))) as {

@@ -289,6 +289,33 @@ export type Database = {
         }
         Relationships: []
       }
+      bridge_secrets: {
+        Row: {
+          allowed_account: string | null
+          created_at: string
+          rotated_at: string
+          secret: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          allowed_account?: string | null
+          created_at?: string
+          rotated_at?: string
+          secret: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          allowed_account?: string | null
+          created_at?: string
+          rotated_at?: string
+          secret?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       broker_bridge_heartbeats: {
         Row: {
           account_is_demo: boolean | null

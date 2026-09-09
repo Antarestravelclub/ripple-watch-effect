@@ -41,3 +41,9 @@
 - [x] Starting balance card on the Blotter
 - [x] Broker uploads store volume_min / volume_step / contract_size when present
 - [x] "Undersized at this balance" notice with min-lot size, its $ and % risk, take-at-min-lot or skip
+
+## Bridge setup page (done)
+- [x] /bridge signed-in page: 6 numbered collapsible panels, copy buttons
+- [x] Per-owner bridge secret (bridge_secrets), auto-generated, reveal + regenerate
+- [x] Pre-filled bridge_config.json download + helper download from /ripple_bridge_helper.py
+- [x] Bridge auth accepts x-bridge-key / Authorization Bearer / X-Bridge-Secret, per-owner lookup
