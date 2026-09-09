@@ -91,6 +91,20 @@ function BlotterPage() {
   const priceOf = (t: PaperTradeRow) =>
     data?.prices[(t.quote_symbol || t.ticker).toUpperCase()]?.price ?? null;
 
+  const [filters, setFilters] = useState<ClosedFilters>({
+    reason: "all",
+    source: "all",
+    from: "",
+    to: "",
+  });
+  const isFiltered =
+    filters.reason !== "all" || filters.source !== "all" || filters.from !== "" || filters.to !== "";
+  const filteredClosed = useMemo(
+    () => applyClosedFilters(closedTrades, filters),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [trades, filters],
+  );
+
   return (
     <SiteShell>
       <div className="flex items-start justify-between gap-3 flex-wrap">
