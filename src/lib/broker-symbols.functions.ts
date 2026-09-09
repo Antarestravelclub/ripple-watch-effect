@@ -43,6 +43,17 @@ function parseCsv(text: string): Record<string, string>[] {
   return rows;
 }
 
+/** First numeric value among the accepted column spellings, else null. */
+function numeric(row: Record<string, string>, keys: string[]): number | null {
+  for (const k of keys) {
+    const raw = row[k];
+    if (raw == null || raw === "") continue;
+    const n = Number(raw);
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+  return null;
+}
+
 const TRADE_MODE_PRIORITY: Record<string, number> = {
   full: 0,
   long_only: 1,
@@ -172,6 +183,9 @@ export const uploadBrokerSymbols = createServerFn({ method: "POST" })
         path: row.path ?? row["path"] ?? null,
         currency_profit: row.currency_profit ?? row["currency_profit"] ?? null,
         trade_mode: row.trade_mode ?? row["trade_mode"] ?? null,
+        volume_min: numeric(row, ["volume_min", "volumemin", "min_volume", "min_lot"]),
+        volume_step: numeric(row, ["volume_step", "volumestep", "lot_step"]),
+        contract_size: numeric(row, ["contract_size", "contractsize", "trade_contract_size"]),
         normalized_base: normalized,
         mapped_app_ticker: appTicker,
         mapping_status: status,
