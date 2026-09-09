@@ -303,6 +303,37 @@ function ManualPage() {
 
 
 
+              <Card title="Connect a demo account — watching it run for real">
+                <p>
+                  The <Term>Broker</Term> page can hand qualifying signals to a
+                  MetaTrader 5 <Term>demo</Term> account so you can watch them
+                  play out on a real platform. Nothing here can touch a funded
+                  account: every order is stamped demo, the database refuses any
+                  other value, and the helper program exits if the terminal is
+                  not a demo login.
+                </p>
+                <p>
+                  MetaTrader 5 has no web connection, so a small helper program
+                  (<span className="font-mono">bridge/mt5_bridge.py</span>) must
+                  run beside a logged-in terminal, and it only runs on Windows.
+                  On a Mac, use a rented Windows trading VPS, Windows in
+                  Parallels or VMware, or a spare Windows PC.
+                </p>
+                <p>
+                  Steps, with a live checklist, are on the{" "}
+                  <Link to="/broker" className="text-primary hover:underline">
+                    Broker
+                  </Link>{" "}
+                  page: save the bridge key, install Python 3.10+ and the helper
+                  on the Windows machine, run it with your app address and key,
+                  and upload your broker's symbol list so share names such as{" "}
+                  <span className="font-mono">AAPL.US</span> match correctly.
+                  Only signals scoring 55 or higher with a size, a stop and a
+                  target are ever queued, and each produces at most one opening
+                  and one closing order.
+                </p>
+              </Card>
+
               <Card title="Analogues & Playbooks — historical context">
                 <p>
                   <Term>Analogues</Term> is a library of canonical past events
