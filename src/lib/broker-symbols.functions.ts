@@ -138,41 +138,44 @@ export const uploadBrokerSymbols = createServerFn({ method: "POST" })
       .single();
     if (uploadErr || !upload) throw new Error(uploadErr?.message ?? "upload insert failed");
 
-    const candidates: Record<string, { row: Record<string, string>; normalized: string }[]> = {};
-    for (const row of rows) {
-      const sym = row.symbol ?? row["symbol"] ?? "";
-      if (!sym) continue;
-      const normalized = normalizeBase(sym);
-      if (!candidates[normalized]) candidates[normalized] = [];
-      candidates[normalized].push({ row, normalized });
+    // Normalize every row first so we can detect ambiguous bases (multiple broker symbols
+    // for the same normalized app ticker).
+    const normalizedRows = rows
+      .map((row) => {
+        const sym = row.symbol ?? row["symbol"] ?? "";
+        if (!sym) return null;
+        return { row, normalized: normalizeBase(sym) };
+      })
+      .filter((r): r is { row: Record<string, string>; normalized: string } => r != null);
+
+    const baseCounts = new Map<string, number>();
+    for (const { normalized } of normalizedRows) {
+      baseCounts.set(normalized, (baseCounts.get(normalized) ?? 0) + 1);
     }
 
     const symbolRows: Record<string, unknown>[] = [];
     let mapped = 0;
     let unmapped = 0;
 
-    for (const [normalized, list] of Object.entries(candidates)) {
-      const sorted = list.sort(
-        (a, b) =>
-          (TRADE_MODE_PRIORITY[a.row.trade_mode ?? "unknown"] ?? 99) -
-          (TRADE_MODE_PRIORITY[b.row.trade_mode ?? "unknown"] ?? 99),
-      );
-      const best = sorted[0];
+    for (const { row, normalized } of normalizedRows) {
+      const brokerSymbol = row.symbol ?? row["symbol"] ?? normalized;
       const appTicker = tickerSet.has(normalized) ? normalized : null;
-      const status = appTicker ? "auto_mapped" : "unmapped";
-      if (appTicker) mapped++;
+      const isAmbiguous = appTicker != null && (baseCounts.get(normalized) ?? 0) > 1;
+      const status = appTicker && !isAmbiguous ? "auto_mapped" : "unmapped";
+      if (status === "auto_mapped") mapped++;
       else unmapped++;
 
       symbolRows.push({
         upload_id: upload.id,
-        broker_symbol: best.row.symbol ?? best.row["symbol"] ?? normalized,
-        description: best.row.description ?? best.row["description"] ?? null,
-        path: best.row.path ?? best.row["path"] ?? null,
-        currency_profit: best.row.currency_profit ?? best.row["currency_profit"] ?? null,
-        trade_mode: best.row.trade_mode ?? best.row["trade_mode"] ?? null,
+        broker_symbol: brokerSymbol,
+        description: row.description ?? row["description"] ?? null,
+        path: row.path ?? row["path"] ?? null,
+        currency_profit: row.currency_profit ?? row["currency_profit"] ?? null,
+        trade_mode: row.trade_mode ?? row["trade_mode"] ?? null,
         normalized_base: normalized,
         mapped_app_ticker: appTicker,
         mapping_status: status,
+        review_reason: isAmbiguous ? "Ambiguous: multiple broker symbols for this ticker" : null,
       });
     }
 
