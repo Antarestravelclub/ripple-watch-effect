@@ -6,6 +6,8 @@ export interface BridgeConfigView {
   secret: string;
   allowedAccount: string | null;
   rotatedAt: string;
+  /** Broker server name last reported by the helper, when it has run. */
+  brokerServer?: string | null;
   /** Fixed values the helper expects; shown read-only on the page. */
   executionEnabled: false;
   maxLotsPerOrder: number;
