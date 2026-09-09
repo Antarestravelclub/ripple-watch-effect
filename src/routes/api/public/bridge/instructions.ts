@@ -6,7 +6,7 @@ export const Route = createFileRoute("/api/public/bridge/instructions")({
     handlers: {
       GET: async ({ request }) => {
         const { authorizeBridge } = await import("@/lib/bridge-auth.server");
-        const denied = authorizeBridge(request);
+        const denied = await authorizeBridge(request);
         if (denied) return denied;
         try {
           const url = new URL(request.url);
