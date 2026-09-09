@@ -2,14 +2,13 @@
 // Secured with the owner's bridge secret (see bridge-auth.server).
 import { createFileRoute } from "@tanstack/react-router";
 
-
 export const Route = createFileRoute("/api/public/bridge/orders")({
   server: {
     handlers: {
       POST: async ({ request }) => {
         const { authorizeBridge } = await import("@/lib/bridge-auth.server");
-        const denied = await authorizeBridge(request);
-        if (denied) return denied;
+        const auth = await authorizeBridge(request);
+        if (auth instanceof Response) return auth;
         try {
           const body = (await request.json().catch(() => ({}))) as {
             limit?: number;
@@ -31,11 +30,11 @@ export const Route = createFileRoute("/api/public/bridge/orders")({
                 { status: 403 },
               );
             }
-            await recordHeartbeat(body.heartbeat as never);
+            await recordHeartbeat(auth.ownerId, body.heartbeat as never);
           }
 
-          const queued = await syncBrokerOrders();
-          const orders = await claimOrders(body.limit ?? 10);
+          const queued = await syncBrokerOrders(auth.ownerId);
+          const orders = await claimOrders(auth.ownerId, body.limit ?? 10);
           return Response.json({ ok: true, mode: "demo", queued, orders });
         } catch (e) {
           return Response.json(

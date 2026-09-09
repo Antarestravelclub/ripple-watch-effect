@@ -175,7 +175,7 @@ export async function runPaperTradeExits(): Promise<PaperExitResult> {
     // already have closed on its own stop/target — deals reconcile that.
     try {
       const { createCloseInstruction } = await import("./bridge-mirror.server");
-      await createCloseInstruction(t.id);
+      await createCloseInstruction(t.user_id, t.id);
     } catch (e) {
       console.warn(`[mirror] close instruction failed for ${t.id}: ${String(e)}`);
     }

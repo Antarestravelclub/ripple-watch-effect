@@ -2,9 +2,10 @@
 
 ## Done
 - Guided "Connect your demo account" panel on /broker, Mac/Windows guidance, helper startup + auth error messages, manual section.
+- Per-user bridge ownership across secrets, snapshots, positions, deals, instructions, mirror settings, heartbeats and queued orders; no workspace-wide bridge secret fallback.
 
 ## Open
-- BRIDGE_SECRET must be saved by the user (secure form) — blocked on user input.
+- None.
 
 ## Phase A — Demo Sync (done)
 - [x] Tables: bridge_account_snapshots, bridge_positions, bridge_deals

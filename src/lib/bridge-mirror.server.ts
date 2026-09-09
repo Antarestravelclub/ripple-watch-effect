@@ -1,21 +1,27 @@
 // Server-only mirroring layer: turns paper trades into demo-account
-// instructions for the MetaTrader 5 bridge helper. Demo only, opt-in per trade.
+// instructions for the MetaTrader 5 bridge helper. Demo only, opt-in per trade,
+// and every instruction belongs to one signed-in owner.
 const CONNECTED_MS = 2 * 60_000;
 
 export type MirrorGuard = { ok: true; brokerSymbol: string } | { ok: false; reason: string };
 
-export async function bridgeState() {
+export async function bridgeState(ownerId: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const [{ data: snaps }, { data: settings }] = await Promise.all([
+  const [{ data: snapshot }, { data: setting }] = await Promise.all([
     supabaseAdmin
       .from("bridge_account_snapshots")
       .select("*")
+      .eq("user_id", ownerId)
       .order("received_at", { ascending: false })
-      .limit(1),
-    supabaseAdmin.from("bridge_mirror_settings").select("*").limit(1),
+      .limit(1)
+      .maybeSingle(),
+    supabaseAdmin
+      .from("bridge_mirror_settings")
+      .select("*")
+      .eq("user_id", ownerId)
+      .limit(1)
+      .maybeSingle(),
   ]);
-  const snapshot = (snaps ?? [])[0] ?? null;
-  const setting = (settings ?? [])[0] ?? null;
   const ageMs = snapshot ? Date.now() - new Date(snapshot.received_at).getTime() : null;
   const status: "connected" | "stale" | "offline" =
     ageMs == null || ageMs > 10 * 60_000 ? "offline" : ageMs > CONNECTED_MS ? "stale" : "connected";
@@ -30,9 +36,13 @@ export async function bridgeState() {
 }
 
 /** Every rule from the mirroring spec. All must pass or no instruction is created. */
-export async function guardMirror(ticker: string, lots: number): Promise<MirrorGuard> {
+export async function guardMirror(
+  ownerId: string,
+  ticker: string,
+  lots: number,
+): Promise<MirrorGuard> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const state = await bridgeState();
+  const state = await bridgeState(ownerId);
 
   if (state.status !== "connected") {
     return {
@@ -84,6 +94,7 @@ export async function guardMirror(ticker: string, lots: number): Promise<MirrorG
 }
 
 export async function createOpenInstruction(args: {
+  userId: string;
   paperTradeId: string;
   ticker: string;
   direction: "long" | "short";
@@ -91,13 +102,14 @@ export async function createOpenInstruction(args: {
   stop: number | null;
   target: number | null;
 }) {
-  const guard = await guardMirror(args.ticker, args.lots);
+  const guard = await guardMirror(args.userId, args.ticker, args.lots);
   if (!guard.ok) throw new Error(guard.reason);
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   const { data: existing } = await supabaseAdmin
     .from("bridge_instructions")
     .select("id,status")
+    .eq("user_id", args.userId)
     .eq("paper_trade_id", args.paperTradeId)
     .eq("action", "open")
     .not("status", "in", "(rejected,cancelled,expired)")
@@ -108,6 +120,7 @@ export async function createOpenInstruction(args: {
   const { data, error } = await supabaseAdmin
     .from("bridge_instructions")
     .insert({
+      user_id: args.userId,
       paper_trade_id: args.paperTradeId,
       action: "open",
       broker_symbol: guard.brokerSymbol,
@@ -123,12 +136,13 @@ export async function createOpenInstruction(args: {
 }
 
 /** Called when a mirrored paper trade closes (manually or by the cron). */
-export async function createCloseInstruction(paperTradeId: string) {
+export async function createCloseInstruction(ownerId: string, paperTradeId: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: trade } = await supabaseAdmin
     .from("paper_trades")
-    .select("id,ticker,direction,mirrored,mirror_ticket")
+    .select("id,user_id,ticker,direction,mirrored,mirror_ticket")
     .eq("id", paperTradeId)
+    .eq("user_id", ownerId)
     .maybeSingle();
   const t = trade as
     | { ticker: string; direction: string; mirrored: boolean; mirror_ticket: number | null }
@@ -138,6 +152,7 @@ export async function createCloseInstruction(paperTradeId: string) {
   const { data: dup } = await supabaseAdmin
     .from("bridge_instructions")
     .select("id")
+    .eq("user_id", ownerId)
     .eq("paper_trade_id", paperTradeId)
     .eq("action", "close")
     .not("status", "in", "(rejected,cancelled,expired)")
@@ -148,6 +163,7 @@ export async function createCloseInstruction(paperTradeId: string) {
   const { data: open } = await supabaseAdmin
     .from("bridge_instructions")
     .select("broker_symbol")
+    .eq("user_id", ownerId)
     .eq("paper_trade_id", paperTradeId)
     .eq("action", "open")
     .order("created_at", { ascending: false })
@@ -157,6 +173,7 @@ export async function createCloseInstruction(paperTradeId: string) {
   const { data, error } = await supabaseAdmin
     .from("bridge_instructions")
     .insert({
+      user_id: ownerId,
       paper_trade_id: paperTradeId,
       action: "close",
       broker_symbol: (open as { broker_symbol: string } | null)?.broker_symbol ?? t.ticker,
@@ -172,14 +189,15 @@ export async function createCloseInstruction(paperTradeId: string) {
   return (data as { id: string } | null)?.id ?? null;
 }
 
-/** Helper poll: hand over pending work and mark it picked up. */
-export async function claimInstructions(limit = 10) {
+/** Helper poll: hand over this owner's pending work and mark it picked up. */
+export async function claimInstructions(ownerId: string, limit = 10) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  await expireInstructions();
+  await expireInstructions(ownerId);
 
   const { data: pending } = await supabaseAdmin
     .from("bridge_instructions")
     .select("*")
+    .eq("user_id", ownerId)
     .eq("status", "pending")
     .order("created_at", { ascending: true })
     .limit(Math.min(Math.max(limit, 1), 50));
@@ -189,6 +207,7 @@ export async function claimInstructions(limit = 10) {
   await supabaseAdmin
     .from("bridge_instructions")
     .update({ status: "picked_up", picked_up_at: new Date().toISOString() } as never)
+    .eq("user_id", ownerId)
     .in(
       "id",
       rows.map((r) => r.id),
@@ -200,6 +219,7 @@ export async function claimInstructions(limit = 10) {
 
 /** Idempotent result report from the helper. */
 export async function recordInstructionResult(
+  ownerId: string,
   id: string,
   input: {
     status: "filled" | "rejected";
@@ -214,6 +234,7 @@ export async function recordInstructionResult(
     .from("bridge_instructions")
     .select("*")
     .eq("id", id)
+    .eq("user_id", ownerId)
     .maybeSingle();
   const ins = instruction as
     | {
@@ -241,6 +262,7 @@ export async function recordInstructionResult(
       filled_ticket: input.ticket ?? null,
     } as never)
     .eq("id", id)
+    .eq("user_id", ownerId)
     .in("status", ["pending", "picked_up"]);
   if (error) throw new Error(error.message);
 
@@ -253,28 +275,31 @@ export async function recordInstructionResult(
           mirror_ticket: input.ticket ?? null,
           demo_fill_price: input.fill_price ?? null,
         } as never)
-        .eq("id", ins.paper_trade_id);
+        .eq("id", ins.paper_trade_id)
+        .eq("user_id", ownerId);
     } else if (input.fill_price != null) {
       await supabaseAdmin
         .from("paper_trades")
         .update({ demo_close_price: input.fill_price } as never)
-        .eq("id", ins.paper_trade_id);
+        .eq("id", ins.paper_trade_id)
+        .eq("user_id", ownerId);
     }
   }
   return { ok: true, unchanged: false, status: input.status };
 }
 
 /** Anything past its expiry and still waiting is expired, never silently dropped. */
-export async function expireInstructions() {
+export async function expireInstructions(ownerId?: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
+  let query = supabaseAdmin
     .from("bridge_instructions")
     .update({
       status: "expired",
       status_detail: "Not picked up by the helper within 10 minutes.",
     } as never)
     .in("status", ["pending", "picked_up"])
-    .lt("expires_at", new Date().toISOString())
-    .select("id");
+    .lt("expires_at", new Date().toISOString());
+  if (ownerId) query = query.eq("user_id", ownerId);
+  const { data } = await query.select("id");
   return (data ?? []).length;
 }

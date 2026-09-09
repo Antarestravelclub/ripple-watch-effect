@@ -3,8 +3,8 @@
 // The app never talks to a broker itself: it publishes intents into
 // broker_orders, and a bridge process running next to a MetaTrader 5 *demo*
 // terminal claims them, executes, and reports fills back. Every row is
-// mode = 'demo' (enforced by a CHECK constraint) so no code path here can
-// reach a funded account.
+// mode = 'demo' and belongs to one bridge owner, so one account can never
+// claim or report another account's queued orders.
 
 const MIN_CONVICTION = 55;
 
@@ -15,12 +15,12 @@ export interface QueueResult {
 }
 
 /**
- * Mirrors the current signal book into the order queue.
+ * Mirrors the current signal book into one owner's order queue.
  * - open signals that cleared conviction get one 'open' order
  * - resolved signals whose open order actually filled get one 'close' order
- * Both are deduplicated by (signal_id, intent) at the database level.
+ * Both are deduplicated by (user_id, signal_id, intent) at the database level.
  */
-export async function syncBrokerOrders(): Promise<QueueResult> {
+export async function syncBrokerOrders(ownerId: string): Promise<QueueResult> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const out: QueueResult = { opensQueued: 0, closesQueued: 0, skipped: 0 };
 
@@ -37,6 +37,7 @@ export async function syncBrokerOrders(): Promise<QueueResult> {
   const { data: existing } = await supabaseAdmin
     .from("broker_orders")
     .select("signal_id,intent,status")
+    .eq("user_id", ownerId)
     .in(
       "signal_id",
       signals.map((s) => s.id),
@@ -54,7 +55,7 @@ export async function syncBrokerOrders(): Promise<QueueResult> {
     .select("id")
     .order("created_at", { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
 
   const brokerSymbolMap = new Map<string, string>();
   if (latestUpload) {
@@ -88,6 +89,7 @@ export async function syncBrokerOrders(): Promise<QueueResult> {
         continue;
       }
       rows.push({
+        user_id: ownerId,
         signal_id: s.id,
         ticker: s.ticker,
         broker_symbol: brokerSymbolMap.get(s.ticker.toUpperCase()) ?? null,
@@ -104,6 +106,7 @@ export async function syncBrokerOrders(): Promise<QueueResult> {
       out.opensQueued++;
     } else if (filledOpen.has(s.id) && !seen.has(`${s.id}:close`)) {
       rows.push({
+        user_id: ownerId,
         signal_id: s.id,
         ticker: s.ticker,
         broker_symbol: brokerSymbolMap.get(s.ticker.toUpperCase()) ?? null,
@@ -125,12 +128,28 @@ export async function syncBrokerOrders(): Promise<QueueResult> {
   return out;
 }
 
-/** Hands queued orders to the bridge and marks them claimed. */
-export async function claimOrders(limit: number) {
+/** Keeps every configured bridge owner's queue current from the scheduled job. */
+export async function syncAllBrokerOrderBooks() {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: owners, error } = await supabaseAdmin
+    .from("bridge_secrets")
+    .select("user_id");
+  if (error) throw new Error(error.message);
+
+  const results: Record<string, QueueResult> = {};
+  for (const owner of owners ?? []) {
+    results[owner.user_id] = await syncBrokerOrders(owner.user_id);
+  }
+  return results;
+}
+
+/** Hands this owner's queued orders to their bridge and marks them claimed. */
+export async function claimOrders(ownerId: string, limit: number) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("broker_orders")
     .select("*")
+    .eq("user_id", ownerId)
     .eq("status", "queued")
     .order("created_at", { ascending: true })
     .limit(Math.min(Math.max(limit, 1), 50));
@@ -140,6 +159,7 @@ export async function claimOrders(limit: number) {
     await supabaseAdmin
       .from("broker_orders")
       .update({ status: "claimed", claimed_at: new Date().toISOString() })
+      .eq("user_id", ownerId)
       .in(
         "id",
         orders.map((o) => o.id),
@@ -158,8 +178,8 @@ export interface FillReport {
   error?: string | null;
 }
 
-/** Records what the demo terminal actually did with each claimed order. */
-export async function recordFills(reports: FillReport[]) {
+/** Records what this owner's demo terminal did with each claimed order. */
+export async function recordFills(ownerId: string, reports: FillReport[]) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   let updated = 0;
   for (const r of reports) {
@@ -175,7 +195,8 @@ export async function recordFills(reports: FillReport[]) {
         error: r.error ?? null,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", r.id);
+      .eq("id", r.id)
+      .eq("user_id", ownerId);
     if (!error) updated++;
   }
   return updated;
@@ -193,9 +214,10 @@ export interface Heartbeat {
   note?: string | null;
 }
 
-export async function recordHeartbeat(hb: Heartbeat) {
+export async function recordHeartbeat(ownerId: string, hb: Heartbeat) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   await supabaseAdmin.from("broker_bridge_heartbeats").insert({
+    user_id: ownerId,
     seen_at: new Date().toISOString(),
     ...hb,
   } as never);

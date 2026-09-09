@@ -6,8 +6,8 @@ export const Route = createFileRoute("/api/public/bridge/instructions")({
     handlers: {
       GET: async ({ request }) => {
         const { authorizeBridge } = await import("@/lib/bridge-auth.server");
-        const denied = await authorizeBridge(request);
-        if (denied) return denied;
+        const auth = await authorizeBridge(request);
+        if (auth instanceof Response) return auth;
         try {
           const url = new URL(request.url);
           if ((url.searchParams.get("status") ?? "pending") !== "pending") {
@@ -18,7 +18,10 @@ export const Route = createFileRoute("/api/public/bridge/instructions")({
           }
           const limit = Number(url.searchParams.get("limit") ?? 10);
           const { claimInstructions } = await import("@/lib/bridge-mirror.server");
-          const instructions = await claimInstructions(Number.isFinite(limit) ? limit : 10);
+          const instructions = await claimInstructions(
+            auth.ownerId,
+            Number.isFinite(limit) ? limit : 10,
+          );
           return Response.json({ ok: true, mode: "demo", instructions });
         } catch (e) {
           return Response.json(

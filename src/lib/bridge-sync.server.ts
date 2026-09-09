@@ -1,5 +1,6 @@
 // Server-only ingestion of MetaTrader 5 *demo* account state reported by the
 // Windows bridge helper: account snapshots, open positions and closed deals.
+// Every row is owned by the user whose bridge secret authenticated the report.
 import { z } from "zod";
 
 const numberish = z.union([z.number(), z.string()]).nullish().transform((v) => {
@@ -52,10 +53,11 @@ export const dealSchema = z.object({
   close_time: timeish,
 });
 
-export async function recordAccountSnapshot(input: unknown) {
+export async function recordAccountSnapshot(ownerId: string, input: unknown) {
   const data = accountSchema.parse(input);
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { error } = await supabaseAdmin.from("bridge_account_snapshots").insert({
+    user_id: ownerId,
     account_number: data.account_number,
     account_mode: data.account_mode,
     currency: data.currency ?? null,
@@ -67,19 +69,20 @@ export async function recordAccountSnapshot(input: unknown) {
   if (error) throw new Error(error.message);
 
   if (data.account_mode === "live") {
-    // Defense in depth: a live terminal must never leave pending work behind.
+    // Defense in depth: this owner's live terminal must never leave pending work.
     await supabaseAdmin
       .from("bridge_instructions")
       .update({
         status: "cancelled",
         status_detail: "Cancelled: reporting terminal is a live account.",
       } as never)
+      .eq("user_id", ownerId)
       .in("status", ["pending", "picked_up"]);
   }
   return { mode: data.account_mode };
 }
 
-export async function syncPositions(input: unknown) {
+export async function syncPositions(ownerId: string, input: unknown) {
   const positions = z.array(positionSchema).max(500).parse(input);
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const seenAt = new Date().toISOString();
@@ -87,6 +90,7 @@ export async function syncPositions(input: unknown) {
   if (positions.length > 0) {
     const { error } = await supabaseAdmin.from("bridge_positions").upsert(
       positions.map((p) => ({
+        user_id: ownerId,
         ticket: p.ticket,
         symbol: p.symbol,
         direction: p.direction,
@@ -100,16 +104,17 @@ export async function syncPositions(input: unknown) {
         last_seen_at: seenAt,
         status: "open",
       })) as never,
-      { onConflict: "ticket" },
+      { onConflict: "user_id,ticket" },
     );
     if (error) throw new Error(error.message);
   }
 
-  // Anything previously open but absent from this full snapshot is closed.
+  // Anything previously open for this owner but absent from this full snapshot is closed.
   const tickets = positions.map((p) => p.ticket);
   let closeQuery = supabaseAdmin
     .from("bridge_positions")
     .update({ status: "closed" } as never)
+    .eq("user_id", ownerId)
     .eq("status", "open");
   if (tickets.length > 0) closeQuery = closeQuery.not("ticket", "in", `(${tickets.join(",")})`);
   const { error: closeError } = await closeQuery;
@@ -118,16 +123,17 @@ export async function syncPositions(input: unknown) {
   return { open: positions.length };
 }
 
-export async function syncDeals(input: unknown) {
+export async function syncDeals(ownerId: string, input: unknown) {
   const deals = z.array(dealSchema).max(500).parse(input);
   if (deals.length === 0) return { inserted: 0 };
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  // Insert-if-new keyed on deal_id, so repeated posts are harmless.
+  // Insert-if-new keyed on owner + deal_id, so repeated posts are harmless.
   const { data, error } = await supabaseAdmin
     .from("bridge_deals")
     .upsert(
       deals.map((d) => ({
+        user_id: ownerId,
         deal_id: d.deal_id,
         ticket: d.ticket,
         symbol: d.symbol,
@@ -141,23 +147,27 @@ export async function syncDeals(input: unknown) {
         open_time: d.open_time,
         close_time: d.close_time,
       })) as never,
-      { onConflict: "deal_id", ignoreDuplicates: true },
+      { onConflict: "user_id,deal_id", ignoreDuplicates: true },
     )
     .select("deal_id");
   if (error) throw new Error(error.message);
 
-  await reconcileDemoCloses(deals.map((d) => d.ticket).filter((t): t is number => t !== null));
+  await reconcileDemoCloses(
+    ownerId,
+    deals.map((d) => d.ticket).filter((t): t is number => t !== null),
+  );
   return { inserted: (data ?? []).length };
 }
 
-/** Fold demo closes back onto the mirrored paper trades. */
-export async function reconcileDemoCloses(tickets: number[]) {
+/** Fold demo closes back onto the same owner's mirrored paper trades. */
+export async function reconcileDemoCloses(ownerId: string, tickets: number[]) {
   if (tickets.length === 0) return;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   const { data: trades } = await supabaseAdmin
     .from("paper_trades")
     .select("id, mirror_ticket")
+    .eq("user_id", ownerId)
     .in("mirror_ticket", tickets);
 
   for (const trade of (trades ?? []) as { id: string; mirror_ticket: number | null }[]) {
@@ -165,6 +175,7 @@ export async function reconcileDemoCloses(tickets: number[]) {
     const { data: deals } = await supabaseAdmin
       .from("bridge_deals")
       .select("close_price, profit, commission, swap, close_time")
+      .eq("user_id", ownerId)
       .eq("ticket", trade.mirror_ticket)
       .order("close_time", { ascending: false });
     const rows = (deals ?? []) as {
@@ -182,6 +193,7 @@ export async function reconcileDemoCloses(tickets: number[]) {
     await supabaseAdmin
       .from("paper_trades")
       .update({ demo_close_price: closePrice, demo_realized_pnl: net } as never)
-      .eq("id", trade.id);
+      .eq("id", trade.id)
+      .eq("user_id", ownerId);
   }
 }
