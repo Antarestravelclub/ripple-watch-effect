@@ -5,6 +5,51 @@ import { SectorHeat } from "./sector-heat";
 import { useLiveEvents } from "@/hooks/use-live-events";
 import { OperonBadge } from "./operon-badge";
 import { DataRefreshStamp } from "./data-refresh-stamp";
+import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+
+/** Session-driven sign-in affordance, so a successful login is visible. */
+function AccountMenu() {
+  const { user, loading } = useAuth();
+  const qc = useQueryClient();
+  const navigate = useNavigate();
+
+  if (loading) return null;
+  if (!user) {
+    return (
+      <Link
+        to="/auth"
+        className="text-sm px-3 py-1.5 rounded-md border border-border/70 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+      >
+        Sign in
+      </Link>
+    );
+  }
+
+  async function signOut() {
+    await qc.cancelQueries();
+    qc.clear();
+    await supabase.auth.signOut();
+    navigate({ to: "/auth", replace: true });
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="hidden md:inline text-[11px] text-muted-foreground max-w-[160px] truncate">
+        {user.email}
+      </span>
+      <button
+        type="button"
+        onClick={signOut}
+        className="text-sm px-3 py-1.5 rounded-md border border-border/70 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+      >
+        Sign out
+      </button>
+    </div>
+  );
+}
 
 function NavLink({ to, children }: { to: string; children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -41,6 +86,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
 
             <NavLink to="/tracker">Tracker</NavLink>
             <NavLink to="/tickers">Tickers</NavLink>
+            <NavLink to="/blotter">Blotter</NavLink>
 
             <NavLink to="/scorecard">Scorecard</NavLink>
             <NavLink to="/analogues">Analogues</NavLink>
@@ -50,8 +96,9 @@ export function SiteShell({ children }: { children: ReactNode }) {
             <NavLink to="/manual">Manual</NavLink>
           </nav>
         </div>
-        <div className="mx-auto max-w-7xl px-4 pb-1.5 flex justify-end">
+        <div className="mx-auto max-w-7xl px-4 pb-1.5 flex items-center justify-end gap-3">
           <DataRefreshStamp />
+          <AccountMenu />
         </div>
       </header>
 
