@@ -93,6 +93,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
             <NavLink to="/playbooks">Playbooks</NavLink>
             <NavLink to="/watchlist">Watchlist</NavLink>
             <NavLink to="/broker">Broker</NavLink>
+            <NavLink to="/bridge">Bridge</NavLink>
             <NavLink to="/manual">Manual</NavLink>
           </nav>
         </div>

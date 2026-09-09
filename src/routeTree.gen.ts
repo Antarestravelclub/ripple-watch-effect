@@ -27,6 +27,7 @@ import { Route as TickersSymbolRouteImport } from './routes/tickers.$symbol'
 import { Route as SignalIdRouteImport } from './routes/signal.$id'
 import { Route as EventIdRouteImport } from './routes/event.$id'
 import { Route as AdminBrokerSymbolsRouteImport } from './routes/admin.broker-symbols'
+import { Route as AuthenticatedBridgeRouteImport } from './routes/_authenticated/bridge'
 import { Route as AuthenticatedBlotterRouteImport } from './routes/_authenticated/blotter'
 import { Route as ApiPublicStreamQuotesRouteImport } from './routes/api/public/stream/quotes'
 import { Route as ApiPublicHooksIngestNewsRouteImport } from './routes/api/public/hooks/ingest-news'
@@ -129,6 +130,11 @@ const AdminBrokerSymbolsRoute = AdminBrokerSymbolsRouteImport.update({
   path: '/admin/broker-symbols',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedBridgeRoute = AuthenticatedBridgeRouteImport.update({
+  id: '/bridge',
+  path: '/bridge',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedBlotterRoute = AuthenticatedBlotterRouteImport.update({
   id: '/blotter',
   path: '/blotter',
@@ -210,6 +216,7 @@ export interface FileRoutesByFullPath {
   '/tracker': typeof TrackerRoute
   '/watchlist': typeof WatchlistRoute
   '/blotter': typeof AuthenticatedBlotterRoute
+  '/bridge': typeof AuthenticatedBridgeRoute
   '/admin/broker-symbols': typeof AdminBrokerSymbolsRoute
   '/event/$id': typeof EventIdRoute
   '/signal/$id': typeof SignalIdRoute
@@ -241,6 +248,7 @@ export interface FileRoutesByTo {
   '/tracker': typeof TrackerRoute
   '/watchlist': typeof WatchlistRoute
   '/blotter': typeof AuthenticatedBlotterRoute
+  '/bridge': typeof AuthenticatedBridgeRoute
   '/admin/broker-symbols': typeof AdminBrokerSymbolsRoute
   '/event/$id': typeof EventIdRoute
   '/signal/$id': typeof SignalIdRoute
@@ -274,6 +282,7 @@ export interface FileRoutesById {
   '/tracker': typeof TrackerRoute
   '/watchlist': typeof WatchlistRoute
   '/_authenticated/blotter': typeof AuthenticatedBlotterRoute
+  '/_authenticated/bridge': typeof AuthenticatedBridgeRoute
   '/admin/broker-symbols': typeof AdminBrokerSymbolsRoute
   '/event/$id': typeof EventIdRoute
   '/signal/$id': typeof SignalIdRoute
@@ -307,6 +316,7 @@ export interface FileRouteTypes {
     | '/tracker'
     | '/watchlist'
     | '/blotter'
+    | '/bridge'
     | '/admin/broker-symbols'
     | '/event/$id'
     | '/signal/$id'
@@ -338,6 +348,7 @@ export interface FileRouteTypes {
     | '/tracker'
     | '/watchlist'
     | '/blotter'
+    | '/bridge'
     | '/admin/broker-symbols'
     | '/event/$id'
     | '/signal/$id'
@@ -370,6 +381,7 @@ export interface FileRouteTypes {
     | '/tracker'
     | '/watchlist'
     | '/_authenticated/blotter'
+    | '/_authenticated/bridge'
     | '/admin/broker-symbols'
     | '/event/$id'
     | '/signal/$id'
@@ -547,6 +559,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBrokerSymbolsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/bridge': {
+      id: '/_authenticated/bridge'
+      path: '/bridge'
+      fullPath: '/bridge'
+      preLoaderRoute: typeof AuthenticatedBridgeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/blotter': {
       id: '/_authenticated/blotter'
       path: '/blotter'
@@ -636,10 +655,12 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedBlotterRoute: typeof AuthenticatedBlotterRoute
+  AuthenticatedBridgeRoute: typeof AuthenticatedBridgeRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBlotterRoute: AuthenticatedBlotterRoute,
+  AuthenticatedBridgeRoute: AuthenticatedBridgeRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
