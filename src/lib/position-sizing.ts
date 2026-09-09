@@ -9,7 +9,8 @@ export interface PortfolioSettings {
 }
 
 export const DEFAULT_PORTFOLIO: PortfolioSettings = {
-  notional_value: 100_000,
+  // Default paper account balance; each owner can change it on the Blotter.
+  notional_value: 1_000,
   risk_per_trade_pct: 0.5,
   max_position_pct: 5,
 };

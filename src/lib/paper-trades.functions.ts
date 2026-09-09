@@ -21,15 +21,10 @@ interface SignalForTrade {
   conviction_score: number | null;
 }
 
-async function notionalValue(): Promise<number> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
-    .from("portfolio_settings")
-    .select("notional_value")
-    .limit(1)
-    .maybeSingle();
-  const n = data?.notional_value != null ? Number(data.notional_value) : 100_000;
-  return n > 0 ? n : 100_000;
+/** The owner's configurable starting balance — the base for all sizing and %. */
+async function notionalValue(userId: string): Promise<number> {
+  const { paperAccount } = await import("./paper-account.server");
+  return (await paperAccount(userId)).startingBalance;
 }
 
 /** Tickers XM can actually trade, from the latest broker symbol upload. */
@@ -84,12 +79,26 @@ export const paperTradePrefill = createServerFn({ method: "POST" })
     const quoteTime = q?.quoteTime ?? null;
     const ageMs = quoteTime ? Date.now() - new Date(quoteTime).getTime() : null;
 
-    const notional = await notionalValue();
+    const { paperAccount, lotRuleFor } = await import("./paper-account.server");
+    const { checkSizing } = await import("./paper-account");
+    const account = await paperAccount(context.userId);
+    const notional = account.startingBalance;
     const sizePct = signal.suggested_size_pct != null ? Number(signal.suggested_size_pct) : 0;
-    const size =
+    const rawSize =
       entry != null && entry > 0 && sizePct > 0
         ? +((notional * (sizePct / 100)) / entry).toFixed(4)
         : 0;
+
+    const stopPrice = signal.stop_price != null ? Number(signal.stop_price) : null;
+    const lot = await lotRuleFor(signal.ticker, account.defaultMinLot);
+    const sizing = checkSizing({
+      rawSize,
+      entry: entry ?? 0,
+      stop: stopPrice,
+      balance: notional,
+      minLot: lot.minLot,
+      lotStep: lot.lotStep,
+    });
 
     return {
       signalId: signal.id,
@@ -101,11 +110,15 @@ export const paperTradePrefill = createServerFn({ method: "POST" })
       entryPrice: entry,
       quoteTime,
       quoteStale: ageMs == null || ageMs > STALE_QUOTE_MS,
-      stopPrice: signal.stop_price != null ? Number(signal.stop_price) : null,
+      stopPrice,
       targetPrice: signal.target_price != null ? Number(signal.target_price) : null,
-      positionSize: size,
+      // Never silently bumped: 0 when the risk-based size is below the min lot.
+      positionSize: sizing.sizedLots,
       suggestedSizePct: sizePct,
       notional,
+      sizing,
+      lotSource: lot.source,
+      brokerSymbol: lot.brokerSymbol,
       hasOpenTrade: Boolean(existing),
     };
   });
@@ -179,7 +192,7 @@ export const openPaperTrade = createServerFn({ method: "POST" })
 export const manualTradePrefill = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { symbol: string; direction: "long" | "short" }) => d)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { quotesFor } = await import("./latest-prices.server");
     const { atrFor } = await import("./atr.server");
     const { atrLevels } = await import("./signal-levels");
@@ -195,13 +208,32 @@ export const manualTradePrefill = createServerFn({ method: "POST" })
     const atr = await atrFor(symbol);
     const levels = atr != null && entry > 0 ? atrLevels(entry, data.direction, atr) : null;
 
-    const notional = await notionalValue();
+    const { paperAccount, lotRuleFor } = await import("./paper-account.server");
+    const { checkSizing } = await import("./paper-account");
+    const account = await paperAccount(context.userId);
+    const notional = account.startingBalance;
     // Manual trades have no conviction score, so they size at the medium band.
     const sizePct =
       atr != null && entry > 0
-        ? suggestedSizePct(entry, atr, 70, { ...DEFAULT_PORTFOLIO, notional_value: notional })
+        ? suggestedSizePct(entry, atr, 70, {
+            ...DEFAULT_PORTFOLIO,
+            notional_value: notional,
+            risk_per_trade_pct: account.riskPerTradePct,
+            max_position_pct: account.maxPositionPct,
+          })
         : 0;
-    const size = sizePct > 0 && entry > 0 ? +((notional * (sizePct / 100)) / entry).toFixed(4) : 0;
+    const rawSize =
+      sizePct > 0 && entry > 0 ? +((notional * (sizePct / 100)) / entry).toFixed(4) : 0;
+
+    const lot = await lotRuleFor(symbol, account.defaultMinLot);
+    const sizing = checkSizing({
+      rawSize,
+      entry,
+      stop: levels?.stop ?? null,
+      balance: notional,
+      minLot: lot.minLot,
+      lotStep: lot.lotStep,
+    });
 
     const quoteTime = q.quoteTime ?? null;
     const ageMs = quoteTime ? Date.now() - new Date(quoteTime).getTime() : null;
@@ -216,9 +248,12 @@ export const manualTradePrefill = createServerFn({ method: "POST" })
       stopPrice: levels?.stop ?? null,
       targetPrice: levels?.target ?? null,
       atr,
-      positionSize: size,
+      positionSize: sizing.sizedLots,
       suggestedSizePct: sizePct,
       notional,
+      sizing,
+      lotSource: lot.source,
+      brokerSymbol: lot.brokerSymbol,
     };
   });
 
@@ -454,7 +489,7 @@ export const listPaperTrades = createServerFn({ method: "GET" })
     return {
       trades,
       prices,
-      notional: await notionalValue(),
+      notional: await notionalValue(context.userId),
       lastQuoteTime: newestQuote > 0 ? new Date(newestQuote).toISOString() : null,
       feedStale: openSymbols.length > 0 && (newestQuote === 0 || Date.now() - newestQuote > STALE_QUOTE_MS),
     };

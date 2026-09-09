@@ -167,7 +167,13 @@ function ManualPage() {
                 <Term>Score and size.</Term> Each exposure becomes a signal with
                 a conviction score out of 100, a stop, a target, a written
                 kill-condition, and a suggested position size as a percentage of
-                a $100,000 paper portfolio.
+                your paper account's starting balance, which you set on the
+                Blotter (default $1,000). If the risk-based size falls below the
+                symbol's minimum tradable lot, the trade is flagged{" "}
+                <Term>undersized at this balance</Term> — it is never rounded up
+                silently. You are shown the minimum lot, what it actually risks
+                as a percentage of your balance, and you choose to take it at the
+                minimum or skip it.
               </li>
               <li>
                 <Term>Price.</Term> One batched price request per run covers

@@ -450,6 +450,7 @@ export type Database = {
       broker_symbols: {
         Row: {
           broker_symbol: string
+          contract_size: number | null
           created_at: string
           currency_profit: string | null
           description: string | null
@@ -462,9 +463,12 @@ export type Database = {
           trade_mode: string | null
           updated_at: string
           upload_id: string
+          volume_min: number | null
+          volume_step: number | null
         }
         Insert: {
           broker_symbol: string
+          contract_size?: number | null
           created_at?: string
           currency_profit?: string | null
           description?: string | null
@@ -477,9 +481,12 @@ export type Database = {
           trade_mode?: string | null
           updated_at?: string
           upload_id: string
+          volume_min?: number | null
+          volume_step?: number | null
         }
         Update: {
           broker_symbol?: string
+          contract_size?: number | null
           created_at?: string
           currency_profit?: string | null
           description?: string | null
@@ -492,6 +499,8 @@ export type Database = {
           trade_mode?: string | null
           updated_at?: string
           upload_id?: string
+          volume_min?: number | null
+          volume_step?: number | null
         }
         Relationships: [
           {
@@ -828,6 +837,36 @@ export type Database = {
           transmission_channel?: string
           updated_at?: string
           why_markets_care?: string
+        }
+        Relationships: []
+      }
+      paper_account_settings: {
+        Row: {
+          created_at: string
+          default_min_lot: number
+          max_position_pct: number
+          risk_per_trade_pct: number
+          starting_balance: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          default_min_lot?: number
+          max_position_pct?: number
+          risk_per_trade_pct?: number
+          starting_balance?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          default_min_lot?: number
+          max_position_pct?: number
+          risk_per_trade_pct?: number
+          starting_balance?: number
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

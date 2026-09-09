@@ -10,6 +10,7 @@ import {
 } from "@/lib/paper-trades.functions";
 import { useAuth } from "@/hooks/use-auth";
 import { fmtDuration, fmtMoney } from "@/lib/paper-trades";
+import type { SizingCheck } from "@/lib/paper-account";
 import { Loader2, NotebookPen, X } from "lucide-react";
 
 
@@ -170,6 +171,14 @@ function PaperTradeForm({
               </p>
             )}
 
+            <UndersizedNotice
+              sizing={prefill.sizing}
+              balance={prefill.notional}
+              lotSource={prefill.lotSource}
+              onTakeMinLot={() => setSize(String(prefill.sizing.minLot))}
+              onSkip={onClose}
+            />
+
             <div className="mt-4 grid grid-cols-2 gap-3">
               <Field label="Entry price" value={entry} onChange={setEntry} />
               <Field label="Lots (1 lot = 1 unit)" value={size} onChange={setSize} />
@@ -188,9 +197,9 @@ function PaperTradeForm({
             <p className="mt-3 text-[11px] text-muted-foreground">
               Pre-filled from the signal's ATR stop/target and risk-based sizing
               {prefill.suggestedSizePct
-                ? ` (${prefill.suggestedSizePct}% of ${fmtMoney(prefill.notional)} paper notional)`
+                ? ` (${prefill.suggestedSizePct}% of your ${fmtMoney(prefill.notional)} balance)`
                 : ""}
-              . Notional at these values: {notional != null ? fmtMoney(notional) : "—"}.
+              . Position value at these values: {notional != null ? fmtMoney(notional) : "—"}.
             </p>
 
             <div className="mt-3">
@@ -259,6 +268,58 @@ function Field({
         onChange={(e) => onChange(e.target.value)}
         className="mt-1 w-full rounded-md border border-border/70 bg-background px-2 py-1.5 text-sm font-mono"
       />
+    </div>
+  );
+}
+
+/**
+ * Shown when the risk-based size lands below the symbol's minimum lot. The size
+ * is never silently rounded up: you either take the minimum knowingly, seeing
+ * what it really risks, or skip the trade.
+ */
+function UndersizedNotice({
+  sizing,
+  balance,
+  lotSource,
+  onTakeMinLot,
+  onSkip,
+}: {
+  sizing: SizingCheck;
+  balance: number;
+  lotSource: "broker_upload" | "default";
+  onTakeMinLot: () => void;
+  onSkip: () => void;
+}) {
+  if (!sizing.undersized) return null;
+  return (
+    <div className="mt-4 rounded-md border border-amber/50 bg-amber/10 p-3 text-xs text-amber">
+      <p className="font-semibold">Undersized at this balance</p>
+      <p className="mt-1 text-amber/90">
+        Risk-based size is {sizing.rawSize} lots, below the minimum tradable{" "}
+        {sizing.minLot} lot{sizing.minLot === 1 ? "" : "s"}
+        {lotSource === "broker_upload" ? " for this symbol" : " (account default)"}. Taking the
+        minimum risks {sizing.minLotRiskDollars != null ? fmtMoney(sizing.minLotRiskDollars) : "—"}
+        {sizing.minLotRiskPct != null
+          ? ` — ${sizing.minLotRiskPct}% of your ${fmtMoney(balance)} balance`
+          : ""}
+        {sizing.minLotNotional != null ? `, using ${fmtMoney(sizing.minLotNotional)} of it` : ""}.
+      </p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={onTakeMinLot}
+          className="rounded-md border border-amber/60 bg-amber/20 px-2.5 py-1 text-[11px] font-medium text-amber hover:bg-amber/30"
+        >
+          Take at minimum lot ({sizing.minLot})
+        </button>
+        <button
+          type="button"
+          onClick={onSkip}
+          className="rounded-md border border-border/70 px-2.5 py-1 text-[11px] text-muted-foreground hover:bg-accent"
+        >
+          Skip this trade
+        </button>
+      </div>
     </div>
   );
 }
@@ -486,6 +547,16 @@ function ManualPaperTradeForm({
           </p>
         )}
 
+        {p && (
+          <UndersizedNotice
+            sizing={p.sizing}
+            balance={p.notional}
+            lotSource={p.lotSource}
+            onTakeMinLot={() => setSize(String(p.sizing.minLot))}
+            onSkip={onClose}
+          />
+        )}
+
         <div className="mt-4 grid grid-cols-2 gap-3">
           <Field label="Entry price" value={entry} onChange={setEntry} />
           <Field label="Lots (1 lot = 1 unit)" value={size} onChange={setSize} />
@@ -504,7 +575,7 @@ function ManualPaperTradeForm({
 
         <p className="mt-3 text-[11px] text-muted-foreground">
           Suggestions use the same rules as signals: stop 1.5× ATR(14), target 2.0× ATR(14), size
-          risking 0.5% of the {p ? fmtMoney(p.notional) : "$100,000"} paper notional. Notional at
+          risking 0.5% of your {p ? fmtMoney(p.notional) : "starting"} balance. Position value at
           these values: {notional != null ? fmtMoney(notional) : "—"}.
         </p>
 

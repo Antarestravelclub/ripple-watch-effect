@@ -34,3 +34,10 @@
 - [x] Counts, win rate, avg win/loss ($ and R), expectancy, best/worst, paper equity
 - [x] Demo realized row when mirrored trades exist (slippage gap)
 - [x] Respects closed-trade filters, stale-feed warning on unrealized, muted n = X
+
+## Configurable starting balance (done)
+- [x] Per-user paper_account_settings: starting_balance (default $1,000), risk %, max position %, default min lot
+- [x] Sizing, P&L %, equity curve and Blotter stats all compute from it
+- [x] Starting balance card on the Blotter
+- [x] Broker uploads store volume_min / volume_step / contract_size when present
+- [x] "Undersized at this balance" notice with min-lot size, its $ and % risk, take-at-min-lot or skip
