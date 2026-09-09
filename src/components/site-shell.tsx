@@ -71,6 +71,9 @@ function NavLink({ to, children }: { to: string; children: ReactNode }) {
 
 export function SiteShell({ children }: { children: ReactNode }) {
   const { events } = useLiveEvents();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  // Blotter needs the full page width for its trade tables.
+  const showSidebar = !pathname.startsWith("/blotter");
   return (
     <div className="min-h-screen flex flex-col bg-background gradient-radial">
       <header className="sticky top-0 z-30 border-b border-border/60 backdrop-blur bg-background/70">
@@ -103,13 +106,20 @@ export function SiteShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <div className="flex-1 mx-auto w-full max-w-7xl px-4 py-6 grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
+      <div
+        className={
+          "flex-1 mx-auto w-full max-w-7xl px-4 py-6 grid gap-6 " +
+          (showSidebar ? "grid-cols-1 lg:grid-cols-[1fr_280px]" : "grid-cols-1")
+        }
+      >
         <main className="min-w-0">{children}</main>
-        <aside className="hidden lg:block">
-          <div className="sticky top-20">
-            <SectorHeat events={events} />
-          </div>
-        </aside>
+        {showSidebar && (
+          <aside className="hidden lg:block">
+            <div className="sticky top-20">
+              <SectorHeat events={events} />
+            </div>
+          </aside>
+        )}
       </div>
 
       <footer className="border-t border-border/60 mt-8">
