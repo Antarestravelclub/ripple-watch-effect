@@ -199,7 +199,7 @@ function BlotterPage() {
       )}
       {!isLoading && tab === "stats" && (
         <>
-          <StatsView trades={closedTrades} notional={data?.notional ?? 100_000} />
+          <StatsView trades={closedTrades} notional={data?.notional ?? DEFAULT_STARTING_BALANCE} />
           <MirrorStats trades={data?.trades ?? []} />
         </>
       )}
@@ -209,7 +209,7 @@ function BlotterPage() {
           closed={filteredClosed}
           open={openTrades}
           priceOf={priceOf}
-          notional={data?.notional ?? 100_000}
+          notional={data?.notional ?? DEFAULT_STARTING_BALANCE}
           filtered={isFiltered}
           feedStale={Boolean(data?.feedStale)}
           lastQuoteTime={data?.lastQuoteTime ?? null}
