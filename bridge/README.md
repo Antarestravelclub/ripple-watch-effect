@@ -65,3 +65,25 @@ shares like `AAPL.cash` or `AAPL-CFD`.
 Only signals that scored 55 or higher and have a size, a stop and a target. Each
 signal produces at most one opening order and, once the signal resolves, one
 closing order.
+
+## Demo account sync + mirroring endpoints (site side)
+
+The helper reports demo-account state and picks up mirror instructions through
+these endpoints. All of them require the header `x-bridge-key: $RIPPLE_BRIDGE_KEY`.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| POST | `/api/public/bridge/account` | Account snapshot every 30-60s: `account_number`, `account_mode` (`demo`/`live`), `currency`, `balance`, `equity`, `margin`, `free_margin`. |
+| POST | `/api/public/bridge/positions` | Full current open-position list: `{ positions: [{ ticket, symbol, direction, lots, open_price, sl, tp, current_price, profit, open_time }] }`. Tickets missing from the list are marked closed. |
+| POST | `/api/public/bridge/deals` | Recent closed deals: `{ deals: [{ deal_id, ticket, symbol, direction, lots, open_price, close_price, profit, commission, swap, open_time, close_time }] }`. Insert-if-new on `deal_id`. |
+| GET | `/api/public/bridge/instructions?status=pending&limit=10` | Claims pending mirror instructions (marks them `picked_up`). |
+| POST | `/api/public/bridge/instructions/{id}/result` | Reports `{ status: "filled", fill_price, fill_time, ticket }` or `{ status: "rejected", detail }`. Idempotent per instruction id. |
+
+Notes:
+
+- A snapshot reporting `account_mode: "live"` cancels all pending instructions
+  and disables mirroring in the site UI. The helper must also enforce its own
+  demo/account-number allowlist.
+- Instructions not picked up within 10 minutes are marked `expired`.
+- Instructions only ever carry a broker symbol that was mapped exactly or
+  confirmed by hand — guessed suffixes are never executed.
