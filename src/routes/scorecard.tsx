@@ -24,6 +24,7 @@ import { convictionBand, BAND_LABEL, type ConvictionBand } from "@/lib/convictio
 import { DEFAULT_PORTFOLIO } from "@/lib/position-sizing";
 import { useLiveEvents } from "@/hooks/use-live-events";
 import { STANCE_LABEL, STANCE_CLASS, type Stance } from "@/lib/ticker-rollup";
+import { INSTRUMENT_LABEL, type InstrumentType } from "@/lib/instrument";
 
 
 export const Route = createFileRoute("/scorecard")({
@@ -543,6 +544,22 @@ function BenchmarkSection({
     });
   }, [closed]);
 
+  const byInstrument = useMemo(() => {
+    const kinds: InstrumentType[] = ["stock", "etf"];
+    return kinds.map((kind) => {
+      const rows = closed.filter((c) => (c.signal.instrument_type ?? "stock") === kind);
+      const winsN = rows.filter((c) => c.ret > 0).length;
+      const rs = rows.map((c) => c.r).filter((v): v is number => v != null);
+      return {
+        kind,
+        n: rows.length,
+        alpha: rows.reduce((a, b) => a + b.alpha, 0),
+        winRate: rows.length ? (winsN / rows.length) * 100 : null,
+        avgR: rs.length ? rs.reduce((a, b) => a + b, 0) / rs.length : null,
+      };
+    });
+  }, [closed]);
+
   return (
     <section className="mb-6">
       <div className="rounded-xl border border-primary/40 bg-primary/5 p-5">
@@ -651,6 +668,42 @@ function BenchmarkSection({
                 </li>
               ))}
             </ul>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <h3 className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
+            Stocks vs ETFs
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead className="text-muted-foreground uppercase tracking-wider text-[10px]">
+                <tr className="border-b border-border/60">
+                  <th className="text-left p-1.5">Instrument</th>
+                  <th className="text-right p-1.5">Closed</th>
+                  <th className="text-right p-1.5">Win rate</th>
+                  <th className="text-right p-1.5">Avg R</th>
+                  <th className="text-right p-1.5">Alpha</th>
+                </tr>
+              </thead>
+              <tbody>
+                {byInstrument.map((row) => (
+                  <tr key={row.kind} className="border-b border-border/40 last:border-b-0">
+                    <td className="p-1.5">{INSTRUMENT_LABEL[row.kind]}</td>
+                    <td className="p-1.5 text-right tabular-nums">{row.n}</td>
+                    <td className="p-1.5 text-right tabular-nums">
+                      {row.winRate == null ? "—" : row.winRate.toFixed(0) + "%"}
+                    </td>
+                    <td className="p-1.5 text-right tabular-nums">
+                      {row.avgR == null ? "—" : row.avgR.toFixed(2) + "R"}
+                    </td>
+                    <td className={"p-1.5 text-right tabular-nums " + pctTone(row.n ? row.alpha : null)}>
+                      {row.n ? fmtPct(row.alpha) : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
 
