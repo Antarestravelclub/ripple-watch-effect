@@ -867,3 +867,145 @@ function MirrorStats({ trades }: { trades: PaperTradeRow[] }) {
     </section>
   );
 }
+
+/**
+ * Persistent running total under the tables. Uses computeStats — the same source
+ * of truth as the Stats tab — so the two can never disagree.
+ */
+function AccumulatedResults({
+  closed,
+  open,
+  priceOf,
+  notional,
+  filtered,
+  feedStale,
+  lastQuoteTime,
+}: {
+  closed: PaperTradeRow[];
+  open: PaperTradeRow[];
+  priceOf: (t: PaperTradeRow) => number | null;
+  notional: number;
+  filtered: boolean;
+  feedStale: boolean;
+  lastQuoteTime: string | null;
+}) {
+  const stats = useMemo(() => computeStats(closed, notional), [closed, notional]);
+
+  const unrealized = useMemo(() => {
+    const values = open
+      .map((t) => liveMetrics(t, priceOf(t)).pnl)
+      .filter((v): v is number => v != null);
+    return {
+      total: values.reduce((a, b) => a + b, 0),
+      priced: values.length,
+      missing: open.length - values.length,
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  const pnls = closed.map((t) => Number(t.realized_pnl ?? 0));
+  const best = pnls.length ? Math.max(...pnls) : null;
+  const worst = pnls.length ? Math.min(...pnls) : null;
+  const wins = pnls.filter((p) => p > 0).length;
+  const losses = pnls.filter((p) => p < 0).length;
+  const combined = stats.totalPnl + unrealized.total;
+  const equity = notional + stats.totalPnl;
+
+  const mirrored = closed.filter((t) => t.mirrored && t.demo_realized_pnl != null);
+  const mirroredPaper = mirrored.reduce((s, t) => s + Number(t.realized_pnl ?? 0), 0);
+  const mirroredDemo = mirrored.reduce((s, t) => s + Number(t.demo_realized_pnl ?? 0), 0);
+
+  return (
+    <section className="mt-10 rounded-xl border border-border/70 bg-card/40 p-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="text-sm font-semibold">Accumulated results</h2>
+        <span className="text-[11px] text-muted-foreground">
+          {filtered ? "Filtered set" : "All time"} · n = {stats.count} closed trade
+          {stats.count === 1 ? "" : "s"}
+        </span>
+      </div>
+
+      <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <Kpi
+          label="Realized P&L"
+          value={fmtMoney(stats.totalPnl)}
+          sub={`${stats.pctOfNotional > 0 ? "+" : ""}${stats.pctOfNotional.toFixed(2)}% of ${fmtMoney(notional)} notional`}
+          tone={pctTone(stats.totalPnl)}
+        />
+        <Kpi
+          label="Unrealized P&L (open)"
+          value={fmtMoney(unrealized.total)}
+          sub={
+            feedStale
+              ? `Price feed stale${lastQuoteTime ? ` — last quote ${fmtDuration(lastQuoteTime)} ago` : ""}`
+              : unrealized.missing > 0
+                ? `${unrealized.priced} of ${open.length} open trades priced`
+                : `${open.length} open trade${open.length === 1 ? "" : "s"}`
+          }
+          tone={feedStale ? "text-amber" : pctTone(unrealized.total)}
+        />
+        <Kpi
+          label="Combined total"
+          value={fmtMoney(combined)}
+          sub="Realized + unrealized"
+          tone={pctTone(combined)}
+        />
+        <Kpi
+          label="Paper equity"
+          value={fmtMoney(equity)}
+          sub="Notional + realized P&L"
+          tone={pctTone(stats.totalPnl)}
+        />
+        <Kpi
+          label="Win rate"
+          value={stats.winRate == null ? "—" : `${stats.winRate.toFixed(1)}%`}
+          sub={`${wins} win${wins === 1 ? "" : "s"} / ${losses} loss${losses === 1 ? "" : "es"}`}
+        />
+        <Kpi
+          label="Average win / loss"
+          value={`${fmtMoney(stats.avgWin)} / ${fmtMoney(stats.avgLoss)}`}
+          sub={`${fmtR(stats.avgWinR)} / ${fmtR(stats.avgLossR)}`}
+        />
+        <Kpi
+          label="Expectancy per trade"
+          value={fmtMoney(stats.expectancy)}
+          sub={fmtR(stats.expectancyR)}
+          tone={pctTone(stats.expectancy)}
+        />
+        <Kpi
+          label="Best / worst trade"
+          value={`${fmtMoney(best)} / ${fmtMoney(worst)}`}
+          sub="Single closed trades"
+        />
+      </div>
+
+      {mirrored.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-1 rounded-lg border border-border/60 bg-background/40 px-3 py-2 text-xs">
+          <span className="text-muted-foreground">
+            Mirrored to demo ({mirrored.length} trade{mirrored.length === 1 ? "" : "s"})
+          </span>
+          <span>
+            Paper <span className={"font-mono " + pctTone(mirroredPaper)}>{fmtMoney(mirroredPaper)}</span>
+          </span>
+          <span>
+            Demo <span className={"font-mono " + pctTone(mirroredDemo)}>{fmtMoney(mirroredDemo)}</span>
+          </span>
+          <span>
+            Gap{" "}
+            <span className={"font-mono " + pctTone(mirroredDemo - mirroredPaper)}>
+              {fmtMoney(mirroredDemo - mirroredPaper)}
+            </span>{" "}
+            <span className="text-muted-foreground">spread, commission and slippage</span>
+          </span>
+        </div>
+      )}
+
+      {stats.count < SMALL_SAMPLE && (
+        <p className="mt-3 text-[11px] text-muted-foreground">
+          Small sample — early results are lumpy by nature. Expectancy only starts meaning
+          something past a few dozen closed trades, the same threshold as the Scorecard review.
+        </p>
+      )}
+    </section>
+  );
+}
