@@ -314,7 +314,7 @@ function ManualPage() {
                 </p>
                 <p>
                   MetaTrader 5 has no web connection, so a small helper program
-                  (<span className="font-mono">bridge/mt5_bridge.py</span>) must
+                  (<span className="font-mono">bridge/ripple_bridge_helper.py</span>) must
                   run beside a logged-in terminal, and it only runs on Windows.
                   On a Mac, use a rented Windows trading VPS, Windows in
                   Parallels or VMware, or a spare Windows PC.
