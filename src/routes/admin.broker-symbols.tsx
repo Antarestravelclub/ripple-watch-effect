@@ -314,6 +314,9 @@ function BrokerSymbolsAdminPage() {
                       <td className="p-2 max-w-[240px] truncate" title={s.description ?? undefined}>
                         {s.description}
                         {s.path && <div className="text-[10px] text-muted-foreground">{s.path}</div>}
+                        {s.review_reason && (
+                          <div className="text-[10px] text-headwind mt-0.5">{s.review_reason}</div>
+                        )}
                       </td>
                       <td className="p-2">{s.trade_mode}</td>
                       <td className="p-2">
