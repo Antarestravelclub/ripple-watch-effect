@@ -253,7 +253,7 @@ function OpenTable({
             <Th>Symbol</Th>
             <Th>Dir</Th>
             <Th>Entry</Th>
-            <Th>Size</Th>
+            <Th>Lots</Th>
             <Th>Current</Th>
             <Th>Unrealised</Th>
             <Th>To stop</Th>
@@ -284,6 +284,9 @@ function OpenTable({
                 <Td>
                   <span className={pctTone(m.pnl)}>
                     {fmtMoney(m.pnl)} · {fmtPct(m.pct)} · {fmtR(m.r)}
+                  </span>
+                  <span className="block text-[10px] text-muted-foreground">
+                    {t.position_size} lot{t.position_size === 1 ? "" : "s"}
                   </span>
                 </Td>
                 <Td mono>
