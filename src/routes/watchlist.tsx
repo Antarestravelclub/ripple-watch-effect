@@ -11,6 +11,9 @@ import { EventCard } from "@/components/event-card";
 import { useState } from "react";
 import { X } from "lucide-react";
 import { WatchlistQuotes } from "@/components/watchlist-quotes";
+import { useEtfTickers } from "@/hooks/use-etf-tickers";
+import { EtfBadge } from "@/components/etf-badge";
+import { matchesInstrument, INSTRUMENT_LABEL, type InstrumentFilter } from "@/lib/instrument";
 
 export const Route = createFileRoute("/watchlist")({
   head: () => ({
@@ -36,9 +39,12 @@ function WatchlistPage() {
   const watchlist = useWatchlist();
   const { events } = useLiveEvents();
   const [input, setInput] = useState("");
+  const [instrument, setInstrument] = useState<InstrumentFilter>("all");
+  const { instrumentOf } = useEtfTickers();
+  const shown = watchlist.filter((t) => matchesInstrument(instrument, instrumentOf(t)));
 
   const relevant = events.filter((e) =>
-    watchlist.some((t) => eventTouchesTicker(e, t)),
+    shown.some((t) => eventTouchesTicker(e, t)),
   ).sort(
     (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
   );
@@ -77,13 +83,41 @@ function WatchlistPage() {
       </form>
 
       {watchlist.length > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-1 text-xs">
+          <span className="text-muted-foreground mr-1">Show</span>
+          {(
+            [
+              ["all", "All"],
+              ["stock", INSTRUMENT_LABEL.stock],
+              ["etf", INSTRUMENT_LABEL.etf],
+            ] as Array<[InstrumentFilter, string]>
+          ).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setInstrument(key)}
+              className={
+                "rounded-md border px-2 py-1 transition-colors " +
+                (instrument === key
+                  ? "border-primary/50 bg-primary/10 text-primary"
+                  : "border-border/70 text-muted-foreground hover:bg-accent")
+              }
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {watchlist.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-6">
-          {watchlist.map((t) => (
+          {shown.map((t) => (
             <span
               key={t}
               className="inline-flex items-center gap-1 text-xs font-mono font-medium px-2 py-1 rounded-md border border-primary/40 bg-primary/10 text-primary"
             >
               {t}
+              <EtfBadge type={instrumentOf(t)} />
               <button
                 onClick={() => removeTicker(t)}
                 className="opacity-70 hover:opacity-100"
@@ -96,7 +130,7 @@ function WatchlistPage() {
         </div>
       )}
 
-      <WatchlistQuotes tickers={watchlist} />
+      <WatchlistQuotes tickers={shown} />
 
 
 

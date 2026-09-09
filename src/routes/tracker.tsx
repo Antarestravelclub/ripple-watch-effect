@@ -4,6 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { SiteShell } from "@/components/site-shell";
 import { TickerLink } from "@/components/ticker-link";
+import { EtfBadge } from "@/components/etf-badge";
+import { matchesInstrument, INSTRUMENT_LABEL, type InstrumentFilter } from "@/lib/instrument";
 import { ensureSignals, listSignals } from "@/lib/signals.functions";
 import { computeMetrics, fmtPct, fmtPrice, pctTone, STATUS_LABEL } from "@/lib/signal-metrics";
 import { ConvictionChip } from "@/components/conviction-chip";
@@ -65,6 +67,7 @@ function TrackerPage() {
   const [status, setStatus] = useState<"all" | "open" | "closed" | "stopped" | "invalidated">("all");
   const [direction, setDirection] = useState<"all" | "long" | "short">("all");
   const [category, setCategory] = useState<"all" | EventCategory>("all");
+  const [instrument, setInstrument] = useState<InstrumentFilter>("all");
   const [onlyWatchlist, setOnlyWatchlist] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>("pct");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
@@ -103,6 +106,7 @@ function TrackerPage() {
     return enriched
       .filter((r) => (status === "all" ? true : r.signal.status === status))
       .filter((r) => (direction === "all" ? true : r.signal.direction === direction))
+      .filter((r) => matchesInstrument(instrument, r.signal.instrument_type))
       .filter((r) =>
         category === "all" ? true : r.event?.category === category,
       )
@@ -188,6 +192,8 @@ function TrackerPage() {
 
         <Select label="Direction" value={direction} onChange={(v) => setDirection(v as typeof direction)}
           options={[["all", "All"], ["long", "Long"], ["short", "Short"]]} />
+        <Select label="Instrument" value={instrument} onChange={(v) => setInstrument(v as InstrumentFilter)}
+          options={[["all", "All"], ["stock", INSTRUMENT_LABEL.stock], ["etf", INSTRUMENT_LABEL.etf]]} />
         <Select label="Category" value={category} onChange={(v) => setCategory(v as typeof category)}
           options={[
             ["all", "All"],
@@ -256,6 +262,7 @@ function TrackerPage() {
                 >
                   <td className="p-2 font-mono font-semibold">
                     <TickerLink symbol={signal.ticker} className="font-mono" />
+                    <EtfBadge type={signal.instrument_type} />
                   </td>
                   <td className="p-2 max-w-[220px] truncate text-muted-foreground">
                     {event ? (
