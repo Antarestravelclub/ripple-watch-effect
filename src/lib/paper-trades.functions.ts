@@ -489,7 +489,7 @@ export const listPaperTrades = createServerFn({ method: "GET" })
     return {
       trades,
       prices,
-      notional: await notionalValue(),
+      notional: await notionalValue(context.userId),
       lastQuoteTime: newestQuote > 0 ? new Date(newestQuote).toISOString() : null,
       feedStale: openSymbols.length > 0 && (newestQuote === 0 || Date.now() - newestQuote > STALE_QUOTE_MS),
     };
