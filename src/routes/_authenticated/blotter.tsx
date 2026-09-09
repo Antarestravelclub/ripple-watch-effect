@@ -174,12 +174,26 @@ function BlotterPage() {
           onClose={(t) => setConfirm({ trade: t, price: priceOf(t) })}
         />
       )}
-      {!isLoading && tab === "closed" && <ClosedTable trades={closedTrades} />}
+      {!isLoading && tab === "closed" && (
+        <ClosedTable rows={filteredClosed} filters={filters} setFilters={setFilters} />
+      )}
       {!isLoading && tab === "stats" && (
         <>
           <StatsView trades={closedTrades} notional={data?.notional ?? 100_000} />
           <MirrorStats trades={data?.trades ?? []} />
         </>
+      )}
+
+      {!isLoading && (
+        <AccumulatedResults
+          closed={filteredClosed}
+          open={openTrades}
+          priceOf={priceOf}
+          notional={data?.notional ?? 100_000}
+          filtered={isFiltered}
+          feedStale={Boolean(data?.feedStale)}
+          lastQuoteTime={data?.lastQuoteTime ?? null}
+        />
       )}
 
       {confirm && (
