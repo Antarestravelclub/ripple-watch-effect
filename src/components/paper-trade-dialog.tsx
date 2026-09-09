@@ -264,6 +264,51 @@ function Field({
 }
 
 /**
+ * What the chosen lot amount is worth in money: loss at the stop, gain at the
+ * target, and the value of a 1% move. Paper measurement only.
+ */
+function LotOutcome({
+  direction,
+  entry,
+  stop,
+  target,
+  lots,
+}: {
+  direction: "long" | "short";
+  entry: number;
+  stop: number;
+  target: number;
+  lots: number;
+}) {
+  if (!(entry > 0) || !(lots > 0)) return null;
+  const sign = direction === "short" ? -1 : 1;
+  const risk = stop > 0 ? (stop - entry) * sign * lots : null;
+  const reward = target > 0 ? (target - entry) * sign * lots : null;
+  const onePct = entry * 0.01 * lots;
+
+  return (
+    <div className="mt-3 grid grid-cols-3 gap-2 rounded-lg border border-border/60 bg-card/50 p-2.5 text-center">
+      <div>
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">If stopped</p>
+        <p className="font-mono text-sm text-headwind">
+          {risk != null ? fmtMoney(risk) : "—"}
+        </p>
+      </div>
+      <div>
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">At target</p>
+        <p className="font-mono text-sm text-tailwind">
+          {reward != null ? fmtMoney(reward) : "—"}
+        </p>
+      </div>
+      <div>
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Per 1% move</p>
+        <p className="font-mono text-sm">{fmtMoney(onePct)}</p>
+      </div>
+    </div>
+  );
+}
+
+/**
  * Free-form paper trade on any symbol, with no signal behind it. Pre-fills the
  * entry from the shared price store and the stop/target from ATR(14).
  */
