@@ -50,6 +50,245 @@ export type Database = {
         }
         Relationships: []
       }
+      bridge_account_snapshots: {
+        Row: {
+          account_mode: string
+          account_number: string
+          balance: number | null
+          created_at: string
+          currency: string | null
+          equity: number | null
+          free_margin: number | null
+          id: string
+          margin: number | null
+          received_at: string
+        }
+        Insert: {
+          account_mode: string
+          account_number: string
+          balance?: number | null
+          created_at?: string
+          currency?: string | null
+          equity?: number | null
+          free_margin?: number | null
+          id?: string
+          margin?: number | null
+          received_at?: string
+        }
+        Update: {
+          account_mode?: string
+          account_number?: string
+          balance?: number | null
+          created_at?: string
+          currency?: string | null
+          equity?: number | null
+          free_margin?: number | null
+          id?: string
+          margin?: number | null
+          received_at?: string
+        }
+        Relationships: []
+      }
+      bridge_deals: {
+        Row: {
+          close_price: number | null
+          close_time: string | null
+          commission: number | null
+          created_at: string
+          deal_id: number
+          direction: string | null
+          id: string
+          lots: number | null
+          open_price: number | null
+          open_time: string | null
+          profit: number | null
+          swap: number | null
+          symbol: string
+          ticket: number | null
+        }
+        Insert: {
+          close_price?: number | null
+          close_time?: string | null
+          commission?: number | null
+          created_at?: string
+          deal_id: number
+          direction?: string | null
+          id?: string
+          lots?: number | null
+          open_price?: number | null
+          open_time?: string | null
+          profit?: number | null
+          swap?: number | null
+          symbol: string
+          ticket?: number | null
+        }
+        Update: {
+          close_price?: number | null
+          close_time?: string | null
+          commission?: number | null
+          created_at?: string
+          deal_id?: number
+          direction?: string | null
+          id?: string
+          lots?: number | null
+          open_price?: number | null
+          open_time?: string | null
+          profit?: number | null
+          swap?: number | null
+          symbol?: string
+          ticket?: number | null
+        }
+        Relationships: []
+      }
+      bridge_instructions: {
+        Row: {
+          action: string
+          broker_symbol: string
+          created_at: string
+          direction: string
+          expires_at: string
+          fill_price: number | null
+          fill_time: string | null
+          filled_ticket: number | null
+          id: string
+          lots: number | null
+          paper_trade_id: string | null
+          picked_up_at: string | null
+          sl: number | null
+          status: string
+          status_detail: string | null
+          ticket: number | null
+          tp: number | null
+          updated_at: string
+        }
+        Insert: {
+          action: string
+          broker_symbol: string
+          created_at?: string
+          direction: string
+          expires_at?: string
+          fill_price?: number | null
+          fill_time?: string | null
+          filled_ticket?: number | null
+          id?: string
+          lots?: number | null
+          paper_trade_id?: string | null
+          picked_up_at?: string | null
+          sl?: number | null
+          status?: string
+          status_detail?: string | null
+          ticket?: number | null
+          tp?: number | null
+          updated_at?: string
+        }
+        Update: {
+          action?: string
+          broker_symbol?: string
+          created_at?: string
+          direction?: string
+          expires_at?: string
+          fill_price?: number | null
+          fill_time?: string | null
+          filled_ticket?: number | null
+          id?: string
+          lots?: number | null
+          paper_trade_id?: string | null
+          picked_up_at?: string | null
+          sl?: number | null
+          status?: string
+          status_detail?: string | null
+          ticket?: number | null
+          tp?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bridge_instructions_paper_trade_id_fkey"
+            columns: ["paper_trade_id"]
+            isOneToOne: false
+            referencedRelation: "paper_trades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bridge_mirror_settings: {
+        Row: {
+          created_at: string
+          id: string
+          max_lots_per_trade: number
+          mirroring_paused: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          max_lots_per_trade?: number
+          mirroring_paused?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          max_lots_per_trade?: number
+          mirroring_paused?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bridge_positions: {
+        Row: {
+          created_at: string
+          current_price: number | null
+          direction: string
+          id: string
+          last_seen_at: string
+          lots: number | null
+          open_price: number | null
+          open_time: string | null
+          profit: number | null
+          sl: number | null
+          status: string
+          symbol: string
+          ticket: number
+          tp: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_price?: number | null
+          direction: string
+          id?: string
+          last_seen_at?: string
+          lots?: number | null
+          open_price?: number | null
+          open_time?: string | null
+          profit?: number | null
+          sl?: number | null
+          status?: string
+          symbol: string
+          ticket: number
+          tp?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_price?: number | null
+          direction?: string
+          id?: string
+          last_seen_at?: string
+          lots?: number | null
+          open_price?: number | null
+          open_time?: string | null
+          profit?: number | null
+          sl?: number | null
+          status?: string
+          symbol?: string
+          ticket?: number
+          tp?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       broker_bridge_heartbeats: {
         Row: {
           account_is_demo: boolean | null
@@ -596,6 +835,9 @@ export type Database = {
         Row: {
           both_touched: boolean
           created_at: string
+          demo_close_price: number | null
+          demo_fill_price: number | null
+          demo_realized_pnl: number | null
           direction: string
           entry_price: number
           entry_time: string
@@ -603,6 +845,8 @@ export type Database = {
           exit_reason: string | null
           exit_time: string | null
           id: string
+          mirror_ticket: number | null
+          mirrored: boolean
           notes: string | null
           overrides_used: boolean
           position_size: number
@@ -620,6 +864,9 @@ export type Database = {
         Insert: {
           both_touched?: boolean
           created_at?: string
+          demo_close_price?: number | null
+          demo_fill_price?: number | null
+          demo_realized_pnl?: number | null
           direction: string
           entry_price: number
           entry_time?: string
@@ -627,6 +874,8 @@ export type Database = {
           exit_reason?: string | null
           exit_time?: string | null
           id?: string
+          mirror_ticket?: number | null
+          mirrored?: boolean
           notes?: string | null
           overrides_used?: boolean
           position_size: number
@@ -644,6 +893,9 @@ export type Database = {
         Update: {
           both_touched?: boolean
           created_at?: string
+          demo_close_price?: number | null
+          demo_fill_price?: number | null
+          demo_realized_pnl?: number | null
           direction?: string
           entry_price?: number
           entry_time?: string
@@ -651,6 +903,8 @@ export type Database = {
           exit_reason?: string | null
           exit_time?: string | null
           id?: string
+          mirror_ticket?: number | null
+          mirrored?: boolean
           notes?: string | null
           overrides_used?: boolean
           position_size?: number
