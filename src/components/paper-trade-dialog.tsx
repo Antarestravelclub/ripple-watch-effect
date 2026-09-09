@@ -547,6 +547,16 @@ function ManualPaperTradeForm({
           </p>
         )}
 
+        {p && (
+          <UndersizedNotice
+            sizing={p.sizing}
+            balance={p.notional}
+            lotSource={p.lotSource}
+            onTakeMinLot={() => setSize(String(p.sizing.minLot))}
+            onSkip={onClose}
+          />
+        )}
+
         <div className="mt-4 grid grid-cols-2 gap-3">
           <Field label="Entry price" value={entry} onChange={setEntry} />
           <Field label="Lots (1 lot = 1 unit)" value={size} onChange={setSize} />
@@ -565,7 +575,7 @@ function ManualPaperTradeForm({
 
         <p className="mt-3 text-[11px] text-muted-foreground">
           Suggestions use the same rules as signals: stop 1.5× ATR(14), target 2.0× ATR(14), size
-          risking 0.5% of the {p ? fmtMoney(p.notional) : "$100,000"} paper notional. Notional at
+          risking 0.5% of your {p ? fmtMoney(p.notional) : "starting"} balance. Position value at
           these values: {notional != null ? fmtMoney(notional) : "—"}.
         </p>
 
