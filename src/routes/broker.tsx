@@ -245,7 +245,7 @@ function BrokerPage() {
           <h2 className="text-sm font-semibold text-foreground">Setting up the helper</h2>
           <p>
             MetaTrader 5 has no web API, so it cannot be reached from a website. The helper
-            program (<span className="font-mono">bridge/mt5_bridge.py</span> in this project)
+            program (<span className="font-mono">bridge/ripple_bridge_helper.py</span> in this project)
             runs on the Windows machine where your demo terminal is logged in. It asks this
             app for new orders every 30 seconds, places them with the stop and target
             attached, and reports fills back.

@@ -60,7 +60,7 @@ export function BridgeSetup({ configured, everSeen, fresh, isDemo, symbolUpload 
     `set RIPPLE_BASE_URL=${origin}`,
     "set RIPPLE_BRIDGE_KEY=paste-your-bridge-key-here",
     "set RIPPLE_LOT=0.10",
-    "python mt5_bridge.py",
+    "python ripple_bridge_helper.py",
   ].join("\n");
 
   return (
@@ -124,7 +124,7 @@ export function BridgeSetup({ configured, everSeen, fresh, isDemo, symbolUpload 
           <p>
             On that Windows machine, install Python, then copy the{" "}
             <span className="font-mono text-foreground">bridge</span> folder from this
-            project (<span className="font-mono">mt5_bridge.py</span>) onto it.
+            project (<span className="font-mono">ripple_bridge_helper.py</span>) onto it.
           </p>
         </div>
 
