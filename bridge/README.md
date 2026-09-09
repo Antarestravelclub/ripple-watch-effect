@@ -1,98 +1,67 @@
-# Ripple Bridge Helper (MetaTrader 5 demo)
+# Ripple Bridge Helper — Setup & Run (Windows)
 
-Connects a local MetaTrader 5 terminal running an **XM demo account** to The
-Ripple Effect site.
+## What this is
 
-```
-The Ripple Effect  ->  bridge endpoints  ->  ripple_bridge_helper.py  ->  MT5 DEMO terminal
-```
+A Python program that runs on the same Windows machine as your MT5 terminal.
 
-- **Phase A (always on):** reports account balance/equity, open positions and
-  closed deals to the site every 30–60 seconds. The **Demo Account** panel on
-  the Broker page and the Blotter show this data.
-- **Phase B (`EXECUTION_ENABLED=true`):** polls the site for mirror
-  instructions every ~12 seconds and places **demo-only** market orders,
-  reporting each fill or rejection back.
+- **Phase A (default):** every ~45s it reports your demo account's balance/equity, open positions, and closed deals to the Ripple site. Read-only — it cannot trade.
+- **Phase B (opt-in):** when you set `EXECUTION_ENABLED` to `true`, it also polls the site for "mirror to demo" instructions and places those orders on the demo account.
 
-## Safety model (defense in depth)
+## One-time setup
 
-- Hard account allowlist (`ALLOWED_ACCOUNT`), checked at startup **and** on
-  every execution cycle.
-- All execution is refused if the terminal reports anything but a demo account.
-  Any non-demo mode is reported to the site as `live`, which also cancels all
-  pending instructions server-side.
-- A disk-persisted ledger (`instruction_ledger.json`) records every instruction
-  id **before** the order is sent — a crash or restart can never double-place.
-- Executes exactly the broker symbol the site resolved, or rejects. No symbol
-  invention, no pending/limit orders, no partial closes, no SL/TP edits.
-- The helper never reads prices from the site; MT5 is the source of truth for
-  account state.
+1. Install Python 3.10+ from [python.org](https://www.python.org) (tick **"Add Python to PATH"** during install).
 
-## Requirements
-
-1. A Windows machine (or Windows VM/VPS) with MetaTrader 5 installed and logged
-   into your **XM demo** account. The MetaTrader5 Python package only works on
-   Windows — on a Mac, use a Windows VPS or a VM (Parallels/VMware).
-2. Python 3.10 or newer on that machine.
-3. The bridge key that was saved in the app (stored server-side as
-   `BRIDGE_SECRET`).
-
-## Install and run
+2. Open Command Prompt in the folder where you put these files and run:
 
 ```bat
 pip install MetaTrader5 requests
-copy bridge_config.example.json bridge_config.json
 ```
 
-Edit `bridge_config.json`:
+3. Copy `bridge_config.example.json` to `bridge_config.json` and edit it:
 
 | Key | Meaning |
 | --- | --- |
-| `SITE_BASE_URL` | Full site URL, e.g. `https://ripple-watch-effect.lovable.app` |
-| `BRIDGE_SECRET` | The same long random value saved in the app as the bridge secret |
-| `ALLOWED_ACCOUNT` | Your XM **demo** account number (integer) |
-| `EXECUTION_ENABLED` | `false` = reporting only; `true` = also place mirror orders |
-| `MAX_LOTS_PER_ORDER` | Local ceiling per order (default 10), independent of the site's limit |
+| `SITE_BASE_URL` | Your site URL, e.g. `https://ripple-watch-effect.lovable.app` |
+| `BRIDGE_SECRET` | The same bridge secret the site has (exact match, no spaces) |
+| `ALLOWED_ACCOUNT` | Your XM demo account number (the login number shown in MT5) |
+| `EXECUTION_ENABLED` | `false` for now |
 
-Then:
+4. Make sure the MT5 terminal is running and logged into the demo account, and that **Tools → Options → Expert Advisors → "Allow algorithmic trading"** is ticked (needed later for Phase B; harmless now).
+
+## Run it
 
 ```bat
 python ripple_bridge_helper.py
 ```
 
-Leave the window open. Progress, every post, every order attempt and every
-safety refusal are printed there and written to a rotating log file
-(`bridge_helper.log`, 5 MB × 5 backups) — the first place to look when
-something goes wrong on the site.
+Leave the window open. You should see log lines in the console (also written to `bridge_helper.log`). Within a minute the site's Demo Account panel should populate and the status chip should show **Connected**.
 
-## Endpoints used (all under `/api/public/bridge/`, header `x-bridge-key`)
+To stop: **Ctrl+C**.
 
-| Endpoint | Direction | Purpose |
-| --- | --- | --- |
-| `POST /account` | helper → site | Account snapshot (balance, equity, margin, mode) |
-| `POST /positions` | helper → site | Full open-position list every cycle (server diffs) |
-| `POST /deals` | helper → site | Closed deals since last post (server dedupes by deal id) |
-| `GET /instructions?status=pending` | site → helper | Pending mirror instructions (marked picked-up on read) |
-| `POST /instructions/{id}/result` | helper → site | Fill or rejection for one instruction (idempotent) |
+## Verifying Phase A
 
-## Rollout order
+- Site shows balance/equity matching MT5 → good.
+- Close the helper → within ~10 minutes the site chip goes **Stale** then **Offline** → good.
+- Open a manual trade in MT5 → it appears in the site's positions table on the next cycle.
 
-1. Run with `EXECUTION_ENABLED=false`. Confirm the Demo Account panel populates
-   and the status chip shows Connected. Stop the helper and watch it go
-   Stale → Offline.
-2. Verify symbol mappings for a few tickers (site resolves → symbol exists in
-   the terminal) via the admin broker-symbols page.
-3. Set `EXECUTION_ENABLED=true`, mirror one small trade, verify the fill is
-   reported, then close it and verify the close + deal reconciliation.
-4. Test the site's kill switch (Pause all mirroring) and an unmapped-symbol
-   refusal before regular use.
+## Turning on Phase B (only after Phase A is verified)
 
-## Failure behavior
+1. In `bridge_config.json`, set `"EXECUTION_ENABLED": true` and restart the helper.
+2. The startup log must say the safety check passed — if the connected account doesn't match `ALLOWED_ACCOUNT` or isn't a demo account, execution stays disabled no matter what the config says.
+3. Mirror one small trade from the site, watch it appear in MT5 with a comment like `ripple:xxxxxxxx`, and confirm the fill shows up back on the site.
+4. Test the site's kill switch before regular use.
 
-- Any HTTP failure is logged and retried with the loop's normal cadence; the
-  helper never crashes the loop.
-- Deals use a persisted high-water mark (`deals_highwater.json`) with a 5-minute
-  overlap; re-sends are harmless because the server dedupes by deal id.
-- If the helper crashes after writing an instruction to the ledger but before
-  recording a result, it refuses to re-place and reports
-  `ambiguous_prior_attempt` — check MT5 for the `ripple:<id>` comment manually.
+## Files it creates
+
+- `bridge_helper.log` — rotating log; first place to look when anything is odd
+- `instruction_ledger.json` — record of every instruction attempted (do not delete; this is what prevents double-placed orders after a crash/restart)
+- `deals_highwater.json` — bookmark of the last closed deal reported
+
+## Safety notes
+
+- The helper refuses to trade on any account other than the one in `ALLOWED_ACCOUNT`, and refuses entirely if the terminal reports a real (non-demo) account — checked at startup and on every execution cycle.
+- If it ever logs `ambiguous_prior_attempt`, it crashed mid-order once: check MT5 for a position with the matching `ripple:` comment before doing anything else.
+
+## Auto-start on boot (optional, later)
+
+Windows Task Scheduler → run `python C:\path\to\ripple_bridge_helper.py` at logon.
