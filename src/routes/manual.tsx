@@ -270,6 +270,25 @@ function ManualPage() {
                 </p>
               </Card>
 
+              <Card title="Blotter — signals as you actually traded them">
+                <p>
+                  Sign in, then press <Term>Paper trade</Term> on any open signal.
+                  The form arrives pre-filled with the signal's own entry, stop,
+                  target and risk-based size; change anything you like and the
+                  trade is tagged as overridden so the statistics can show
+                  whether your tweaks help or hurt. Open trades show unrealised
+                  P&amp;L, distance to stop and target in percent and in R, and
+                  time in trade. Stops and targets close automatically at the
+                  level itself — never at a flattering price — and nothing is
+                  ever closed while the price feed is stale. The Scorecard
+                  measures signals as issued; the Blotter measures them as
+                  traded. Everything stays paper: there is no live execution
+                  anywhere in this app.
+                </p>
+              </Card>
+
+
+
               <Card title="Analogues & Playbooks — historical context">
                 <p>
                   <Term>Analogues</Term> is a library of canonical past events

@@ -592,6 +592,86 @@ export type Database = {
         }
         Relationships: []
       }
+      paper_trades: {
+        Row: {
+          both_touched: boolean
+          created_at: string
+          direction: string
+          entry_price: number
+          entry_time: string
+          exit_price: number | null
+          exit_reason: string | null
+          exit_time: string | null
+          id: string
+          notes: string | null
+          overrides_used: boolean
+          position_size: number
+          quote_symbol: string | null
+          realized_pnl: number | null
+          signal_id: string
+          status: string
+          stop_price: number
+          target_price: number
+          ticker: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          both_touched?: boolean
+          created_at?: string
+          direction: string
+          entry_price: number
+          entry_time?: string
+          exit_price?: number | null
+          exit_reason?: string | null
+          exit_time?: string | null
+          id?: string
+          notes?: string | null
+          overrides_used?: boolean
+          position_size: number
+          quote_symbol?: string | null
+          realized_pnl?: number | null
+          signal_id: string
+          status?: string
+          stop_price: number
+          target_price: number
+          ticker: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          both_touched?: boolean
+          created_at?: string
+          direction?: string
+          entry_price?: number
+          entry_time?: string
+          exit_price?: number | null
+          exit_reason?: string | null
+          exit_time?: string | null
+          id?: string
+          notes?: string | null
+          overrides_used?: boolean
+          position_size?: number
+          quote_symbol?: string | null
+          realized_pnl?: number | null
+          signal_id?: string
+          status?: string
+          stop_price?: number
+          target_price?: number
+          ticker?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paper_trades_signal_id_fkey"
+            columns: ["signal_id"]
+            isOneToOne: false
+            referencedRelation: "signals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       portfolio_settings: {
         Row: {
           created_at: string

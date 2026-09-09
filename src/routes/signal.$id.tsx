@@ -18,6 +18,7 @@ import {
 } from "@/lib/signal-metrics";
 import { ConvictionBreakdownList } from "@/components/conviction-chip";
 import { TradingViewChart } from "@/components/tradingview";
+import { PaperTradeButton } from "@/components/paper-trade-dialog";
 
 import { useLiveEvents } from "@/hooks/use-live-events";
 import { ArrowLeft, Clock } from "lucide-react";
@@ -91,6 +92,11 @@ function SignalDetail() {
           <TickerLink symbol={signal.ticker} />
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">{signal.rationale}</p>
+        {signal.status === "open" && (
+          <div className="mt-3">
+            <PaperTradeButton signalId={signal.id} ticker={signal.ticker} />
+          </div>
+        )}
         {event && (
           <Link
             to="/event/$id"

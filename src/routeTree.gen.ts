@@ -17,14 +17,17 @@ import { Route as PlaybooksRouteImport } from './routes/playbooks'
 import { Route as ManualRouteImport } from './routes/manual'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as BrokerRouteImport } from './routes/broker'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AnalyzeRouteImport } from './routes/analyze'
 import { Route as AnaloguesRouteImport } from './routes/analogues'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TickersIndexRouteImport } from './routes/tickers.index'
 import { Route as TickersSymbolRouteImport } from './routes/tickers.$symbol'
 import { Route as SignalIdRouteImport } from './routes/signal.$id'
 import { Route as EventIdRouteImport } from './routes/event.$id'
 import { Route as AdminBrokerSymbolsRouteImport } from './routes/admin.broker-symbols'
+import { Route as AuthenticatedBlotterRouteImport } from './routes/_authenticated/blotter'
 import { Route as ApiPublicStreamQuotesRouteImport } from './routes/api/public/stream/quotes'
 import { Route as ApiPublicHooksIngestNewsRouteImport } from './routes/api/public/hooks/ingest-news'
 import { Route as ApiPublicHooksEvaluateSignalsRouteImport } from './routes/api/public/hooks/evaluate-signals'
@@ -72,6 +75,11 @@ const BrokerRoute = BrokerRouteImport.update({
   path: '/broker',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AnalyzeRoute = AnalyzeRouteImport.update({
   id: '/analyze',
   path: '/analyze',
@@ -80,6 +88,10 @@ const AnalyzeRoute = AnalyzeRouteImport.update({
 const AnaloguesRoute = AnaloguesRouteImport.update({
   id: '/analogues',
   path: '/analogues',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -111,6 +123,11 @@ const AdminBrokerSymbolsRoute = AdminBrokerSymbolsRouteImport.update({
   id: '/admin/broker-symbols',
   path: '/admin/broker-symbols',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedBlotterRoute = AuthenticatedBlotterRouteImport.update({
+  id: '/blotter',
+  path: '/blotter',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const ApiPublicStreamQuotesRoute = ApiPublicStreamQuotesRouteImport.update({
   id: '/api/public/stream/quotes',
@@ -150,6 +167,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/analogues': typeof AnaloguesRoute
   '/analyze': typeof AnalyzeRoute
+  '/auth': typeof AuthRoute
   '/broker': typeof BrokerRoute
   '/calendar': typeof CalendarRoute
   '/manual': typeof ManualRoute
@@ -158,6 +176,7 @@ export interface FileRoutesByFullPath {
   '/setups': typeof SetupsRoute
   '/tracker': typeof TrackerRoute
   '/watchlist': typeof WatchlistRoute
+  '/blotter': typeof AuthenticatedBlotterRoute
   '/admin/broker-symbols': typeof AdminBrokerSymbolsRoute
   '/event/$id': typeof EventIdRoute
   '/signal/$id': typeof SignalIdRoute
@@ -174,6 +193,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analogues': typeof AnaloguesRoute
   '/analyze': typeof AnalyzeRoute
+  '/auth': typeof AuthRoute
   '/broker': typeof BrokerRoute
   '/calendar': typeof CalendarRoute
   '/manual': typeof ManualRoute
@@ -182,6 +202,7 @@ export interface FileRoutesByTo {
   '/setups': typeof SetupsRoute
   '/tracker': typeof TrackerRoute
   '/watchlist': typeof WatchlistRoute
+  '/blotter': typeof AuthenticatedBlotterRoute
   '/admin/broker-symbols': typeof AdminBrokerSymbolsRoute
   '/event/$id': typeof EventIdRoute
   '/signal/$id': typeof SignalIdRoute
@@ -197,8 +218,10 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/analogues': typeof AnaloguesRoute
   '/analyze': typeof AnalyzeRoute
+  '/auth': typeof AuthRoute
   '/broker': typeof BrokerRoute
   '/calendar': typeof CalendarRoute
   '/manual': typeof ManualRoute
@@ -207,6 +230,7 @@ export interface FileRoutesById {
   '/setups': typeof SetupsRoute
   '/tracker': typeof TrackerRoute
   '/watchlist': typeof WatchlistRoute
+  '/_authenticated/blotter': typeof AuthenticatedBlotterRoute
   '/admin/broker-symbols': typeof AdminBrokerSymbolsRoute
   '/event/$id': typeof EventIdRoute
   '/signal/$id': typeof SignalIdRoute
@@ -225,6 +249,7 @@ export interface FileRouteTypes {
     | '/'
     | '/analogues'
     | '/analyze'
+    | '/auth'
     | '/broker'
     | '/calendar'
     | '/manual'
@@ -233,6 +258,7 @@ export interface FileRouteTypes {
     | '/setups'
     | '/tracker'
     | '/watchlist'
+    | '/blotter'
     | '/admin/broker-symbols'
     | '/event/$id'
     | '/signal/$id'
@@ -249,6 +275,7 @@ export interface FileRouteTypes {
     | '/'
     | '/analogues'
     | '/analyze'
+    | '/auth'
     | '/broker'
     | '/calendar'
     | '/manual'
@@ -257,6 +284,7 @@ export interface FileRouteTypes {
     | '/setups'
     | '/tracker'
     | '/watchlist'
+    | '/blotter'
     | '/admin/broker-symbols'
     | '/event/$id'
     | '/signal/$id'
@@ -271,8 +299,10 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/_authenticated'
     | '/analogues'
     | '/analyze'
+    | '/auth'
     | '/broker'
     | '/calendar'
     | '/manual'
@@ -281,6 +311,7 @@ export interface FileRouteTypes {
     | '/setups'
     | '/tracker'
     | '/watchlist'
+    | '/_authenticated/blotter'
     | '/admin/broker-symbols'
     | '/event/$id'
     | '/signal/$id'
@@ -296,8 +327,10 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AnaloguesRoute: typeof AnaloguesRoute
   AnalyzeRoute: typeof AnalyzeRoute
+  AuthRoute: typeof AuthRoute
   BrokerRoute: typeof BrokerRoute
   CalendarRoute: typeof CalendarRoute
   ManualRoute: typeof ManualRoute
@@ -377,6 +410,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BrokerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/analyze': {
       id: '/analyze'
       path: '/analyze'
@@ -389,6 +429,13 @@ declare module '@tanstack/react-router' {
       path: '/analogues'
       fullPath: '/analogues'
       preLoaderRoute: typeof AnaloguesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -432,6 +479,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/broker-symbols'
       preLoaderRoute: typeof AdminBrokerSymbolsRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/blotter': {
+      id: '/_authenticated/blotter'
+      path: '/blotter'
+      fullPath: '/blotter'
+      preLoaderRoute: typeof AuthenticatedBlotterRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/api/public/stream/quotes': {
       id: '/api/public/stream/quotes'
@@ -478,10 +532,23 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedBlotterRoute: typeof AuthenticatedBlotterRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedBlotterRoute: AuthenticatedBlotterRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AnaloguesRoute: AnaloguesRoute,
   AnalyzeRoute: AnalyzeRoute,
+  AuthRoute: AuthRoute,
   BrokerRoute: BrokerRoute,
   CalendarRoute: CalendarRoute,
   ManualRoute: ManualRoute,

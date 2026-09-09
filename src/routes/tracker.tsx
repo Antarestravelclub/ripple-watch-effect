@@ -13,6 +13,7 @@ import { useLiveEvents } from "@/hooks/use-live-events";
 import { useWatchlist } from "@/lib/watchlist-store";
 import { RefreshCw } from "lucide-react";
 import { TradingViewWatchlist } from "@/components/tradingview";
+import { PaperTradeButton } from "@/components/paper-trade-dialog";
 
 export const Route = createFileRoute("/tracker")({
   head: () => ({
@@ -243,6 +244,7 @@ function TrackerPage() {
                 <Th onClick={() => toggleSort("current")} right>Current</Th>
                 <Th onClick={() => toggleSort("pct")} right>% Move</Th>
                 <Th onClick={() => toggleSort("status")}>Status</Th>
+                <Th>Blotter</Th>
 
               </tr>
             </thead>
@@ -316,11 +318,16 @@ function TrackerPage() {
                       {STATUS_LABEL[signal.status]}
                     </span>
                   </td>
+                  <td className="p-2">
+                    {signal.status === "open" && (
+                      <PaperTradeButton signalId={signal.id} ticker={signal.ticker} compact />
+                    )}
+                  </td>
                 </tr>
               ))}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="p-6 text-center text-muted-foreground">
+                  <td colSpan={12} className="p-6 text-center text-muted-foreground">
                     No signals match these filters.
                   </td>
                 </tr>
