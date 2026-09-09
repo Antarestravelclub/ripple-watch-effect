@@ -25,6 +25,7 @@ import { Route as TickersIndexRouteImport } from './routes/tickers.index'
 import { Route as TickersSymbolRouteImport } from './routes/tickers.$symbol'
 import { Route as SignalIdRouteImport } from './routes/signal.$id'
 import { Route as EventIdRouteImport } from './routes/event.$id'
+import { Route as AdminEtfsRouteImport } from './routes/admin.etfs'
 import { Route as AdminBrokerSymbolsRouteImport } from './routes/admin.broker-symbols'
 import { Route as AuthenticatedBrokerRouteImport } from './routes/_authenticated/broker'
 import { Route as AuthenticatedBridgeRouteImport } from './routes/_authenticated/bridge'
@@ -118,6 +119,11 @@ const SignalIdRoute = SignalIdRouteImport.update({
 const EventIdRoute = EventIdRouteImport.update({
   id: '/event/$id',
   path: '/event/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminEtfsRoute = AdminEtfsRouteImport.update({
+  id: '/admin/etfs',
+  path: '/admin/etfs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminBrokerSymbolsRoute = AdminBrokerSymbolsRouteImport.update({
@@ -218,6 +224,7 @@ export interface FileRoutesByFullPath {
   '/bridge': typeof AuthenticatedBridgeRoute
   '/broker': typeof AuthenticatedBrokerRoute
   '/admin/broker-symbols': typeof AdminBrokerSymbolsRoute
+  '/admin/etfs': typeof AdminEtfsRoute
   '/event/$id': typeof EventIdRoute
   '/signal/$id': typeof SignalIdRoute
   '/tickers/$symbol': typeof TickersSymbolRoute
@@ -250,6 +257,7 @@ export interface FileRoutesByTo {
   '/bridge': typeof AuthenticatedBridgeRoute
   '/broker': typeof AuthenticatedBrokerRoute
   '/admin/broker-symbols': typeof AdminBrokerSymbolsRoute
+  '/admin/etfs': typeof AdminEtfsRoute
   '/event/$id': typeof EventIdRoute
   '/signal/$id': typeof SignalIdRoute
   '/tickers/$symbol': typeof TickersSymbolRoute
@@ -284,6 +292,7 @@ export interface FileRoutesById {
   '/_authenticated/bridge': typeof AuthenticatedBridgeRoute
   '/_authenticated/broker': typeof AuthenticatedBrokerRoute
   '/admin/broker-symbols': typeof AdminBrokerSymbolsRoute
+  '/admin/etfs': typeof AdminEtfsRoute
   '/event/$id': typeof EventIdRoute
   '/signal/$id': typeof SignalIdRoute
   '/tickers/$symbol': typeof TickersSymbolRoute
@@ -318,6 +327,7 @@ export interface FileRouteTypes {
     | '/bridge'
     | '/broker'
     | '/admin/broker-symbols'
+    | '/admin/etfs'
     | '/event/$id'
     | '/signal/$id'
     | '/tickers/$symbol'
@@ -350,6 +360,7 @@ export interface FileRouteTypes {
     | '/bridge'
     | '/broker'
     | '/admin/broker-symbols'
+    | '/admin/etfs'
     | '/event/$id'
     | '/signal/$id'
     | '/tickers/$symbol'
@@ -383,6 +394,7 @@ export interface FileRouteTypes {
     | '/_authenticated/bridge'
     | '/_authenticated/broker'
     | '/admin/broker-symbols'
+    | '/admin/etfs'
     | '/event/$id'
     | '/signal/$id'
     | '/tickers/$symbol'
@@ -414,6 +426,7 @@ export interface RootRouteChildren {
   TrackerRoute: typeof TrackerRoute
   WatchlistRoute: typeof WatchlistRoute
   AdminBrokerSymbolsRoute: typeof AdminBrokerSymbolsRoute
+  AdminEtfsRoute: typeof AdminEtfsRoute
   EventIdRoute: typeof EventIdRoute
   SignalIdRoute: typeof SignalIdRoute
   TickersSymbolRoute: typeof TickersSymbolRoute
@@ -542,6 +555,13 @@ declare module '@tanstack/react-router' {
       path: '/event/$id'
       fullPath: '/event/$id'
       preLoaderRoute: typeof EventIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/etfs': {
+      id: '/admin/etfs'
+      path: '/admin/etfs'
+      fullPath: '/admin/etfs'
+      preLoaderRoute: typeof AdminEtfsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/broker-symbols': {
@@ -696,6 +716,7 @@ const rootRouteChildren: RootRouteChildren = {
   TrackerRoute: TrackerRoute,
   WatchlistRoute: WatchlistRoute,
   AdminBrokerSymbolsRoute: AdminBrokerSymbolsRoute,
+  AdminEtfsRoute: AdminEtfsRoute,
   EventIdRoute: EventIdRoute,
   SignalIdRoute: SignalIdRoute,
   TickersSymbolRoute: TickersSymbolRoute,

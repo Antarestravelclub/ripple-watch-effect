@@ -1,6 +1,7 @@
 // Pure, client-safe helpers to compute tracked-signal metrics from snapshots.
 // No secrets, no server-only imports — safe to import from React components.
 import type { ConvictionBreakdown } from "./conviction";
+import type { InstrumentType } from "./instrument";
 
 /** Machine-checkable kill conditions attached to a signal. */
 export interface InvalidationParams {
@@ -50,6 +51,8 @@ export interface SignalRow {
   benchmark_exit_price?: number | null;
   below_threshold?: boolean | null;
   mode?: string | null;
+  /** "stock" (default) or "etf" — fund-level exposure. */
+  instrument_type?: InstrumentType | null;
 }
 
 export interface SnapshotRow {

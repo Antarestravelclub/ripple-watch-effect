@@ -48,3 +48,10 @@
 - [x] Per-owner bridge secret (bridge_secrets), auto-generated, reveal + regenerate
 - [x] Pre-filled bridge_config.json download + helper download from /ripple_bridge_helper.py
 - [x] Bridge auth accepts x-bridge-key / Authorization Bearer / X-Bridge-Secret, per-owner lookup
+
+## ETFs in the signal universe
+- [x] instrument_type on signals + etf_reference table (80 funds, commodity/geopolitics tilt)
+- [x] Event-to-fund keyword matching in news ingestion (leveraged/inverse excluded)
+- [x] ETF chips + instrument filters on Tracker, Blotter, Watchlist; stocks-vs-ETFs split on Scorecard
+- [x] Admin fund maintenance page with price-feed check; ETFs included in broker symbol mapping
+- [ ] Confirm ETF broker tradability after the next XM symbol upload

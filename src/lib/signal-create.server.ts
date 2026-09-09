@@ -7,6 +7,7 @@ import { suggestedSizePct, DEFAULT_PORTFOLIO, type PortfolioSettings } from "./p
 import { analogueHitRate } from "./analogue-stats.server";
 import { benchmarkPrice, BENCHMARK_SYMBOL } from "./benchmark.server";
 import type { EventCategory } from "./ripple-data";
+import type { InstrumentType } from "./instrument";
 
 export interface CreateSignalInput {
   eventId: string;
@@ -25,6 +26,8 @@ export interface CreateSignalInput {
   eventText: string;
   eventPublishedAt: string;
   generatedBy: string;
+  /** Single stock (default) or exchange-traded fund. */
+  instrumentType?: InstrumentType;
 }
 
 export type CreateSignalResult =
@@ -137,6 +140,7 @@ export async function createSignal(
       benchmark_source: "exact",
       mode: "paper",
       status: "open",
+      instrument_type: input.instrumentType ?? "stock",
     })
     .select("id")
     .maybeSingle();

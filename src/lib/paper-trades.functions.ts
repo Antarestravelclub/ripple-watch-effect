@@ -19,6 +19,7 @@ interface SignalForTrade {
   suggested_size_pct: number | null;
   atr_at_signal: number | null;
   conviction_score: number | null;
+  instrument_type?: string | null;
 }
 
 /** The owner's configurable starting balance — the base for all sizing and %. */
@@ -58,7 +59,7 @@ export const paperTradePrefill = createServerFn({ method: "POST" })
     const { data: signal } = await supabaseAdmin
       .from("signals")
       .select(
-        "id,ticker,quote_symbol,direction,status,event_id,signal_price,stop_price,target_price,suggested_size_pct,atr_at_signal,conviction_score",
+        "id,ticker,quote_symbol,direction,status,event_id,signal_price,stop_price,target_price,suggested_size_pct,atr_at_signal,conviction_score,instrument_type",
       )
       .eq("id", data.signalId)
       .maybeSingle<SignalForTrade>();
@@ -411,7 +412,7 @@ export const listPaperTrades = createServerFn({ method: "GET" })
       const { data: signals } = await supabaseAdmin
         .from("signals")
         .select(
-          "id,ticker,quote_symbol,direction,status,event_id,signal_price,stop_price,target_price,suggested_size_pct,atr_at_signal,conviction_score",
+          "id,ticker,quote_symbol,direction,status,event_id,signal_price,stop_price,target_price,suggested_size_pct,atr_at_signal,conviction_score,instrument_type",
         )
         .in("id", signalIds);
       for (const s of (signals ?? []) as SignalForTrade[]) signalById.set(s.id, s);
@@ -435,6 +436,8 @@ export const listPaperTrades = createServerFn({ method: "GET" })
     }
 
     const tradable = await tradableTickers();
+    const { etfTickerSet } = await import("./etf-reference.server");
+    const etfs = await etfTickerSet().catch(() => new Set<string>());
 
     const trades: PaperTradeRow[] = rows.map((r) => {
       const s = r.signal_id ? signalById.get(r.signal_id) : undefined;
@@ -462,6 +465,8 @@ export const listPaperTrades = createServerFn({ method: "GET" })
         category: s ? (categoryByEvent.get(s.event_id) ?? null) : null,
         conviction_score: s?.conviction_score ?? null,
         cohort: s?.atr_at_signal != null && s?.stop_price != null ? "atr_v1" : "legacy_pct",
+        instrument_type:
+          s?.instrument_type === "etf" || etfs.has(r.ticker.toUpperCase()) ? "etf" : "stock",
         tradable: tradable.has(r.ticker.toUpperCase()),
         mirrored: Boolean(r.mirrored),
         mirror_ticket: r.mirror_ticket != null ? Number(r.mirror_ticket) : null,

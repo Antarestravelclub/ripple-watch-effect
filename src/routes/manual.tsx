@@ -352,6 +352,29 @@ function ManualPage() {
                 </p>
               </Card>
 
+              <Card title="Funds as well as companies">
+                <p>
+                  Some events land on a whole sector, country or commodity
+                  rather than one company — a shipping lane closure, an export
+                  ban, a rate decision. For those the engine can also raise a
+                  signal on an exchange-traded fund, marked with a small{" "}
+                  <Term>ETF</Term> tag next to the symbol on the Tracker, the
+                  Blotter and your Watchlist. Fund signals go through exactly the
+                  same volatility-based stop, target, conviction score and sizing
+                  as a company signal, and every list with an instrument filter
+                  can be narrowed to stocks only or funds only. The Scorecard
+                  shows a stocks-versus-funds split so you can see which route
+                  actually earns its keep.
+                </p>
+                <p>
+                  Leveraged and inverse funds are deliberately never suggested.
+                  They reset daily, so holding one for several days decays away
+                  from the move you were expecting and our stop-and-target model
+                  no longer describes them. A bearish view is expressed as a
+                  short signal on the plain fund instead.
+                </p>
+              </Card>
+
               <Card title="Analogues — what happened last time">
                 <p>
                   A library of canonical past events with what actually happened

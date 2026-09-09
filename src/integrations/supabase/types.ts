@@ -560,6 +560,48 @@ export type Database = {
           },
         ]
       }
+      etf_reference: {
+        Row: {
+          active: boolean
+          category: Database["public"]["Enums"]["etf_category"]
+          created_at: string
+          feed_error: string | null
+          id: string
+          inverse: boolean
+          leveraged: boolean
+          name: string
+          theme_keywords: string[]
+          ticker: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category: Database["public"]["Enums"]["etf_category"]
+          created_at?: string
+          feed_error?: string | null
+          id?: string
+          inverse?: boolean
+          leveraged?: boolean
+          name: string
+          theme_keywords?: string[]
+          ticker: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category?: Database["public"]["Enums"]["etf_category"]
+          created_at?: string
+          feed_error?: string | null
+          id?: string
+          inverse?: boolean
+          leveraged?: boolean
+          name?: string
+          theme_keywords?: string[]
+          ticker?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       evaluation_runs: {
         Row: {
           created_at: string
@@ -1183,6 +1225,7 @@ export type Database = {
           exchange: string | null
           generated_by: string
           id: string
+          instrument_type: Database["public"]["Enums"]["instrument_type"]
           invalidation_params: Json | null
           invalidation_price: number | null
           invalidation_text: string | null
@@ -1221,6 +1264,7 @@ export type Database = {
           exchange?: string | null
           generated_by?: string
           id?: string
+          instrument_type?: Database["public"]["Enums"]["instrument_type"]
           invalidation_params?: Json | null
           invalidation_price?: number | null
           invalidation_text?: string | null
@@ -1259,6 +1303,7 @@ export type Database = {
           exchange?: string | null
           generated_by?: string
           id?: string
+          instrument_type?: Database["public"]["Enums"]["instrument_type"]
           invalidation_params?: Json | null
           invalidation_price?: number | null
           invalidation_text?: string | null
@@ -1311,6 +1356,13 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      etf_category:
+        | "sector"
+        | "country"
+        | "commodity"
+        | "broad_market"
+        | "bond"
+        | "currency"
       event_archetype:
         | "armed_conflict"
         | "terror_attack"
@@ -1322,6 +1374,7 @@ export type Database = {
         | "pandemic_health"
         | "cyber_attack"
         | "commodity_shock"
+      instrument_type: "stock" | "etf"
       reaction_direction: "up" | "down"
       reaction_role:
         | "direct_loser"
@@ -1457,6 +1510,14 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      etf_category: [
+        "sector",
+        "country",
+        "commodity",
+        "broad_market",
+        "bond",
+        "currency",
+      ],
       event_archetype: [
         "armed_conflict",
         "terror_attack",
@@ -1469,6 +1530,7 @@ export const Constants = {
         "cyber_attack",
         "commodity_shock",
       ],
+      instrument_type: ["stock", "etf"],
       reaction_direction: ["up", "down"],
       reaction_role: [
         "direct_loser",

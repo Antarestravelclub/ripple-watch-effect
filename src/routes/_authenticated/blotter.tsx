@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { SiteShell } from "@/components/site-shell";
 import { TickerLink } from "@/components/ticker-link";
+import { EtfBadge } from "@/components/etf-badge";
+import { matchesInstrument, INSTRUMENT_LABEL, type InstrumentFilter } from "@/lib/instrument";
 import { ManualPaperTradeButton } from "@/components/paper-trade-dialog";
 import { DemoAccountPanel } from "@/components/demo-account-panel";
 import { StartingBalanceCard } from "@/components/starting-balance-card";
@@ -96,11 +98,16 @@ function BlotterPage() {
   const [filters, setFilters] = useState<ClosedFilters>({
     reason: "all",
     source: "all",
+    instrument: "all",
     from: "",
     to: "",
   });
   const isFiltered =
-    filters.reason !== "all" || filters.source !== "all" || filters.from !== "" || filters.to !== "";
+    filters.reason !== "all" ||
+    filters.source !== "all" ||
+    filters.instrument !== "all" ||
+    filters.from !== "" ||
+    filters.to !== "";
   const filteredClosed = useMemo(
     () => applyClosedFilters(closedTrades, filters),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -313,6 +320,7 @@ function OpenTable({
               <tr key={t.id} className="border-t border-border/50">
                 <Td>
                   <TickerLink symbol={t.ticker} />
+                  <EtfBadge type={t.instrument_type} />
                   {t.overrides_used && (
                     <span className="ml-1 text-[9px] uppercase text-muted-foreground">ovr</span>
                   )}
@@ -385,6 +393,7 @@ function OpenTable({
 export interface ClosedFilters {
   reason: "all" | ExitReason;
   source: "all" | TradeSource;
+  instrument: InstrumentFilter;
   from: string;
   to: string;
 }
@@ -393,6 +402,7 @@ export function applyClosedFilters(trades: PaperTradeRow[], f: ClosedFilters) {
   return trades
     .filter((t) => (f.reason === "all" ? true : t.exit_reason === f.reason))
     .filter((t) => (f.source === "all" ? true : t.source === f.source))
+    .filter((t) => matchesInstrument(f.instrument, t.instrument_type))
     .filter((t) => (f.from ? (t.exit_time ?? "") >= f.from : true))
     .filter((t) => (f.to ? (t.exit_time ?? "") <= f.to + "T23:59:59Z" : true))
     .sort((a, b) => (b.exit_time ?? "").localeCompare(a.exit_time ?? ""));
@@ -410,6 +420,7 @@ function ClosedTable({
   const { reason, source, from, to } = filters;
   const setReason = (v: "all" | ExitReason) => setFilters({ ...filters, reason: v });
   const setSource = (v: "all" | TradeSource) => setFilters({ ...filters, source: v });
+  const setInstrument = (v: InstrumentFilter) => setFilters({ ...filters, instrument: v });
   const setFrom = (v: string) => setFilters({ ...filters, from: v });
   const setTo = (v: string) => setFilters({ ...filters, to: v });
 
@@ -426,6 +437,19 @@ function ClosedTable({
             <option value="all">All</option>
             <option value="signal">{SOURCE_LABEL.signal}</option>
             <option value="manual">{SOURCE_LABEL.manual}</option>
+          </select>
+        </label>
+
+        <label className="text-xs text-muted-foreground">
+          Instrument
+          <select
+            value={filters.instrument}
+            onChange={(e) => setInstrument(e.target.value as InstrumentFilter)}
+            className="ml-2 rounded-md border border-border/70 bg-background px-2 py-1 text-xs text-foreground"
+          >
+            <option value="all">All</option>
+            <option value="stock">{INSTRUMENT_LABEL.stock}</option>
+            <option value="etf">{INSTRUMENT_LABEL.etf}</option>
           </select>
         </label>
 
@@ -503,6 +527,7 @@ function ClosedTable({
                   <tr key={t.id} className="border-t border-border/50">
                     <Td>
                       <TickerLink symbol={t.ticker} />
+                      <EtfBadge type={t.instrument_type} />
                       {t.both_touched && (
                         <span
                           className="ml-1 text-[9px] uppercase text-amber"
