@@ -79,12 +79,26 @@ export const paperTradePrefill = createServerFn({ method: "POST" })
     const quoteTime = q?.quoteTime ?? null;
     const ageMs = quoteTime ? Date.now() - new Date(quoteTime).getTime() : null;
 
-    const notional = await notionalValue();
+    const { paperAccount, lotRuleFor } = await import("./paper-account.server");
+    const { checkSizing } = await import("./paper-account");
+    const account = await paperAccount(context.userId);
+    const notional = account.startingBalance;
     const sizePct = signal.suggested_size_pct != null ? Number(signal.suggested_size_pct) : 0;
-    const size =
+    const rawSize =
       entry != null && entry > 0 && sizePct > 0
         ? +((notional * (sizePct / 100)) / entry).toFixed(4)
         : 0;
+
+    const stopPrice = signal.stop_price != null ? Number(signal.stop_price) : null;
+    const lot = await lotRuleFor(signal.ticker, account.defaultMinLot);
+    const sizing = checkSizing({
+      rawSize,
+      entry: entry ?? 0,
+      stop: stopPrice,
+      balance: notional,
+      minLot: lot.minLot,
+      lotStep: lot.lotStep,
+    });
 
     return {
       signalId: signal.id,
@@ -96,11 +110,15 @@ export const paperTradePrefill = createServerFn({ method: "POST" })
       entryPrice: entry,
       quoteTime,
       quoteStale: ageMs == null || ageMs > STALE_QUOTE_MS,
-      stopPrice: signal.stop_price != null ? Number(signal.stop_price) : null,
+      stopPrice,
       targetPrice: signal.target_price != null ? Number(signal.target_price) : null,
-      positionSize: size,
+      // Never silently bumped: 0 when the risk-based size is below the min lot.
+      positionSize: sizing.sizedLots,
       suggestedSizePct: sizePct,
       notional,
+      sizing,
+      lotSource: lot.source,
+      brokerSymbol: lot.brokerSymbol,
       hasOpenTrade: Boolean(existing),
     };
   });
