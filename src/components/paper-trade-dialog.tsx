@@ -197,9 +197,9 @@ function PaperTradeForm({
             <p className="mt-3 text-[11px] text-muted-foreground">
               Pre-filled from the signal's ATR stop/target and risk-based sizing
               {prefill.suggestedSizePct
-                ? ` (${prefill.suggestedSizePct}% of ${fmtMoney(prefill.notional)} paper notional)`
+                ? ` (${prefill.suggestedSizePct}% of your ${fmtMoney(prefill.notional)} balance)`
                 : ""}
-              . Notional at these values: {notional != null ? fmtMoney(notional) : "—"}.
+              . Position value at these values: {notional != null ? fmtMoney(notional) : "—"}.
             </p>
 
             <div className="mt-3">
