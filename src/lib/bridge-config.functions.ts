@@ -29,10 +29,18 @@ export const getBridgeConfig = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<BridgeConfigView> => {
     const { ensureBridgeSecret } = await import("./bridge-secret.server");
     const row = await ensureBridgeSecret(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: hb } = await supabaseAdmin
+      .from("broker_bridge_heartbeats")
+      .select("account_server")
+      .order("seen_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
     return {
       secret: row.secret,
       allowedAccount: row.allowedAccount,
       rotatedAt: row.rotatedAt,
+      brokerServer: hb?.account_server ?? null,
       ...FIXED,
     };
   });
