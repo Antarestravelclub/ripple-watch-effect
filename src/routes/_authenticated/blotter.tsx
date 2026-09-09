@@ -253,7 +253,7 @@ function OpenTable({
             <Th>Symbol</Th>
             <Th>Dir</Th>
             <Th>Entry</Th>
-            <Th>Size</Th>
+            <Th>Lots</Th>
             <Th>Current</Th>
             <Th>Unrealised</Th>
             <Th>To stop</Th>
