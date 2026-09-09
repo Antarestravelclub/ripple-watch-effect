@@ -21,6 +21,12 @@ The Ripple Effect  ->  order queue  ->  mt5_bridge.py  ->  MT5 DEMO terminal
 
 1. A Windows machine (or Windows VM) with MetaTrader 5 installed and logged into
    a **demo** account.
+
+   **On a Mac?** The `MetaTrader5` Python package is Windows-only, so the Mac
+   build of MT5 cannot run this helper. Pick one of:
+   - a rented Windows VPS from a trading-VPS provider (~10-25 USD/month, always on);
+   - Windows in Parallels or VMware on your Mac (only runs while the Mac is awake);
+   - any spare Windows PC.
 2. Python 3.10 or newer on that machine.
 3. The bridge key that was saved in the app.
 

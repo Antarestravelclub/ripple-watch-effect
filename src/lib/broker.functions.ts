@@ -57,10 +57,25 @@ export const getBrokerActivity = createServerFn({ method: "GET" }).handler(async
     return acc;
   }, {});
 
+  const heartbeat = ((hbRes.data ?? [])[0] ?? null) as unknown as BridgeHeartbeatRow | null;
+
+  const uploadRes = await supabaseAdmin
+    .from("broker_symbol_uploads")
+    .select("id, created_at, symbol_count")
+    .order("created_at", { ascending: false })
+    .limit(1);
+  const upload = ((uploadRes.data ?? [])[0] ?? null) as
+    | { created_at: string; symbol_count: number | null }
+    | null;
+
   return {
     configured: Boolean(process.env["BRIDGE_SECRET"]),
     orders,
     counts,
-    heartbeat: ((hbRes.data ?? [])[0] ?? null) as unknown as BridgeHeartbeatRow | null,
+    heartbeat,
+    heartbeatFresh: heartbeat
+      ? Date.now() - new Date(heartbeat.seen_at).getTime() < 10 * 60_000
+      : false,
+    symbolUpload: upload,
   };
 });

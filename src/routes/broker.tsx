@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { SiteShell } from "@/components/site-shell";
 import { TickerLink } from "@/components/ticker-link";
 import { getBrokerActivity } from "@/lib/broker.functions";
+import { BridgeSetup } from "@/components/bridge-setup";
 import { ShieldCheck, Activity } from "lucide-react";
 
 export const Route = createFileRoute("/broker")({
@@ -87,6 +88,14 @@ function BrokerPage() {
             Manage broker symbol mapping
           </Link>
         </div>
+
+        <BridgeSetup
+          configured={Boolean(data?.configured)}
+          everSeen={Boolean(hb)}
+          fresh={Boolean(liveBridge)}
+          isDemo={hb?.account_is_demo ?? null}
+          symbolUpload={data?.symbolUpload ?? null}
+        />
 
         {/* Bridge status */}
         <section className="rounded-xl border border-border/70 bg-card/60 p-4 mb-5">
