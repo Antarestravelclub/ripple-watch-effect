@@ -219,6 +219,7 @@ export type Database = {
           mapping_status: string
           normalized_base: string | null
           path: string | null
+          review_reason: string | null
           trade_mode: string | null
           updated_at: string
           upload_id: string
@@ -233,6 +234,7 @@ export type Database = {
           mapping_status?: string
           normalized_base?: string | null
           path?: string | null
+          review_reason?: string | null
           trade_mode?: string | null
           updated_at?: string
           upload_id: string
@@ -247,6 +249,7 @@ export type Database = {
           mapping_status?: string
           normalized_base?: string | null
           path?: string | null
+          review_reason?: string | null
           trade_mode?: string | null
           updated_at?: string
           upload_id?: string
