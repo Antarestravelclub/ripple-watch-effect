@@ -5,6 +5,9 @@ import { useMemo, useState } from "react";
 import { SiteShell } from "@/components/site-shell";
 import { TickerLink } from "@/components/ticker-link";
 import { ManualPaperTradeButton } from "@/components/paper-trade-dialog";
+import { DemoAccountPanel } from "@/components/demo-account-panel";
+import { MirrorTradeButton } from "@/components/mirror-trade-button";
+import { averageSlippage, mirrorComparisons } from "@/lib/paper-trades";
 import { closePaperTrade, listPaperTrades } from "@/lib/paper-trades.functions";
 import {
   computeStats,
