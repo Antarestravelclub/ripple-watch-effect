@@ -37,7 +37,7 @@ export const Route = createFileRoute("/api/public/bridge/instructions/$id/result
             ticket: num(body.ticket),
             detail: body.detail ?? body.error ?? null,
           });
-          return Response.json({ ok: true, ...result });
+          return Response.json(result);
         } catch (e) {
           return Response.json(
             { ok: false, error: e instanceof Error ? e.message : "Result rejected" },
