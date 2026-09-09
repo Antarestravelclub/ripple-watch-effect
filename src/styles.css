@@ -140,7 +140,63 @@
     break-inside: avoid;
     page-break-inside: avoid;
   }
+
+  /* Manual route: light, high-contrast print layout */
+  body.manual-print,
+  body.manual-print * {
+    background: #fff !important;
+    color: #111 !important;
+    border-color: #999 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  body.manual-print a,
+  body.manual-print a * {
+    color: #000 !important;
+    text-decoration: underline !important;
+  }
+  body.manual-print .text-muted-foreground,
+  body.manual-print .text-primary,
+  body.manual-print .text-secondary-foreground,
+  body.manual-print .text-accent-foreground,
+  body.manual-print .text-destructive,
+  body.manual-print .text-card-foreground,
+  body.manual-print .text-popover-foreground {
+    color: #333 !important;
+  }
+  body.manual-print h1,
+  body.manual-print h2,
+  body.manual-print h3,
+  body.manual-print .text-foreground,
+  body.manual-print .font-semibold,
+  body.manual-print .font-medium,
+  body.manual-print strong {
+    color: #000 !important;
+  }
+  body.manual-print header,
+  body.manual-print aside,
+  body.manual-print footer,
+  body.manual-print .no-print {
+    display: none !important;
+  }
+  body.manual-print .print-doc {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+  body.manual-print .print-doc section,
+  body.manual-print .print-doc .rounded-xl,
+  body.manual-print .print-doc .rounded-lg,
+  body.manual-print .print-doc .rounded-md,
+  body.manual-print .print-doc .rounded-sm {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  body.manual-print .print-doc p,
+  body.manual-print .print-doc li {
+    orphans: 3;
+    widows: 3;
+  }
   @page {
-    margin: 16mm;
+    margin: 14mm;
   }
 }
