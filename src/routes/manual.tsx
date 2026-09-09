@@ -62,7 +62,7 @@ function Term({ children }: { children: ReactNode }) {
 const CONTENTS = [
   ["what-it-is", "What this tool is (and is not)"],
   ["how-it-works", "How the engine works, end to end"],
-  ["pages", "Every page, explained"],
+  ["pages", "Every tab, explained"],
   ["reading-a-signal", "How to read a signal card"],
   ["conviction", "Conviction, sizing, stops and targets"],
   ["scorecard", "The honest number: alpha vs the index"],
