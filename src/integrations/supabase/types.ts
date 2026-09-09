@@ -62,6 +62,7 @@ export type Database = {
           id: string
           margin: number | null
           received_at: string
+          user_id: string | null
         }
         Insert: {
           account_mode: string
@@ -74,6 +75,7 @@ export type Database = {
           id?: string
           margin?: number | null
           received_at?: string
+          user_id?: string | null
         }
         Update: {
           account_mode?: string
@@ -86,6 +88,7 @@ export type Database = {
           id?: string
           margin?: number | null
           received_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -105,6 +108,7 @@ export type Database = {
           swap: number | null
           symbol: string
           ticket: number | null
+          user_id: string | null
         }
         Insert: {
           close_price?: number | null
@@ -121,6 +125,7 @@ export type Database = {
           swap?: number | null
           symbol: string
           ticket?: number | null
+          user_id?: string | null
         }
         Update: {
           close_price?: number | null
@@ -137,6 +142,7 @@ export type Database = {
           swap?: number | null
           symbol?: string
           ticket?: number | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -160,6 +166,7 @@ export type Database = {
           ticket: number | null
           tp: number | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           action: string
@@ -180,6 +187,7 @@ export type Database = {
           ticket?: number | null
           tp?: number | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           action?: string
@@ -200,6 +208,7 @@ export type Database = {
           ticket?: number | null
           tp?: number | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -218,6 +227,7 @@ export type Database = {
           max_lots_per_trade: number
           mirroring_paused: boolean
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -225,6 +235,7 @@ export type Database = {
           max_lots_per_trade?: number
           mirroring_paused?: boolean
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -232,6 +243,7 @@ export type Database = {
           max_lots_per_trade?: number
           mirroring_paused?: boolean
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -252,6 +264,7 @@ export type Database = {
           ticket: number
           tp: number | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -269,6 +282,7 @@ export type Database = {
           ticket: number
           tp?: number | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -286,6 +300,7 @@ export type Database = {
           ticket?: number
           tp?: number | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -329,6 +344,7 @@ export type Database = {
           note: string | null
           open_positions: number | null
           seen_at: string
+          user_id: string | null
         }
         Insert: {
           account_is_demo?: boolean | null
@@ -342,6 +358,7 @@ export type Database = {
           note?: string | null
           open_positions?: number | null
           seen_at?: string
+          user_id?: string | null
         }
         Update: {
           account_is_demo?: boolean | null
@@ -355,6 +372,7 @@ export type Database = {
           note?: string | null
           open_positions?: number | null
           seen_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -381,6 +399,7 @@ export type Database = {
           target_price: number | null
           ticker: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           broker_symbol?: string | null
@@ -404,6 +423,7 @@ export type Database = {
           target_price?: number | null
           ticker: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           broker_symbol?: string | null
@@ -427,6 +447,7 @@ export type Database = {
           target_price?: number | null
           ticker?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {

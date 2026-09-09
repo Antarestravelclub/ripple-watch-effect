@@ -16,7 +16,6 @@ import { Route as ScorecardRouteImport } from './routes/scorecard'
 import { Route as PlaybooksRouteImport } from './routes/playbooks'
 import { Route as ManualRouteImport } from './routes/manual'
 import { Route as CalendarRouteImport } from './routes/calendar'
-import { Route as BrokerRouteImport } from './routes/broker'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AnalyzeRouteImport } from './routes/analyze'
 import { Route as AnaloguesRouteImport } from './routes/analogues'
@@ -27,6 +26,7 @@ import { Route as TickersSymbolRouteImport } from './routes/tickers.$symbol'
 import { Route as SignalIdRouteImport } from './routes/signal.$id'
 import { Route as EventIdRouteImport } from './routes/event.$id'
 import { Route as AdminBrokerSymbolsRouteImport } from './routes/admin.broker-symbols'
+import { Route as AuthenticatedBrokerRouteImport } from './routes/_authenticated/broker'
 import { Route as AuthenticatedBridgeRouteImport } from './routes/_authenticated/bridge'
 import { Route as AuthenticatedBlotterRouteImport } from './routes/_authenticated/blotter'
 import { Route as ApiPublicStreamQuotesRouteImport } from './routes/api/public/stream/quotes'
@@ -74,11 +74,6 @@ const ManualRoute = ManualRouteImport.update({
 const CalendarRoute = CalendarRouteImport.update({
   id: '/calendar',
   path: '/calendar',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BrokerRoute = BrokerRouteImport.update({
-  id: '/broker',
-  path: '/broker',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -129,6 +124,11 @@ const AdminBrokerSymbolsRoute = AdminBrokerSymbolsRouteImport.update({
   id: '/admin/broker-symbols',
   path: '/admin/broker-symbols',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedBrokerRoute = AuthenticatedBrokerRouteImport.update({
+  id: '/broker',
+  path: '/broker',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedBridgeRoute = AuthenticatedBridgeRouteImport.update({
   id: '/bridge',
@@ -207,7 +207,6 @@ export interface FileRoutesByFullPath {
   '/analogues': typeof AnaloguesRoute
   '/analyze': typeof AnalyzeRoute
   '/auth': typeof AuthRoute
-  '/broker': typeof BrokerRoute
   '/calendar': typeof CalendarRoute
   '/manual': typeof ManualRoute
   '/playbooks': typeof PlaybooksRoute
@@ -217,6 +216,7 @@ export interface FileRoutesByFullPath {
   '/watchlist': typeof WatchlistRoute
   '/blotter': typeof AuthenticatedBlotterRoute
   '/bridge': typeof AuthenticatedBridgeRoute
+  '/broker': typeof AuthenticatedBrokerRoute
   '/admin/broker-symbols': typeof AdminBrokerSymbolsRoute
   '/event/$id': typeof EventIdRoute
   '/signal/$id': typeof SignalIdRoute
@@ -239,7 +239,6 @@ export interface FileRoutesByTo {
   '/analogues': typeof AnaloguesRoute
   '/analyze': typeof AnalyzeRoute
   '/auth': typeof AuthRoute
-  '/broker': typeof BrokerRoute
   '/calendar': typeof CalendarRoute
   '/manual': typeof ManualRoute
   '/playbooks': typeof PlaybooksRoute
@@ -249,6 +248,7 @@ export interface FileRoutesByTo {
   '/watchlist': typeof WatchlistRoute
   '/blotter': typeof AuthenticatedBlotterRoute
   '/bridge': typeof AuthenticatedBridgeRoute
+  '/broker': typeof AuthenticatedBrokerRoute
   '/admin/broker-symbols': typeof AdminBrokerSymbolsRoute
   '/event/$id': typeof EventIdRoute
   '/signal/$id': typeof SignalIdRoute
@@ -273,7 +273,6 @@ export interface FileRoutesById {
   '/analogues': typeof AnaloguesRoute
   '/analyze': typeof AnalyzeRoute
   '/auth': typeof AuthRoute
-  '/broker': typeof BrokerRoute
   '/calendar': typeof CalendarRoute
   '/manual': typeof ManualRoute
   '/playbooks': typeof PlaybooksRoute
@@ -283,6 +282,7 @@ export interface FileRoutesById {
   '/watchlist': typeof WatchlistRoute
   '/_authenticated/blotter': typeof AuthenticatedBlotterRoute
   '/_authenticated/bridge': typeof AuthenticatedBridgeRoute
+  '/_authenticated/broker': typeof AuthenticatedBrokerRoute
   '/admin/broker-symbols': typeof AdminBrokerSymbolsRoute
   '/event/$id': typeof EventIdRoute
   '/signal/$id': typeof SignalIdRoute
@@ -307,7 +307,6 @@ export interface FileRouteTypes {
     | '/analogues'
     | '/analyze'
     | '/auth'
-    | '/broker'
     | '/calendar'
     | '/manual'
     | '/playbooks'
@@ -317,6 +316,7 @@ export interface FileRouteTypes {
     | '/watchlist'
     | '/blotter'
     | '/bridge'
+    | '/broker'
     | '/admin/broker-symbols'
     | '/event/$id'
     | '/signal/$id'
@@ -339,7 +339,6 @@ export interface FileRouteTypes {
     | '/analogues'
     | '/analyze'
     | '/auth'
-    | '/broker'
     | '/calendar'
     | '/manual'
     | '/playbooks'
@@ -349,6 +348,7 @@ export interface FileRouteTypes {
     | '/watchlist'
     | '/blotter'
     | '/bridge'
+    | '/broker'
     | '/admin/broker-symbols'
     | '/event/$id'
     | '/signal/$id'
@@ -372,7 +372,6 @@ export interface FileRouteTypes {
     | '/analogues'
     | '/analyze'
     | '/auth'
-    | '/broker'
     | '/calendar'
     | '/manual'
     | '/playbooks'
@@ -382,6 +381,7 @@ export interface FileRouteTypes {
     | '/watchlist'
     | '/_authenticated/blotter'
     | '/_authenticated/bridge'
+    | '/_authenticated/broker'
     | '/admin/broker-symbols'
     | '/event/$id'
     | '/signal/$id'
@@ -406,7 +406,6 @@ export interface RootRouteChildren {
   AnaloguesRoute: typeof AnaloguesRoute
   AnalyzeRoute: typeof AnalyzeRoute
   AuthRoute: typeof AuthRoute
-  BrokerRoute: typeof BrokerRoute
   CalendarRoute: typeof CalendarRoute
   ManualRoute: typeof ManualRoute
   PlaybooksRoute: typeof PlaybooksRoute
@@ -482,13 +481,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CalendarRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/broker': {
-      id: '/broker'
-      path: '/broker'
-      fullPath: '/broker'
-      preLoaderRoute: typeof BrokerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -558,6 +550,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/broker-symbols'
       preLoaderRoute: typeof AdminBrokerSymbolsRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/broker': {
+      id: '/_authenticated/broker'
+      path: '/broker'
+      fullPath: '/broker'
+      preLoaderRoute: typeof AuthenticatedBrokerRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/bridge': {
       id: '/_authenticated/bridge'
@@ -656,11 +655,13 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedBlotterRoute: typeof AuthenticatedBlotterRoute
   AuthenticatedBridgeRoute: typeof AuthenticatedBridgeRoute
+  AuthenticatedBrokerRoute: typeof AuthenticatedBrokerRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBlotterRoute: AuthenticatedBlotterRoute,
   AuthenticatedBridgeRoute: AuthenticatedBridgeRoute,
+  AuthenticatedBrokerRoute: AuthenticatedBrokerRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -687,7 +688,6 @@ const rootRouteChildren: RootRouteChildren = {
   AnaloguesRoute: AnaloguesRoute,
   AnalyzeRoute: AnalyzeRoute,
   AuthRoute: AuthRoute,
-  BrokerRoute: BrokerRoute,
   CalendarRoute: CalendarRoute,
   ManualRoute: ManualRoute,
   PlaybooksRoute: PlaybooksRoute,

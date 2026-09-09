@@ -6,12 +6,15 @@ export const Route = createFileRoute("/api/public/bridge/deals")({
     handlers: {
       POST: async ({ request }) => {
         const { authorizeBridge } = await import("@/lib/bridge-auth.server");
-        const denied = await authorizeBridge(request);
-        if (denied) return denied;
+        const auth = await authorizeBridge(request);
+        if (auth instanceof Response) return auth;
         try {
           const body = (await request.json().catch(() => ({}))) as { deals?: unknown };
           const { syncDeals } = await import("@/lib/bridge-sync.server");
-          const result = await syncDeals(Array.isArray(body) ? body : (body.deals ?? []));
+          const result = await syncDeals(
+            auth.ownerId,
+            Array.isArray(body) ? body : (body.deals ?? []),
+          );
           return Response.json({ ok: true, ...result });
         } catch (e) {
           return Response.json(

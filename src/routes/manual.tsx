@@ -383,23 +383,24 @@ function ManualPage() {
 
               <Card title="Broker — mirroring to a demo account">
                 <p>
-                  This tab can hand qualifying signals to a MetaTrader 5{" "}
-                  <Term>demo</Term> account so you can watch them play out on a
-                  real platform. Nothing here can touch a funded account: every
-                  order is stamped demo, the database refuses any other value,
-                  and the helper program exits if the terminal is not a demo
-                  login. Mirroring is off until you switch it on, and there is a
-                  kill switch that stops everything immediately.
+                  Sign-in required. This tab can hand qualifying signals to your
+                  MetaTrader 5 <Term>demo</Term> account so you can watch them
+                  play out on a real platform. Nothing here can touch a funded
+                  account: every order is stamped demo, the database refuses any
+                  other value, and the helper program exits if the terminal is
+                  not a demo login. Mirroring is off until you switch it on, and
+                  there is a kill switch that stops everything immediately.
                 </p>
                 <p>
-                  It shows the demo account panel (mode, balance, equity, last
-                  report), the queue of instructions and what came back as fills,
-                  and the broker symbol list you upload so share names such as{" "}
-                  <span className="font-mono">AAPL.US</span> match the right
+                  It shows only your own bridge activity: demo account mode,
+                  balance, equity, last report, queued instructions and fills.
+                  The broker symbol list is shared setup data so share names such
+                  as <span className="font-mono">AAPL.US</span> match the right
                   company. Only signals scoring 55 or higher with a size, a stop
                   and a target are ever queued, and each produces at most one
-                  opening and one closing order. Paper remains the system of
-                  record; the demo account is a mirror, not the truth.
+                  opening and one closing order for your account. Paper remains
+                  the system of record; the demo account is a mirror, not the
+                  truth.
                 </p>
               </Card>
 
@@ -444,9 +445,9 @@ function ManualPage() {
                   so the trade tables get the full width.
                 </p>
                 <p>
-                  <Term>Sign in</Term> is only needed for the Blotter and Bridge.
-                  Everything else — the feed, setups, tracker, scorecard, history
-                  — is readable without an account.
+                  <Term>Sign in</Term> is only needed for the Blotter, Broker and
+                  Bridge. Everything else — the feed, setups, tracker, scorecard,
+                  history — is readable without an account.
                 </p>
               </Card>
             </div>

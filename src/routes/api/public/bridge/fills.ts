@@ -23,12 +23,12 @@ export const Route = createFileRoute("/api/public/bridge/fills")({
     handlers: {
       POST: async ({ request }) => {
         const { authorizeBridge } = await import("@/lib/bridge-auth.server");
-        const denied = await authorizeBridge(request);
-        if (denied) return denied;
+        const auth = await authorizeBridge(request);
+        if (auth instanceof Response) return auth;
         try {
           const parsed = schema.parse(await request.json());
           const { recordFills } = await import("@/lib/broker-queue.server");
-          const updated = await recordFills(parsed.reports);
+          const updated = await recordFills(auth.ownerId, parsed.reports);
           return Response.json({ ok: true, updated });
         } catch (e) {
           return Response.json(

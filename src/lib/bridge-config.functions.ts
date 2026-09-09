@@ -33,6 +33,7 @@ export const getBridgeConfig = createServerFn({ method: "GET" })
     const { data: hb } = await supabaseAdmin
       .from("broker_bridge_heartbeats")
       .select("account_server")
+      .eq("user_id", context.userId)
       .order("seen_at", { ascending: false })
       .limit(1)
       .maybeSingle();

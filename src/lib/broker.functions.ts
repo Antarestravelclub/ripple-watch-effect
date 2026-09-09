@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export interface BrokerOrderRow {
   id: string;
@@ -34,48 +35,57 @@ export interface BridgeHeartbeatRow {
   note: string | null;
 }
 
-/** Read-only monitoring view of the demo-account pipeline. */
-export const getBrokerActivity = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+/** Read-only monitoring view of the signed-in owner's demo-account pipeline. */
+export const getBrokerActivity = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  const [ordersRes, hbRes] = await Promise.all([
-    supabaseAdmin
-      .from("broker_orders")
-      .select("*")
+    const [ordersRes, hbRes, secretRes] = await Promise.all([
+      supabaseAdmin
+        .from("broker_orders")
+        .select("*")
+        .eq("user_id", context.userId)
+        .order("created_at", { ascending: false })
+        .limit(100),
+      supabaseAdmin
+        .from("broker_bridge_heartbeats")
+        .select("*")
+        .eq("user_id", context.userId)
+        .order("seen_at", { ascending: false })
+        .limit(1),
+      supabaseAdmin
+        .from("bridge_secrets")
+        .select("user_id")
+        .eq("user_id", context.userId)
+        .maybeSingle(),
+    ]);
+
+    const orders = (ordersRes.data ?? []) as unknown as BrokerOrderRow[];
+    const counts = orders.reduce<Record<string, number>>((acc, o) => {
+      acc[o.status] = (acc[o.status] ?? 0) + 1;
+      return acc;
+    }, {});
+
+    const heartbeat = ((hbRes.data ?? [])[0] ?? null) as unknown as BridgeHeartbeatRow | null;
+
+    const uploadRes = await supabaseAdmin
+      .from("broker_symbol_uploads")
+      .select("id, created_at, symbol_count")
       .order("created_at", { ascending: false })
-      .limit(100),
-    supabaseAdmin
-      .from("broker_bridge_heartbeats")
-      .select("*")
-      .order("seen_at", { ascending: false })
-      .limit(1),
-  ]);
+      .limit(1);
+    const upload = ((uploadRes.data ?? [])[0] ?? null) as
+      | { created_at: string; symbol_count: number | null }
+      | null;
 
-  const orders = (ordersRes.data ?? []) as unknown as BrokerOrderRow[];
-  const counts = orders.reduce<Record<string, number>>((acc, o) => {
-    acc[o.status] = (acc[o.status] ?? 0) + 1;
-    return acc;
-  }, {});
-
-  const heartbeat = ((hbRes.data ?? [])[0] ?? null) as unknown as BridgeHeartbeatRow | null;
-
-  const uploadRes = await supabaseAdmin
-    .from("broker_symbol_uploads")
-    .select("id, created_at, symbol_count")
-    .order("created_at", { ascending: false })
-    .limit(1);
-  const upload = ((uploadRes.data ?? [])[0] ?? null) as
-    | { created_at: string; symbol_count: number | null }
-    | null;
-
-  return {
-    configured: Boolean(process.env["BRIDGE_SECRET"]),
-    orders,
-    counts,
-    heartbeat,
-    heartbeatFresh: heartbeat
-      ? Date.now() - new Date(heartbeat.seen_at).getTime() < 10 * 60_000
-      : false,
-    symbolUpload: upload,
-  };
-});
+    return {
+      configured: Boolean(secretRes.data),
+      orders,
+      counts,
+      heartbeat,
+      heartbeatFresh: heartbeat
+        ? Date.now() - new Date(heartbeat.seen_at).getTime() < 10 * 60_000
+        : false,
+      symbolUpload: upload,
+    };
+  });

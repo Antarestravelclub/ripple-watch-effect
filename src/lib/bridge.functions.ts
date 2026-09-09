@@ -45,30 +45,33 @@ export interface MirrorInstruction {
   expires_at: string;
 }
 
-/** Everything the Demo Account panel renders. */
+/** Everything the Demo Account panel renders, scoped to the signed-in owner. */
 export const getDemoAccount = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { bridgeState, expireInstructions } = await import("@/lib/bridge-mirror.server");
 
-    await expireInstructions();
-    const state = await bridgeState();
+    await expireInstructions(context.userId);
+    const state = await bridgeState(context.userId);
 
     const [{ data: positions }, { data: deals }, { data: instructions }] = await Promise.all([
       supabaseAdmin
         .from("bridge_positions")
         .select("*")
+        .eq("user_id", context.userId)
         .eq("status", "open")
         .order("open_time", { ascending: false }),
       supabaseAdmin
         .from("bridge_deals")
         .select("*")
+        .eq("user_id", context.userId)
         .order("close_time", { ascending: false })
         .limit(50),
       supabaseAdmin
         .from("bridge_instructions")
         .select("*")
+        .eq("user_id", context.userId)
         .order("created_at", { ascending: false })
         .limit(100),
     ]);
@@ -112,25 +115,26 @@ export const getDemoAccount = createServerFn({ method: "GET" })
     };
   });
 
-/** Kill switch: pausing also cancels anything still waiting. */
+/** Kill switch: pausing also cancels anything still waiting for this owner. */
 export const setMirroringPaused = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { paused: boolean }) => d)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { bridgeState } = await import("@/lib/bridge-mirror.server");
-    const state = await bridgeState();
+    const state = await bridgeState(context.userId);
 
     if (state.settingsId) {
       const { error } = await supabaseAdmin
         .from("bridge_mirror_settings")
         .update({ mirroring_paused: data.paused } as never)
-        .eq("id", state.settingsId);
+        .eq("id", state.settingsId)
+        .eq("user_id", context.userId);
       if (error) throw new Error(error.message);
     } else {
       const { error } = await supabaseAdmin
         .from("bridge_mirror_settings")
-        .insert({ mirroring_paused: data.paused } as never);
+        .insert({ user_id: context.userId, mirroring_paused: data.paused } as never);
       if (error) throw new Error(error.message);
     }
 
@@ -142,6 +146,7 @@ export const setMirroringPaused = createServerFn({ method: "POST" })
           status: "cancelled",
           status_detail: "Cancelled: mirroring was paused.",
         } as never)
+        .eq("user_id", context.userId)
         .in("status", ["pending", "picked_up"])
         .select("id");
       cancelled = (rows ?? []).length;
@@ -149,7 +154,7 @@ export const setMirroringPaused = createServerFn({ method: "POST" })
     return { paused: data.paused, cancelled };
   });
 
-/** Mirror one of the signed-in user's own open paper trades to the demo account. */
+/** Mirror one of the signed-in user's own open paper trades to their demo account. */
 export const mirrorPaperTrade = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { paperTradeId: string; lots: number }) => d)
@@ -167,6 +172,7 @@ export const mirrorPaperTrade = createServerFn({ method: "POST" })
     if (trade.status !== "open") throw new Error("This paper trade is already closed");
 
     return createOpenInstruction({
+      userId: context.userId,
       paperTradeId: trade.id,
       ticker: trade.ticker,
       direction: trade.direction as "long" | "short",

@@ -22,11 +22,11 @@ export const Route = createFileRoute("/api/public/hooks/evaluate-signals")({
             paper = { error: e instanceof Error ? e.message : "paper exits failed" };
           }
 
-          // Mirror the resulting signal book into the demo order queue.
+          // Mirror the resulting signal book into every configured owner's demo queue.
           let broker: unknown = null;
           try {
-            const { syncBrokerOrders } = await import("@/lib/broker-queue.server");
-            broker = await syncBrokerOrders();
+            const { syncAllBrokerOrderBooks } = await import("@/lib/broker-queue.server");
+            broker = await syncAllBrokerOrderBooks();
           } catch (e) {
             broker = { error: e instanceof Error ? e.message : "queue sync failed" };
           }

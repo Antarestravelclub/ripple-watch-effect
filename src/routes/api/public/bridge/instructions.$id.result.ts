@@ -7,8 +7,8 @@ export const Route = createFileRoute("/api/public/bridge/instructions/$id/result
     handlers: {
       POST: async ({ request, params }) => {
         const { authorizeBridge } = await import("@/lib/bridge-auth.server");
-        const denied = await authorizeBridge(request);
-        if (denied) return denied;
+        const auth = await authorizeBridge(request);
+        if (auth instanceof Response) return auth;
         try {
           const body = (await request.json().catch(() => ({}))) as {
             status?: string;
@@ -30,7 +30,7 @@ export const Route = createFileRoute("/api/public/bridge/instructions/$id/result
             return Number.isFinite(n) ? n : null;
           };
           const { recordInstructionResult } = await import("@/lib/bridge-mirror.server");
-          const result = await recordInstructionResult(params.id, {
+          const result = await recordInstructionResult(auth.ownerId, params.id, {
             status: body.status,
             fill_price: num(body.fill_price),
             fill_time: body.fill_time ?? null,

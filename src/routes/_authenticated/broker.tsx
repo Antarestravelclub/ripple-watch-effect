@@ -7,7 +7,7 @@ import { getBrokerActivity } from "@/lib/broker.functions";
 import { BridgeSetup } from "@/components/bridge-setup";
 import { ShieldCheck, Activity } from "lucide-react";
 
-export const Route = createFileRoute("/broker")({
+export const Route = createFileRoute("/_authenticated/broker")({
   head: () => ({
     meta: [
       { title: "Demo Account Bridge — The Ripple Effect" },

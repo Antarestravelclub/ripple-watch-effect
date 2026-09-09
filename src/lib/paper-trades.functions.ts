@@ -381,9 +381,9 @@ export const closePaperTrade = createServerFn({ method: "POST" })
       .eq("user_id", context.userId);
     if (error) throw new Error(error.message);
 
-    // Mirrored trades get a matching close on the demo account.
+    // Mirrored trades get a matching close on this owner's demo account.
     const { createCloseInstruction } = await import("./bridge-mirror.server");
-    await createCloseInstruction(trade.id);
+    await createCloseInstruction(context.userId, trade.id);
 
     return { exitPrice: q.price, realizedPnl: pnl };
   });
