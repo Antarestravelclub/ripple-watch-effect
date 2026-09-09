@@ -21,15 +21,10 @@ interface SignalForTrade {
   conviction_score: number | null;
 }
 
-async function notionalValue(): Promise<number> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
-    .from("portfolio_settings")
-    .select("notional_value")
-    .limit(1)
-    .maybeSingle();
-  const n = data?.notional_value != null ? Number(data.notional_value) : 100_000;
-  return n > 0 ? n : 100_000;
+/** The owner's configurable starting balance — the base for all sizing and %. */
+async function notionalValue(userId: string): Promise<number> {
+  const { paperAccount } = await import("./paper-account.server");
+  return (await paperAccount(userId)).startingBalance;
 }
 
 /** Tickers XM can actually trade, from the latest broker symbol upload. */
