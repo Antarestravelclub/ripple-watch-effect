@@ -285,6 +285,9 @@ function OpenTable({
                   <span className={pctTone(m.pnl)}>
                     {fmtMoney(m.pnl)} · {fmtPct(m.pct)} · {fmtR(m.r)}
                   </span>
+                  <span className="block text-[10px] text-muted-foreground">
+                    {t.position_size} lot{t.position_size === 1 ? "" : "s"}
+                  </span>
                 </Td>
                 <Td mono>
                   {t.stop_price.toFixed(2)} ({fmtPct(m.toStopPct)} / {fmtR(m.toStopR)})
