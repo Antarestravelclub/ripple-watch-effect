@@ -87,3 +87,33 @@ Notes:
 - Instructions not picked up within 10 minutes are marked `expired`.
 - Instructions only ever carry a broker symbol that was mapped exactly or
   confirmed by hand — guessed suffixes are never executed.
+
+## Helper v2 configuration
+
+| Variable | Meaning |
+| --- | --- |
+| `SITE_BASE_URL` | Your app address, e.g. `https://ripple-watch-effect.lovable.app`. |
+| `BRIDGE_SECRET` | The bridge key saved in the app. Sent as `x-bridge-key` on every request. |
+| `ALLOWED_ACCOUNT` | Your DEMO account number. Hard allowlist — any other account is refused. |
+| `EXECUTION_ENABLED` | `false` by default. Phase A (reporting) runs with this off. |
+| `MAX_LOTS_PER_ORDER` | Local ceiling, default 10, independent of the server limit. |
+| `REPORT_SECONDS` / `DEALS_SECONDS` / `INSTRUCTION_SECONDS` | Cycle timings: 30 / 60 / 12 seconds by default. |
+| `STATE_DIR` | Where `ripple_ledger.json`, the deal high-water mark and `ripple_bridge.log` are written. |
+
+The helper writes each attempted instruction id to `ripple_ledger.json` **before**
+sending the order, so a restart re-posts the stored result instead of placing a
+second order. Logs rotate at 2 MB, five files kept.
+
+## Rollout order
+
+1. Run with `EXECUTION_ENABLED=false`. Confirm the Demo Account panel in the
+   Blotter fills in, then stop the helper and watch the chip go Stale, then Offline.
+2. Check a few tickers map to symbols that exist in your terminal
+   (`/admin/broker-symbols`).
+3. Set `EXECUTION_ENABLED=true`, mirror one small trade, confirm the fill is
+   reported, then close it and confirm the close and deal reconciliation.
+4. Test the kill switch (Pause all mirroring) and an unmapped-symbol refusal
+   before regular use.
+
+The helper never places pending orders, never modifies stops or targets on
+existing positions, and never partially closes.
