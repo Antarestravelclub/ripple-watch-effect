@@ -6,6 +6,8 @@ import { SiteShell } from "@/components/site-shell";
 import { TickerLink } from "@/components/ticker-link";
 import { ManualPaperTradeButton } from "@/components/paper-trade-dialog";
 import { DemoAccountPanel } from "@/components/demo-account-panel";
+import { StartingBalanceCard } from "@/components/starting-balance-card";
+import { DEFAULT_STARTING_BALANCE } from "@/lib/paper-account";
 import { MirrorTradeButton } from "@/components/mirror-trade-button";
 import { averageSlippage, mirrorComparisons } from "@/lib/paper-trades";
 import { closePaperTrade, listPaperTrades } from "@/lib/paper-trades.functions";
@@ -141,6 +143,10 @@ function BlotterPage() {
           </span>
         </div>
       )}
+
+      <div className="mt-5">
+        <StartingBalanceCard />
+      </div>
 
       <div className="mt-5">
         <DemoAccountPanel />
