@@ -62,7 +62,7 @@ function Term({ children }: { children: ReactNode }) {
 const CONTENTS = [
   ["what-it-is", "What this tool is (and is not)"],
   ["how-it-works", "How the engine works, end to end"],
-  ["pages", "Every page, explained"],
+  ["pages", "Every tab, explained"],
   ["reading-a-signal", "How to read a signal card"],
   ["conviction", "Conviction, sizing, stops and targets"],
   ["scorecard", "The honest number: alpha vs the index"],
@@ -195,14 +195,19 @@ function ManualPage() {
             </p>
           </Section>
 
-          <Section id="pages" title="3. Every page, explained">
+          <Section id="pages" title="3. Every tab, explained">
+            <p>
+              The tabs across the top run left to right in the order you would
+              normally use them: read the news, shortlist, check context, record
+              trades, then judge results. Each card below covers one tab.
+            </p>
             <div className="grid gap-3">
               <Card title="Today — the live feed">
                 <p>
-                  Ripples ordered by strength, then freshness. Anything under 48
-                  hours old sits in the main list; older items collapse into
-                  "Older ripples". The status line at the top shows when news
-                  last refreshed, with <Term>Refresh now</Term> to pull
+                  The home tab. Ripples ordered by strength, then freshness.
+                  Anything under 48 hours old sits in the main list; older items
+                  collapse into "Older ripples". The status line at the top shows
+                  when news last refreshed, with <Term>Refresh now</Term> to pull
                   headlines immediately.
                 </p>
                 <p>
@@ -212,7 +217,9 @@ function ManualPage() {
                   price-feed readout and opens itself when a price update fails.
                   The search box filters the feed to a single ticker, and the
                   region chips narrow to the US, EU, Canada, Australia, Japan or
-                  China.
+                  China. Clicking a ripple opens its own event page with the full
+                  reasoning, both exposure lists and the historical analogues for
+                  that kind of event.
                 </p>
               </Card>
 
@@ -224,69 +231,75 @@ function ManualPage() {
                   reward and an expected timeframe. Ideas where most of the move
                   has already happened are flagged{" "}
                   <Term>priced-in</Term> — that warning is the most useful thing
-                  on the page.
+                  on the page. Use this tab to shortlist; use Today to understand
+                  why.
                 </p>
               </Card>
 
               <Card title="Calendar — scheduled catalysts">
                 <p>
                   Known dates ahead: central bank meetings, elections, OPEC,
-                  major data. Use it to avoid opening an idea the day before
-                  something scheduled can overrule it.
+                  major data releases, grouped by date and region. Use it to
+                  avoid opening an idea the day before something scheduled can
+                  overrule it, and to see which of this week's ripples has a
+                  known follow-up event coming.
                 </p>
               </Card>
 
               <Card title="Analyser — paste your own article">
                 <p>
-                  Paste any article or note and the same exposure logic runs on
-                  it, returning positive and negative exposures with mechanisms.
-                  Use it for stories the news feed missed, or to test whether a
-                  story you already believe in actually has a mechanical path to
-                  earnings.
+                  Paste any article, note or transcript and the same exposure
+                  logic runs on it, returning positive and negative exposures
+                  with a written mechanism for each. Use it for stories the news
+                  feed missed, or to test whether a story you already believe in
+                  actually has a mechanical path to company earnings. Results are
+                  for reading only — they are not added to the tracked signal
+                  set.
                 </p>
               </Card>
 
               <Card title="Tracker — every signal in one table">
                 <p>
                   Sortable list of all signals with direction, conviction,
-                  status, move since flagging and days open. This is where you
-                  audit the engine rather than browse it. A live chart panel
-                  covers the highest-conviction open names.
+                  status, move since flagging and days open, filterable to open
+                  or closed and to your watchlist names. This is where you audit
+                  the engine rather than browse it. A live chart panel covers the
+                  highest-conviction open names, and any row opens the signal's
+                  own page: levels, conviction breakdown, price history since
+                  flagging, and the log of every evaluation that touched it.
                 </p>
               </Card>
 
               <Card title="Tickers — the conflict resolver">
                 <p>
                   The same company can be helped by one event and hurt by
-                  another. This page rolls every open signal up per ticker into
-                  a net stance: <Term>Long</Term>, <Term>Short</Term> or{" "}
+                  another. This tab rolls every open signal up per ticker into a
+                  net stance: <Term>Long</Term>, <Term>Short</Term> or{" "}
                   <Term>Conflicted</Term>. Check it before taking any single
                   idea seriously — a conflicted name means the app is telling
                   you the story is genuinely two-sided.
                 </p>
-              </Card>
-
-              <Card title="Scorecard — did any of this work?">
                 <p>
-                  Paper P/L, win rate, average R, target hits, invalidations and
-                  the headline number: cumulative alpha versus the index. Also
-                  shows when evaluation last ran, and lets you view alpha using
-                  exactly-priced entries only or all entries including
-                  backfilled ones.
+                  There is also a search box for any symbol, listed or not
+                  flagged by an event. A symbol page shows the current delayed
+                  quote, a chart, every event and signal that has ever touched
+                  the name, and a <Term>Paper trade</Term> button. Symbols appear
+                  as clickable links everywhere in the app, so you can always get
+                  from a headline to a single company in one click.
                 </p>
               </Card>
 
               <Card title="Blotter — signals as you actually traded them">
                 <p>
-                  Sign in, then press <Term>Paper trade</Term> on any open signal.
-                  The form arrives pre-filled with the signal's own entry, stop,
-                  target and risk-based size; change anything you like and the
-                  trade is tagged as overridden so the statistics can show
-                  whether your tweaks help or hurt. Open trades show unrealised
-                  P&amp;L, distance to stop and target in percent and in R, and
-                  time in trade. Stops and targets close automatically at the
-                  level itself — never at a flattering price — and nothing is
-                  ever closed while the price feed is stale. The Scorecard
+                  Sign-in required. Press <Term>Paper trade</Term> on any open
+                  signal and the form arrives pre-filled with the signal's own
+                  entry, stop, target and risk-based size; change anything you
+                  like and the trade is tagged as overridden so the statistics
+                  can show whether your tweaks help or hurt. Open trades show
+                  unrealised P&amp;L, distance to stop and target in percent and
+                  in R, and time in trade. Stops and targets close automatically
+                  at the level itself — never at a flattering price — and nothing
+                  is ever closed while the price feed is stale. The Scorecard
                   measures signals as issued; the Blotter measures them as
                   traded. Everything stays paper: there is no live execution
                   anywhere in this app.
@@ -299,67 +312,141 @@ function ManualPage() {
                   the latest stored price plus a stop at 1.5× ATR(14), a target at
                   2.0× ATR(14) and a size risking 0.5% of the paper notional. These
                   free-form trades exit on stop, target or your own manual close.
-                  The Stats tab keeps them apart from signal-based trades, so
-                  signal quality stays measurable — switch between{" "}
+                  The <Term>Stats</Term> tab keeps them apart from signal-based
+                  trades, so signal quality stays measurable — switch between{" "}
                   <Term>From signal</Term>, <Term>Manual</Term> and{" "}
                   <Term>All trades</Term> there.
                 </p>
-
-              </Card>
-
-
-
-              <Card title="Connect a demo account — watching it run for real">
                 <p>
-                  The <Term>Broker</Term> page can hand qualifying signals to a
-                  MetaTrader 5 <Term>demo</Term> account so you can watch them
-                  play out on a real platform. Nothing here can touch a funded
-                  account: every order is stamped demo, the database refuses any
-                  other value, and the helper program exits if the terminal is
-                  not a demo login.
-                </p>
-                <p>
-                  MetaTrader 5 has no web connection, so a small helper program
-                  (<span className="font-mono">bridge/ripple_bridge_helper.py</span>) must
-                  run beside a logged-in terminal, and it only runs on Windows.
-                  On a Mac, use a rented Windows trading VPS, Windows in
-                  Parallels or VMware, or a spare Windows PC.
-                </p>
-                <p>
-                  Steps, with a live checklist, are on the{" "}
-                  <Link to="/broker" className="text-primary hover:underline">
-                    Broker
-                  </Link>{" "}
-                  page: save the bridge key, install Python 3.10+ and the helper
-                  on the Windows machine, run it with your app address and key,
-                  and upload your broker's symbol list so share names such as{" "}
-                  <span className="font-mono">AAPL.US</span> match correctly.
-                  Only signals scoring 55 or higher with a size, a stop and a
-                  target are ever queued, and each produces at most one opening
-                  and one closing order.
+                  <Term>Starting balance</Term> sets the size of the paper
+                  account — default $1,000 — plus your risk per trade and maximum
+                  position share. Every suggested size, every percentage and the
+                  equity curve are calculated from it, so changing it rescales
+                  the whole account view. Below the trade tables,{" "}
+                  <Term>Accumulated results</Term> totals the same filtered set
+                  of trades you are looking at: realised, unrealised and combined
+                  P&amp;L in money and percent, current equity, counts and win
+                  rate, average win, average loss, average R and expectancy, best
+                  and worst trade, and — if a demo account is mirroring — the
+                  slippage between paper and demo fills. Small samples are
+                  labelled with <Term>n = X</Term> so you don't read too much
+                  into six trades.
                 </p>
               </Card>
 
-              <Card title="Analogues & Playbooks — historical context">
+              <Card title="Scorecard — did any of this work?">
                 <p>
-                  <Term>Analogues</Term> is a library of canonical past events
-                  with what actually happened to specific stocks, the time
-                  window, and whether the move reverted.{" "}
-                  <Term>Playbooks</Term> generalises those into typical winners,
-                  losers, magnitude and duration per event archetype. Read the
-                  playbook for an archetype before trusting today's version of
-                  it.
+                  Paper P/L, win rate, average R, target hits, invalidations,
+                  median time to resolution and the headline number: cumulative
+                  alpha versus the index. Broken down by event category and
+                  conviction band so you can see which kinds of news earn their
+                  place. It also shows when evaluation last ran, and lets you
+                  view alpha using exactly-priced entries only or all entries
+                  including backfilled ones. This tab measures the engine, not
+                  your trading — the Blotter does that.
+                </p>
+              </Card>
+
+              <Card title="Analogues — what happened last time">
+                <p>
+                  A library of canonical past events with what actually happened
+                  to specific stocks: the role each name played, the size of the
+                  move, the time window it took, and whether the move later
+                  reverted. Filter by archetype to find the closest match to
+                  today's news, and open a case to read the full reaction list.
+                </p>
+              </Card>
+
+              <Card title="Playbooks — the generalised pattern">
+                <p>
+                  The same history rolled up per event archetype: typical
+                  winners, typical losers, usual magnitude, usual duration and
+                  how often the move reverted. Read the playbook for an archetype
+                  before trusting today's version of it — it is also where the
+                  historical component of the conviction score comes from.
                 </p>
               </Card>
 
               <Card title="Watchlist — your own names">
                 <p>
-                  Track the tickers you care about and get flagged when an event
-                  touches them, with live quotes alongside.
+                  Track the tickers you care about, with delayed quotes
+                  alongside. Anything on the list is flagged when an event
+                  touches it, and the Tracker can be filtered down to watchlist
+                  names only.
+                </p>
+              </Card>
+
+              <Card title="Broker — mirroring to a demo account">
+                <p>
+                  This tab can hand qualifying signals to a MetaTrader 5{" "}
+                  <Term>demo</Term> account so you can watch them play out on a
+                  real platform. Nothing here can touch a funded account: every
+                  order is stamped demo, the database refuses any other value,
+                  and the helper program exits if the terminal is not a demo
+                  login. Mirroring is off until you switch it on, and there is a
+                  kill switch that stops everything immediately.
+                </p>
+                <p>
+                  It shows the demo account panel (mode, balance, equity, last
+                  report), the queue of instructions and what came back as fills,
+                  and the broker symbol list you upload so share names such as{" "}
+                  <span className="font-mono">AAPL.US</span> match the right
+                  company. Only signals scoring 55 or higher with a size, a stop
+                  and a target are ever queued, and each produces at most one
+                  opening and one closing order. Paper remains the system of
+                  record; the demo account is a mirror, not the truth.
+                </p>
+              </Card>
+
+              <Card title="Bridge — the six-step setup guide">
+                <p>
+                  Sign-in required. The numbered, expandable guide that gets
+                  MetaTrader 5 talking to the site: why the site never holds your
+                  broker login, which bridge to use, the install steps with copy
+                  buttons, the site address to allow in MT5, your own private
+                  bridge key (masked, with reveal, copy and regenerate) and the
+                  demo account number you save once.
+                </p>
+                <p>
+                  Both downloads on this page are already filled in for you — the
+                  helper program and a matching config file with your address,
+                  your key and your account number. The last panel shows live
+                  connection status: green Online, amber Stale or red Offline,
+                  DEMO or LIVE, broker server, masked account, balance, equity
+                  and last update. MetaTrader 5 has no web connection, so the
+                  helper must run on Windows beside a logged-in terminal; on a
+                  Mac use a Windows trading VPS, Parallels or VMware, or a spare
+                  Windows PC. Keys are per person — regenerating rejects the old
+                  one immediately, and nobody can see anyone else's.
+                </p>
+              </Card>
+
+              <Card title="Manual — this page">
+                <p>
+                  The full walkthrough, readable top to bottom, with{" "}
+                  <Term>Print / Save as PDF</Term> at the top right if you would
+                  rather keep it offline.
+                </p>
+              </Card>
+
+              <Card title="Always on screen">
+                <p>
+                  <Term>Sector pressure</Term> sits in the side panel on most
+                  pages: net directional pressure per sector, drawn as bars
+                  spreading out from the centre — right for net tailwind, left
+                  for net headwind — so a sector with heavy pressure both ways
+                  reads as balanced rather than busy. It is hidden on the Blotter
+                  so the trade tables get the full width.
+                </p>
+                <p>
+                  <Term>Sign in</Term> is only needed for the Blotter and Bridge.
+                  Everything else — the feed, setups, tracker, scorecard, history
+                  — is readable without an account.
                 </p>
               </Card>
             </div>
           </Section>
+
 
           <Section id="reading-a-signal" title="4. How to read a signal card">
             <p>Read a card in this order — it is the fastest route to a judgement:</p>
