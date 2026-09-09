@@ -1,7 +1,10 @@
 {
   "SITE_BASE_URL": "https://ripple-watch-effect.lovable.app",
-  "BRIDGE_SECRET": "paste-the-same-long-random-value-stored-in-the-app",
-  "ALLOWED_ACCOUNT": 0,
+  "BRIDGE_SECRET": "PASTE-YOUR-BRIDGE-SECRET-HERE",
+  "ALLOWED_ACCOUNT": 12345678,
   "EXECUTION_ENABLED": false,
-  "MAX_LOTS_PER_ORDER": 10.0
+  "MAX_LOTS_PER_ORDER": 10.0,
+  "ACCOUNT_POST_INTERVAL_S": 45,
+  "DEALS_POST_INTERVAL_S": 60,
+  "INSTRUCTION_POLL_INTERVAL_S": 12
 }
