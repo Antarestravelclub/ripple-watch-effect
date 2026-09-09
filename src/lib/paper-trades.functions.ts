@@ -172,6 +172,139 @@ export const openPaperTrade = createServerFn({ method: "POST" })
     return { id: row?.id ?? null };
   });
 
+/**
+ * Pre-fill for a free-form paper trade on any symbol: latest stored price,
+ * ATR(14)-scaled stop/target and risk-based size on the paper notional.
+ */
+export const manualTradePrefill = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { symbol: string; direction: "long" | "short" }) => d)
+  .handler(async ({ data }) => {
+    const { quotesFor } = await import("./latest-prices.server");
+    const { atrFor } = await import("./atr.server");
+    const { atrLevels } = await import("./signal-levels");
+    const { suggestedSizePct, DEFAULT_PORTFOLIO } = await import("./position-sizing");
+
+    const symbol = data.symbol.trim().toUpperCase();
+    if (!/^[A-Z0-9.\-^]{1,15}$/.test(symbol)) throw new Error("That doesn't look like a symbol");
+
+    const q = (await quotesFor([symbol])).get(symbol);
+    if (!q) throw new Error(`No price data available for ${symbol}`);
+
+    const entry = q.price;
+    const atr = await atrFor(symbol);
+    const levels = atr != null && entry > 0 ? atrLevels(entry, data.direction, atr) : null;
+
+    const notional = await notionalValue();
+    // Manual trades have no conviction score, so they size at the medium band.
+    const sizePct =
+      atr != null && entry > 0
+        ? suggestedSizePct(entry, atr, 70, { ...DEFAULT_PORTFOLIO, notional_value: notional })
+        : 0;
+    const size = sizePct > 0 && entry > 0 ? +((notional * (sizePct / 100)) / entry).toFixed(4) : 0;
+
+    const quoteTime = q.quoteTime ?? null;
+    const ageMs = quoteTime ? Date.now() - new Date(quoteTime).getTime() : null;
+
+    return {
+      ticker: symbol,
+      quoteSymbol: symbol,
+      direction: data.direction,
+      entryPrice: entry,
+      quoteTime,
+      quoteStale: ageMs == null || ageMs > STALE_QUOTE_MS,
+      stopPrice: levels?.stop ?? null,
+      targetPrice: levels?.target ?? null,
+      atr,
+      positionSize: size,
+      suggestedSizePct: sizePct,
+      notional,
+    };
+  });
+
+/** Opens a free-form paper trade on any symbol, unlinked from any signal. */
+export const openManualPaperTrade = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (d: {
+      symbol: string;
+      direction: "long" | "short";
+      entryPrice: number;
+      stopPrice: number;
+      targetPrice: number;
+      positionSize: number;
+      notes?: string;
+    }) => d,
+  )
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const symbol = data.symbol.trim().toUpperCase();
+    if (!/^[A-Z0-9.\-^]{1,15}$/.test(symbol)) throw new Error("That doesn't look like a symbol");
+    if (data.direction !== "long" && data.direction !== "short") {
+      throw new Error("Direction must be long or short");
+    }
+    for (const [k, v] of Object.entries({
+      entryPrice: data.entryPrice,
+      stopPrice: data.stopPrice,
+      targetPrice: data.targetPrice,
+      positionSize: data.positionSize,
+    })) {
+      if (!(Number(v) > 0)) throw new Error(`${k} must be greater than zero`);
+    }
+    // Stop and target must sit on the right side of entry, or the exit logic
+    // would fire immediately.
+    if (data.direction === "long" && !(data.stopPrice < data.entryPrice)) {
+      throw new Error("For a long, the stop must be below the entry price");
+    }
+    if (data.direction === "long" && !(data.targetPrice > data.entryPrice)) {
+      throw new Error("For a long, the target must be above the entry price");
+    }
+    if (data.direction === "short" && !(data.stopPrice > data.entryPrice)) {
+      throw new Error("For a short, the stop must be above the entry price");
+    }
+    if (data.direction === "short" && !(data.targetPrice < data.entryPrice)) {
+      throw new Error("For a short, the target must be below the entry price");
+    }
+
+    const { data: existing } = await supabaseAdmin
+      .from("paper_trades")
+      .select("id")
+      .eq("user_id", context.userId)
+      .eq("source", "manual")
+      .eq("ticker", symbol)
+      .eq("direction", data.direction)
+      .eq("status", "open")
+      .maybeSingle();
+    if (existing) {
+      throw new Error(`You already have an open manual ${data.direction} on ${symbol}.`);
+    }
+
+    const { data: row, error } = await supabaseAdmin
+      .from("paper_trades")
+      .insert({
+        user_id: context.userId,
+        signal_id: null,
+        source: "manual",
+        ticker: symbol,
+        quote_symbol: symbol,
+        direction: data.direction,
+        entry_price: data.entryPrice,
+        entry_time: new Date().toISOString(),
+        stop_price: data.stopPrice,
+        target_price: data.targetPrice,
+        position_size: data.positionSize,
+        overrides_used: false,
+        notes: data.notes?.trim() ? data.notes.trim() : null,
+        status: "open",
+      })
+      .select("id")
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return { id: row?.id ?? null };
+  });
+
+
 /** Closes a trade manually at the current stored quote. */
 export const closePaperTrade = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -230,7 +363,9 @@ export const listPaperTrades = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     const rows = raw ?? [];
 
-    const signalIds = [...new Set(rows.map((r) => r.signal_id))];
+    const signalIds = [
+      ...new Set(rows.map((r) => r.signal_id).filter((id): id is string => Boolean(id))),
+    ];
     const signalById = new Map<string, SignalForTrade>();
     if (signalIds.length > 0) {
       const { data: signals } = await supabaseAdmin
@@ -241,6 +376,7 @@ export const listPaperTrades = createServerFn({ method: "GET" })
         .in("id", signalIds);
       for (const s of (signals ?? []) as SignalForTrade[]) signalById.set(s.id, s);
     }
+
 
     const eventIds = [
       ...new Set(
@@ -261,12 +397,14 @@ export const listPaperTrades = createServerFn({ method: "GET" })
     const tradable = await tradableTickers();
 
     const trades: PaperTradeRow[] = rows.map((r) => {
-      const s = signalById.get(r.signal_id);
+      const s = r.signal_id ? signalById.get(r.signal_id) : undefined;
       return {
         id: r.id,
         signal_id: r.signal_id,
+        source: (r.source === "manual" ? "manual" : "signal") as PaperTradeRow["source"],
         ticker: r.ticker,
         quote_symbol: r.quote_symbol,
+
         direction: r.direction as "long" | "short",
         entry_price: Number(r.entry_price),
         entry_time: r.entry_time,

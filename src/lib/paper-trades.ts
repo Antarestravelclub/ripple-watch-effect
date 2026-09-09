@@ -8,10 +8,14 @@ export const STALE_QUOTE_MS = 20 * 60_000;
 export type TradeDirection = "long" | "short";
 export type TradeStatus = "open" | "closed";
 export type ExitReason = "target_hit" | "stop_hit" | "invalidated" | "manual";
+/** Where the trade came from: an event signal, or a free-form manual entry. */
+export type TradeSource = "signal" | "manual";
 
 export interface PaperTradeRow {
   id: string;
-  signal_id: string;
+  /** Null for free-form manual trades that aren't tied to a signal. */
+  signal_id: string | null;
+  source: TradeSource;
   ticker: string;
   quote_symbol: string | null;
   direction: TradeDirection;
@@ -34,6 +38,12 @@ export interface PaperTradeRow {
   cohort: "atr_v1" | "legacy_pct";
   tradable: boolean;
 }
+
+export const SOURCE_LABEL: Record<TradeSource, string> = {
+  signal: "From signal",
+  manual: "Manual",
+};
+
 
 export const EXIT_REASON_LABEL: Record<ExitReason, string> = {
   target_hit: "Target hit",
@@ -236,7 +246,8 @@ export type SplitKey =
   | "tradability"
   | "exit_reason"
   | "overrides"
-  | "direction";
+  | "direction"
+  | "source";
 
 export const SPLIT_LABEL: Record<SplitKey, string> = {
   category: "Event category",
@@ -246,7 +257,9 @@ export const SPLIT_LABEL: Record<SplitKey, string> = {
   exit_reason: "Exit reason",
   overrides: "As-signalled vs overridden",
   direction: "Direction",
+  source: "Signal vs manual",
 };
+
 
 function bucketOf(t: PaperTradeRow, key: SplitKey): string {
   switch (key) {
@@ -270,6 +283,8 @@ function bucketOf(t: PaperTradeRow, key: SplitKey): string {
       return t.overrides_used ? "Overridden" : "As signalled";
     case "direction":
       return t.direction === "long" ? "Long" : "Short";
+    case "source":
+      return SOURCE_LABEL[t.source];
   }
 }
 

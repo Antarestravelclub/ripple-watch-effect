@@ -2,10 +2,16 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { openPaperTrade, paperTradePrefill } from "@/lib/paper-trades.functions";
+import {
+  manualTradePrefill,
+  openManualPaperTrade,
+  openPaperTrade,
+  paperTradePrefill,
+} from "@/lib/paper-trades.functions";
 import { useAuth } from "@/hooks/use-auth";
 import { fmtDuration, fmtMoney } from "@/lib/paper-trades";
 import { Loader2, NotebookPen, X } from "lucide-react";
+
 
 interface Props {
   signalId: string;
@@ -245,6 +251,242 @@ function Field({
         onChange={(e) => onChange(e.target.value)}
         className="mt-1 w-full rounded-md border border-border/70 bg-background px-2 py-1.5 text-sm font-mono"
       />
+    </div>
+  );
+}
+
+/**
+ * Free-form paper trade on any symbol, with no signal behind it. Pre-fills the
+ * entry from the shared price store and the stop/target from ATR(14).
+ */
+export function ManualPaperTradeButton({
+  symbol,
+  compact,
+  label = "New paper trade",
+}: {
+  symbol?: string;
+  compact?: boolean;
+  label?: string;
+}) {
+  const { signedIn } = useAuth();
+  const [open, setOpen] = useState(false);
+
+  if (!signedIn) {
+    return (
+      <Link
+        to="/auth"
+        className={
+          "inline-flex items-center gap-1 rounded-md border border-border/70 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors " +
+          (compact ? "px-2 py-0.5 text-[10px]" : "px-3 py-1.5 text-xs")
+        }
+      >
+        <NotebookPen className="w-3 h-3" />
+        Sign in to paper trade
+      </Link>
+    );
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className={
+          "inline-flex items-center gap-1 rounded-md border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 transition-colors " +
+          (compact ? "px-2 py-0.5 text-[10px]" : "px-3 py-1.5 text-xs")
+        }
+      >
+        <NotebookPen className="w-3 h-3" />
+        {label}
+      </button>
+      {open && <ManualPaperTradeForm initialSymbol={symbol ?? ""} onClose={() => setOpen(false)} />}
+    </>
+  );
+}
+
+function ManualPaperTradeForm({
+  initialSymbol,
+  onClose,
+}: {
+  initialSymbol: string;
+  onClose: () => void;
+}) {
+  const prefillFn = useServerFn(manualTradePrefill);
+  const openFn = useServerFn(openManualPaperTrade);
+  const qc = useQueryClient();
+
+  const [symbol, setSymbol] = useState(initialSymbol.toUpperCase());
+  const [direction, setDirection] = useState<"long" | "short">("long");
+  const [entry, setEntry] = useState("");
+  const [stop, setStop] = useState("");
+  const [target, setTarget] = useState("");
+  const [size, setSize] = useState("");
+  const [notes, setNotes] = useState("");
+
+  const prefill = useMutation({
+    mutationFn: (s: string) => prefillFn({ data: { symbol: s, direction } }),
+    onSuccess: (p) => {
+      setSymbol(p.ticker);
+      setEntry(p.entryPrice != null ? String(p.entryPrice) : "");
+      setStop(p.stopPrice != null ? String(p.stopPrice) : "");
+      setTarget(p.targetPrice != null ? String(p.targetPrice) : "");
+      setSize(p.positionSize ? String(p.positionSize) : "");
+    },
+  });
+
+  // Look up the symbol we were opened with straight away.
+  useEffect(() => {
+    if (initialSymbol.trim()) prefill.mutate(initialSymbol.trim().toUpperCase());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const open = useMutation({
+    mutationFn: () =>
+      openFn({
+        data: {
+          symbol,
+          direction,
+          entryPrice: Number(entry),
+          stopPrice: Number(stop),
+          targetPrice: Number(target),
+          positionSize: Number(size),
+          notes,
+        },
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["paper-trades"] });
+      onClose();
+    },
+  });
+
+  const p = prefill.data;
+  const notional = Number(entry) > 0 && Number(size) > 0 ? Number(entry) * Number(size) : null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4">
+      <div className="w-full max-w-md rounded-xl border border-border/70 bg-card p-5 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold">New paper trade</h2>
+            <p className="text-xs text-muted-foreground">
+              Any symbol, no event signal needed. Paper only — no broker, no order routing.
+            </p>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Close">
+            <X className="w-4 h-4 text-muted-foreground" />
+          </button>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-end gap-2">
+          <div className="flex-1 min-w-[8rem]">
+            <label className="text-xs text-muted-foreground" htmlFor="mt-symbol">
+              Symbol
+            </label>
+            <input
+              id="mt-symbol"
+              value={symbol}
+              onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+              placeholder="NVDA"
+              className="mt-1 w-full rounded-md border border-border/70 bg-background px-2 py-1.5 text-sm font-mono uppercase"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground" htmlFor="mt-dir">
+              Direction
+            </label>
+            <select
+              id="mt-dir"
+              value={direction}
+              onChange={(e) => setDirection(e.target.value as "long" | "short")}
+              className="mt-1 rounded-md border border-border/70 bg-background px-2 py-1.5 text-sm"
+            >
+              <option value="long">Long</option>
+              <option value="short">Short</option>
+            </select>
+          </div>
+          <button
+            type="button"
+            disabled={!symbol.trim() || prefill.isPending}
+            onClick={() => prefill.mutate(symbol.trim())}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border/70 px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent disabled:opacity-60"
+          >
+            {prefill.isPending && <Loader2 className="w-3 h-3 animate-spin" />}
+            Look up price
+          </button>
+        </div>
+
+        {prefill.error && (
+          <p className="mt-3 text-xs text-headwind">
+            {prefill.error instanceof Error ? prefill.error.message : "Could not price that symbol"}
+          </p>
+        )}
+        {p?.quoteStale && (
+          <p className="mt-3 rounded-md border border-amber/40 bg-amber/10 p-2 text-xs text-amber">
+            Price feed looks stale
+            {p.quoteTime ? ` — last quote ${fmtDuration(p.quoteTime)} ago.` : "."} Check the entry
+            price before opening.
+          </p>
+        )}
+        {p && p.atr == null && (
+          <p className="mt-3 rounded-md border border-amber/40 bg-amber/10 p-2 text-xs text-amber">
+            Not enough daily price history to suggest a stop, target or size — enter your own.
+          </p>
+        )}
+
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <Field label="Entry price" value={entry} onChange={setEntry} />
+          <Field label="Position size (units)" value={size} onChange={setSize} />
+          <Field label="Stop price" value={stop} onChange={setStop} />
+          <Field label="Target price" value={target} onChange={setTarget} />
+        </div>
+
+        <p className="mt-3 text-[11px] text-muted-foreground">
+          Suggestions use the same rules as signals: stop 1.5× ATR(14), target 2.0× ATR(14), size
+          risking 0.5% of the {p ? fmtMoney(p.notional) : "$100,000"} paper notional. Notional at
+          these values: {notional != null ? fmtMoney(notional) : "—"}.
+        </p>
+
+        <div className="mt-3">
+          <label className="text-xs text-muted-foreground" htmlFor="mt-notes">
+            Notes (optional)
+          </label>
+          <textarea
+            id="mt-notes"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={2}
+            className="mt-1 w-full rounded-md border border-border/70 bg-background px-2 py-1.5 text-sm"
+          />
+        </div>
+
+        {open.error && (
+          <p className="mt-3 text-xs text-headwind">
+            {open.error instanceof Error ? open.error.message : "Could not open the trade"}
+          </p>
+        )}
+
+        <div className="mt-4 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md border border-border/70 px-3 py-1.5 text-xs text-muted-foreground hover:bg-accent"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={open.isPending || !symbol.trim()}
+            onClick={() => open.mutate()}
+            className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground disabled:opacity-60"
+          >
+            {open.isPending && <Loader2 className="w-3 h-3 animate-spin" />}
+            Open paper trade
+          </button>
+        </div>
+        <p className="mt-3 text-[10px] uppercase tracking-wider text-muted-foreground">
+          Paper only · no broker, no order routing
+        </p>
+      </div>
     </div>
   );
 }

@@ -608,7 +608,8 @@ export type Database = {
           position_size: number
           quote_symbol: string | null
           realized_pnl: number | null
-          signal_id: string
+          signal_id: string | null
+          source: string
           status: string
           stop_price: number
           target_price: number
@@ -631,7 +632,8 @@ export type Database = {
           position_size: number
           quote_symbol?: string | null
           realized_pnl?: number | null
-          signal_id: string
+          signal_id?: string | null
+          source?: string
           status?: string
           stop_price: number
           target_price: number
@@ -654,7 +656,8 @@ export type Database = {
           position_size?: number
           quote_symbol?: string | null
           realized_pnl?: number | null
-          signal_id?: string
+          signal_id?: string | null
+          source?: string
           status?: string
           stop_price?: number
           target_price?: number

@@ -18,6 +18,11 @@ import { listSignals } from "@/lib/signals.functions";
 import { getQuote } from "@/lib/quotes.functions";
 import { listAnalogues } from "@/lib/analogues.functions";
 import { TradingViewChart } from "@/components/tradingview";
+import {
+  ManualPaperTradeButton,
+  PaperTradeButton,
+} from "@/components/paper-trade-dialog";
+
 import { tickerMeta } from "@/lib/ticker-registry";
 import { addTicker, removeTicker, useWatchlist } from "@/lib/watchlist-store";
 import { ROLE_LABEL, formatPct, formatWindow, roleTone } from "@/lib/analogue-mapping";
@@ -210,7 +215,10 @@ function TickerDetail() {
 
       {/* Active signals */}
       <section className="mb-5">
-        <h2 className="text-sm font-semibold tracking-tight mb-2">Active exposure</h2>
+        <div className="flex items-center justify-between gap-3 flex-wrap mb-2">
+          <h2 className="text-sm font-semibold tracking-tight">Active exposure</h2>
+          <ManualPaperTradeButton symbol={symbol} label={`Paper trade ${symbol}`} compact />
+        </div>
         {row?.stance === "conflicted" && (
           <div className="rounded-lg border border-border/70 bg-muted/20 p-3 text-xs text-muted-foreground mb-3">
             {CONFLICT_NOTE} {row.activeLong} active long signal(s) and {row.activeShort}{" "}
@@ -221,7 +229,7 @@ function TickerDetail() {
           <p className="text-xs text-muted-foreground">
             {rollupsLoading
               ? "Loading…"
-              : "No active signals on this symbol right now — no current event maps exposure to it."}
+              : "No active signals on this symbol right now — no current event maps exposure to it. You can still open a free-form paper trade above."}
           </p>
         ) : (
           <div className="rounded-xl border border-border/70 bg-card/40 overflow-x-auto">
@@ -232,8 +240,10 @@ function TickerDetail() {
                   <th className="text-left p-2">Direction</th>
                   <th className="text-right p-2">Snapshot</th>
                   <th className="text-right p-2">Move</th>
+                  <th className="text-right p-2">Paper</th>
                 </tr>
               </thead>
+
               <tbody>
                 {row.signals.map((s) => {
                   const ev = eventById.get(s.event_id);
@@ -280,7 +290,13 @@ function TickerDetail() {
                       >
                         {fmtPct(dirPct, 1)}
                       </td>
+                      <td className="p-2 text-right">
+                        {s.status === "open" && (
+                          <PaperTradeButton signalId={s.id} ticker={s.ticker} compact />
+                        )}
+                      </td>
                     </tr>
+
                   );
                 })}
               </tbody>

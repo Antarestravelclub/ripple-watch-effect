@@ -285,6 +285,20 @@ function ManualPage() {
                   traded. Everything stays paper: there is no live execution
                   anywhere in this app.
                 </p>
+                <p>
+                  You can also trade a symbol that has no signal: press{" "}
+                  <Term>New paper trade</Term> on the Blotter, or{" "}
+                  <Term>Paper trade [symbol]</Term> on any symbol page. Type the
+                  symbol, pick long or short, and the form suggests an entry from
+                  the latest stored price plus a stop at 1.5× ATR(14), a target at
+                  2.0× ATR(14) and a size risking 0.5% of the paper notional. These
+                  free-form trades exit on stop, target or your own manual close.
+                  The Stats tab keeps them apart from signal-based trades, so
+                  signal quality stays measurable — switch between{" "}
+                  <Term>From signal</Term>, <Term>Manual</Term> and{" "}
+                  <Term>All trades</Term> there.
+                </p>
+
               </Card>
 
 
