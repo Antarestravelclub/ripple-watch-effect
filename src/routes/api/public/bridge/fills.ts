@@ -22,16 +22,9 @@ export const Route = createFileRoute("/api/public/bridge/fills")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const expected = process.env["BRIDGE_SECRET"] ?? "";
-        if (!expected) {
-          return Response.json(
-            { ok: false, error: "Bridge is not configured yet (BRIDGE_SECRET missing)." },
-            { status: 503 },
-          );
-        }
-        if (request.headers.get("x-bridge-key") !== expected) {
-          return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
-        }
+        const { authorizeBridge } = await import("@/lib/bridge-auth.server");
+        const denied = await authorizeBridge(request);
+        if (denied) return denied;
         try {
           const parsed = schema.parse(await request.json());
           const { recordFills } = await import("@/lib/broker-queue.server");
