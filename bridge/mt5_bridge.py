@@ -35,7 +35,10 @@ SUFFIX = os.environ.get("RIPPLE_SYMBOL_SUFFIX", "")
 MAX_ORDERS = int(os.environ.get("RIPPLE_MAX_ORDERS", "10"))
 
 if not BASE_URL or not BRIDGE_KEY:
-    raise SystemExit("Set RIPPLE_BASE_URL and RIPPLE_BRIDGE_KEY first.")
+    raise SystemExit(
+        "Missing settings. Set RIPPLE_BASE_URL to your app address and "
+        "RIPPLE_BRIDGE_KEY to the bridge key saved in the app, then run again."
+    )
 
 HEADERS = {"x-bridge-key": BRIDGE_KEY, "content-type": "application/json"}
 
@@ -52,7 +55,12 @@ def connect():
         raise SystemExit(
             "Refusing to run: this terminal is not logged into a DEMO account."
         )
-    print(f"Attached to DEMO account {info.login} on {info.server}")
+    print(
+        f"Connected: DEMO account {info.login} on {info.server} | "
+        f"equity {info.equity:.2f} {info.currency} | balance {info.balance:.2f} | "
+        f"open positions {mt5.positions_total() or 0} | helper {VERSION}"
+    )
+    print(f"Reporting to {BASE_URL} every {POLL_SECONDS}s. Leave this window open.")
     return info
 
 
@@ -175,6 +183,13 @@ def main():
                 json={"limit": MAX_ORDERS, "heartbeat": heartbeat(mt5.account_info() or info)},
                 timeout=30,
             )
+            if poll.status_code in (401, 403):
+                print(
+                    "The app rejected this helper: the bridge key is missing or wrong. "
+                    "Check RIPPLE_BRIDGE_KEY matches the key saved in the app, then restart."
+                )
+                time.sleep(POLL_SECONDS)
+                continue
             if poll.status_code != 200:
                 print(f"poll failed [{poll.status_code}]: {poll.text[:300]}")
                 time.sleep(POLL_SECONDS)

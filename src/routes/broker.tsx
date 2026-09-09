@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { SiteShell } from "@/components/site-shell";
 import { TickerLink } from "@/components/ticker-link";
 import { getBrokerActivity } from "@/lib/broker.functions";
+import { BridgeSetup } from "@/components/bridge-setup";
 import { ShieldCheck, Activity } from "lucide-react";
 
 export const Route = createFileRoute("/broker")({
