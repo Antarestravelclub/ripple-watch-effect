@@ -310,7 +310,78 @@ export async function runNewsIngest(): Promise<IngestResult> {
 
       }
     }
+
+    // ---- ETF pass -------------------------------------------------------
+    // Many events transmit through a sector, country or commodity fund rather
+    // than one company. Matching is keyword-based and deterministic; direction
+    // comes from the event's dominant stock side, and the usual ATR levels,
+    // conviction rubric and sizing apply unchanged.
+    const category = normalizeCategory(impact.category) as EventCategory;
+    const etfMatches = matchEtfs(etfUniverse, text, category, 3);
+    const longs = (impact.positive ?? []).length;
+    const shorts = (impact.negative ?? []).length;
+    const dominant: "long" | "short" | null =
+      longs > shorts ? "long" : shorts > longs ? "short" : null;
+
+    if (etfMatches.length > 0 && dominant == null) {
+      detail.push(
+        `ETF skipped for "${item.headline}": event has balanced winners and losers, no clear fund direction.`,
+      );
+    }
+
+    if (dominant) {
+      for (const match of etfMatches) {
+        const sym = match.row.ticker.toUpperCase();
+        const out = await priceFor(sym);
+        const mechanism =
+          `Fund-level exposure: ${match.row.name} tracks ${match.matched.join(", ")} ` +
+          `named in this event.`;
+
+        await supabaseAdmin.from("live_event_exposures").insert({
+          live_event_id: ev.id,
+          ticker: sym,
+          company_name: match.row.name,
+          side: dominant === "long" ? "tailwind" : "headwind",
+          sector: match.row.category,
+          mechanism,
+          confidence: match.score >= 4 ? "High" : "Medium",
+          quote_symbol: sym,
+          needs_review: out.status !== "ok",
+          review_reason: out.status !== "ok" ? (out.message ?? out.status) : null,
+        });
+
+        if (out.status !== "ok") {
+          detail.push(`ETF ${sym} skipped: ${out.message ?? out.status}`);
+          continue;
+        }
+
+        const outcome = await createSignal(
+          {
+            eventId: ev.id,
+            ticker: sym,
+            companyName: match.row.name,
+            quoteSymbol: sym,
+            direction: dominant,
+            entryPrice: out.price,
+            dayHigh: out.dayHigh ?? null,
+            dayLow: out.dayLow ?? null,
+            rationale: mechanism,
+            strength: (ev.strength as "Low" | "Medium" | "High") ?? "Medium",
+            confidence: match.score >= 4 ? "High" : "Medium",
+            category,
+            eventText: text,
+            eventPublishedAt: publishedAt,
+            generatedBy: "ripple-news-etf-v1",
+            instrumentType: "etf",
+          },
+          portfolio,
+        );
+        if (outcome.ok) result.signalsCreated++;
+        else detail.push(`ETF signal rejected for ${sym}: ${outcome.reason}`);
+      }
+    }
   }
+
 
   result.skipped =
     stages.duplicates + stages.tooThin + stages.aiFailed + stages.noExposure;
