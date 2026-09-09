@@ -88,6 +88,14 @@ function BrokerPage() {
           </Link>
         </div>
 
+        <BridgeSetup
+          configured={Boolean(data?.configured)}
+          everSeen={Boolean(hb)}
+          fresh={Boolean(liveBridge)}
+          isDemo={hb?.account_is_demo ?? null}
+          symbolUpload={data?.symbolUpload ?? null}
+        />
+
         {/* Bridge status */}
         <section className="rounded-xl border border-border/70 bg-card/60 p-4 mb-5">
           <div className="flex items-center gap-2 mb-3">
