@@ -193,7 +193,28 @@ function TrackerPage() {
         </button>
       </div>
 
+      <div className="mb-3 flex items-center gap-2 rounded-xl border border-border/70 bg-card/70 px-3 py-2 focus-within:border-primary/60 transition-colors max-w-xl">
+        <Search className="w-4 h-4 text-muted-foreground shrink-0" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search signals — symbol, event or reason (e.g. NVDA, oil, tariff)"
+          aria-label="Search signals"
+          className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground/70"
+        />
+        {search && (
+          <button
+            onClick={() => setSearch("")}
+            aria-label="Clear search"
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
       <div className="mb-4 flex flex-wrap gap-2">
+
         <Select label="Status" value={status} onChange={(v) => setStatus(v as typeof status)}
           options={[
             ["all", "All"],
