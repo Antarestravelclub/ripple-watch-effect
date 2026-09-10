@@ -121,7 +121,7 @@ function TrackerPage() {
         return (
           r.signal.ticker.toUpperCase().includes(q) ||
           (r.signal.quote_symbol ?? "").toUpperCase().includes(q) ||
-          (r.event?.title ?? "").toUpperCase().includes(q) ||
+          (r.event?.headline ?? "").toUpperCase().includes(q) ||
           (r.signal.rationale ?? "").toUpperCase().includes(q)
         );
       })
