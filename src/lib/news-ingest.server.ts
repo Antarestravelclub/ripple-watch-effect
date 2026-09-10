@@ -123,25 +123,44 @@ export async function runNewsIngest(): Promise<IngestResult> {
     return finish();
   }
 
-  let items: NewsItem[] = [];
-  try {
-    const res = await fetch(`${NEWS_URL}&token=${feedKey}`);
-    if (!res.ok) {
-      result.error = `News feed returned HTTP ${res.status}`;
-      return finish();
-    }
-    items = (await res.json()) as NewsItem[];
-  } catch (e) {
-    result.error = e instanceof Error ? e.message : "News feed unreachable";
+  // Scan several feed categories so more world events reach the analyser.
+  const items: NewsItem[] = [];
+  const fetched = await Promise.all(
+    NEWS_CATEGORIES.map(async (category) => {
+      try {
+        const res = await fetch(
+          `${NEWS_URL}?category=${category}&token=${feedKey}`,
+        );
+        if (!res.ok) return { category, rows: [] as NewsItem[], error: `HTTP ${res.status}` };
+        return { category, rows: (await res.json()) as NewsItem[], error: null };
+      } catch (e) {
+        return {
+          category,
+          rows: [] as NewsItem[],
+          error: e instanceof Error ? e.message : "unreachable",
+        };
+      }
+    }),
+  );
+  for (const f of fetched) {
+    if (f.error) detail.push(`Feed "${f.category}" failed: ${f.error}`);
+    else items.push(...f.rows);
+  }
+  if (items.length === 0) {
+    result.error = "No headlines returned by any news feed.";
     return finish();
   }
 
   const cutoff = Date.now() - 48 * 3_600_000;
-  const candidates = items
+  const withinRun = new Map<string, NewsItem>();
+  for (const i of items
     .filter((i) => (i.headline ?? "").trim().length > 20)
     .filter((i) => !i.datetime || i.datetime * 1000 > cutoff)
-    .sort((a, b) => (b.datetime ?? 0) - (a.datetime ?? 0))
-    .slice(0, HEADLINE_SCAN_CAP);
+    .sort((a, b) => (b.datetime ?? 0) - (a.datetime ?? 0))) {
+    const key = dedupeKeyFor(i);
+    if (!withinRun.has(key)) withinRun.set(key, i);
+  }
+  const candidates = [...withinRun.values()].slice(0, HEADLINE_SCAN_CAP);
   result.headlinesSeen = candidates.length;
 
   const keys = candidates.map(dedupeKeyFor);
