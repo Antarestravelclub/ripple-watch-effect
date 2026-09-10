@@ -306,9 +306,9 @@ function OpenTable({
             <Th>Entry</Th>
             <Th>Lots</Th>
             <Th>Current</Th>
+            <Th>To target</Th>
             <Th>Unrealised</Th>
             <Th>To stop</Th>
-            <Th>To target</Th>
             <Th>In trade</Th>
             <Th />
           </tr>
@@ -333,6 +333,9 @@ function OpenTable({
                 <Td mono>{t.entry_price.toFixed(2)}</Td>
                 <Td mono>{t.position_size}</Td>
                 <Td mono>{m.price != null ? m.price.toFixed(2) : "—"}</Td>
+                <Td mono>
+                  {t.target_price.toFixed(2)} ({fmtPct(m.toTargetPct)} / {fmtR(m.toTargetR)})
+                </Td>
                 <Td>
                   <span className={pctTone(m.pnl)}>
                     {fmtMoney(m.pnl)} · {fmtPct(m.pct)} · {fmtR(m.r)}
@@ -343,9 +346,6 @@ function OpenTable({
                 </Td>
                 <Td mono>
                   {t.stop_price.toFixed(2)} ({fmtPct(m.toStopPct)} / {fmtR(m.toStopR)})
-                </Td>
-                <Td mono>
-                  {t.target_price.toFixed(2)} ({fmtPct(m.toTargetPct)} / {fmtR(m.toTargetR)})
                 </Td>
                 <Td>{fmtDuration(t.entry_time)}</Td>
                 <Td>
