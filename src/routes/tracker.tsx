@@ -299,13 +299,14 @@ function TrackerPage() {
                     <EtfBadge type={signal.instrument_type} />
                   </td>
                   <td className="p-2 max-w-[220px] truncate text-muted-foreground">
-                    {event ? (
-                      <Link to="/event/$id" params={{ id: event.id }} className="hover:text-primary">
-                        {event.headline}
-                      </Link>
-                    ) : (
-                      signal.event_id
-                    )}
+                    <Link
+                      to="/event/$id"
+                      params={{ id: event?.id ?? signal.event_id }}
+                      className="hover:text-primary"
+                    >
+                      {event ? event.headline : "Earlier event"}
+                    </Link>
+
                   </td>
                   <td className="p-2">
                     <span
