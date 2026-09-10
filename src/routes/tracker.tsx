@@ -13,7 +13,7 @@ import { ConvictionChip } from "@/components/conviction-chip";
 import { type EventCategory } from "@/lib/ripple-data";
 import { useLiveEvents } from "@/hooks/use-live-events";
 import { useWatchlist } from "@/lib/watchlist-store";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Search, X } from "lucide-react";
 import { TradingViewWatchlist } from "@/components/tradingview";
 import { PaperTradeButton } from "@/components/paper-trade-dialog";
 
