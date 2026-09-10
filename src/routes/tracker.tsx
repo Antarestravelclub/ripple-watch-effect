@@ -13,7 +13,7 @@ import { ConvictionChip } from "@/components/conviction-chip";
 import { type EventCategory } from "@/lib/ripple-data";
 import { useLiveEvents } from "@/hooks/use-live-events";
 import { useWatchlist } from "@/lib/watchlist-store";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Search, X } from "lucide-react";
 import { TradingViewWatchlist } from "@/components/tradingview";
 import { PaperTradeButton } from "@/components/paper-trade-dialog";
 
@@ -69,6 +69,8 @@ function TrackerPage() {
   const [category, setCategory] = useState<"all" | EventCategory>("all");
   const [instrument, setInstrument] = useState<InstrumentFilter>("all");
   const [onlyWatchlist, setOnlyWatchlist] = useState(false);
+  const [search, setSearch] = useState("");
+
   const [sortKey, setSortKey] = useState<SortKey>("pct");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
@@ -113,6 +115,17 @@ function TrackerPage() {
       .filter((r) =>
         !onlyWatchlist ? true : watchlist.includes(r.signal.ticker.toUpperCase()),
       )
+      .filter((r) => {
+        const q = search.trim().toUpperCase();
+        if (!q) return true;
+        return (
+          r.signal.ticker.toUpperCase().includes(q) ||
+          (r.signal.quote_symbol ?? "").toUpperCase().includes(q) ||
+          (r.event?.headline ?? "").toUpperCase().includes(q) ||
+          (r.signal.rationale ?? "").toUpperCase().includes(q)
+        );
+      })
+
       .sort((a, b) => {
         const dir = sortDir === "asc" ? 1 : -1;
         switch (sortKey) {
@@ -146,7 +159,7 @@ function TrackerPage() {
             return ((a.metrics.currentPct ?? -Infinity) - (b.metrics.currentPct ?? -Infinity)) * dir;
         }
       });
-  }, [data, status, direction, category, onlyWatchlist, sortKey, sortDir, eventById, watchlist]);
+  }, [data, status, direction, category, instrument, onlyWatchlist, search, sortKey, sortDir, eventById, watchlist]);
 
   function toggleSort(k: SortKey) {
     if (sortKey === k) setSortDir(sortDir === "asc" ? "desc" : "asc");
@@ -180,7 +193,28 @@ function TrackerPage() {
         </button>
       </div>
 
+      <div className="mb-3 flex items-center gap-2 rounded-xl border border-border/70 bg-card/70 px-3 py-2 focus-within:border-primary/60 transition-colors max-w-xl">
+        <Search className="w-4 h-4 text-muted-foreground shrink-0" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search signals — symbol, event or reason (e.g. NVDA, oil, tariff)"
+          aria-label="Search signals"
+          className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground/70"
+        />
+        {search && (
+          <button
+            onClick={() => setSearch("")}
+            aria-label="Clear search"
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
       <div className="mb-4 flex flex-wrap gap-2">
+
         <Select label="Status" value={status} onChange={(v) => setStatus(v as typeof status)}
           options={[
             ["all", "All"],
@@ -265,13 +299,14 @@ function TrackerPage() {
                     <EtfBadge type={signal.instrument_type} />
                   </td>
                   <td className="p-2 max-w-[220px] truncate text-muted-foreground">
-                    {event ? (
-                      <Link to="/event/$id" params={{ id: event.id }} className="hover:text-primary">
-                        {event.headline}
-                      </Link>
-                    ) : (
-                      signal.event_id
-                    )}
+                    <Link
+                      to="/event/$id"
+                      params={{ id: event?.id ?? signal.event_id }}
+                      className="hover:text-primary"
+                    >
+                      {event ? event.headline : "Earlier event"}
+                    </Link>
+
                   </td>
                   <td className="p-2">
                     <span
