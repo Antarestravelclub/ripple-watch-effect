@@ -69,6 +69,8 @@ function TrackerPage() {
   const [category, setCategory] = useState<"all" | EventCategory>("all");
   const [instrument, setInstrument] = useState<InstrumentFilter>("all");
   const [onlyWatchlist, setOnlyWatchlist] = useState(false);
+  const [search, setSearch] = useState("");
+
   const [sortKey, setSortKey] = useState<SortKey>("pct");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
