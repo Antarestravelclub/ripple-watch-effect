@@ -10,11 +10,13 @@ import {
 import type { EventCategory } from "./ripple-data";
 
 
-const NEWS_URL = "https://finnhub.io/api/v1/news?category=general";
+const NEWS_URL = "https://finnhub.io/api/v1/news";
+/** Feed categories scanned each run — broader world-event coverage. */
+export const NEWS_CATEGORIES = ["general", "forex", "merger", "crypto"] as const;
 
 /** Max headlines pulled per run, and max sent through the AI per run. */
-export const HEADLINE_SCAN_CAP = 40;
-export const AI_ANALYSE_CAP = 12;
+export const HEADLINE_SCAN_CAP = 90;
+export const AI_ANALYSE_CAP = 24;
 export const RETENTION_DAYS = 14;
 
 interface NewsItem {
