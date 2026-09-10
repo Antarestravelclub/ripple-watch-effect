@@ -306,9 +306,9 @@ function OpenTable({
             <Th>Entry</Th>
             <Th>Lots</Th>
             <Th>Current</Th>
+            <Th>To target</Th>
             <Th>Unrealised</Th>
             <Th>To stop</Th>
-            <Th>To target</Th>
             <Th>In trade</Th>
             <Th />
           </tr>
