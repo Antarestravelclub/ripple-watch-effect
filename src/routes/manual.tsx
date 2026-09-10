@@ -236,8 +236,17 @@ function ManualPage() {
                   reward and an expected timeframe. Ideas where most of the move
                   has already happened are flagged{" "}
                   <Term>priced-in</Term> — that warning is the most useful thing
-                  on the page. Use this tab to shortlist; use Today to understand
-                  why.
+                  on the page. Use <Term>Rank by</Term> to compare six different
+                  views: the risk-adjusted opportunity rank, remaining percentage
+                  to target, setup score, actual percentage increase, actual
+                  percentage decrease, or newest event. Actual increase and
+                  decrease describe what the market has already done since the
+                  event was mapped. Remaining gain describes the favorable move
+                  still needed to reach the mechanical target. The opportunity
+                  rank combines quality, remaining move, freshness, conflicts and
+                  invalidation risk; it is a research comparison, not a prediction
+                  or recommendation. Use this tab to shortlist; use Today to
+                  understand why.
                 </p>
               </Card>
 

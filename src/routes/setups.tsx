@@ -13,6 +13,35 @@ import { buildSetups, dedupeByTicker } from "@/lib/swing-setups";
 import { RegionFilter } from "@/components/region-filter";
 import { eventMatchesRegions, type RegionCode } from "@/lib/ripple-regions";
 
+type RankMode = "opportunity" | "remaining" | "score" | "increase" | "decrease" | "newest";
+
+const rankDescriptions: Record<RankMode, string> = {
+  opportunity: "Balances setup quality, remaining target distance, freshness, conflicts and invalidation risk.",
+  remaining: "Largest favorable percentage still available before the mechanical target.",
+  score: "Highest existing setup-quality score first.",
+  increase: "Largest actual price increase since the event was mapped.",
+  decrease: "Largest actual price decrease since the event was mapped.",
+  newest: "Most recently mapped event first.",
+};
+
+function valueOrLast(value: number | null, fallback: number) {
+  return value == null || !Number.isFinite(value) ? fallback : value;
+}
+
+function rankSetups(setups: ReturnType<typeof buildSetups>, mode: RankMode) {
+  return [...setups].sort((a, b) => {
+    if (mode === "opportunity") return b.opportunityRank - a.opportunityRank || b.score - a.score;
+    if (mode === "remaining")
+      return valueOrLast(b.remainingTargetPct, -Infinity) - valueOrLast(a.remainingTargetPct, -Infinity);
+    if (mode === "score") return b.score - a.score;
+    if (mode === "increase")
+      return valueOrLast(b.actualMovePct, -Infinity) - valueOrLast(a.actualMovePct, -Infinity);
+    if (mode === "decrease")
+      return valueOrLast(a.actualMovePct, Infinity) - valueOrLast(b.actualMovePct, Infinity);
+    return valueOrLast(a.eventAgeHours, Infinity) - valueOrLast(b.eventAgeHours, Infinity);
+  });
+}
+
 export const Route = createFileRoute("/setups")({
   head: () => ({
     meta: [
@@ -54,6 +83,7 @@ function SetupsPage() {
   const [hideCaptured, setHideCaptured] = useState(true);
   const [hideConflicted, setHideConflicted] = useState(true);
   const [onePerTicker, setOnePerTicker] = useState(true);
+  const [rankBy, setRankBy] = useState<RankMode>("opportunity");
 
   const conflicted = useMemo(
     () => new Set(rollups.filter((r) => r.stance === "conflicted").map((r) => r.ticker.toUpperCase())),
@@ -88,7 +118,8 @@ function SetupsPage() {
       .filter((s) =>
         regions.length === 0 || !s.event ? true : eventMatchesRegions(s.event.id, regions),
       );
-    return onePerTicker ? dedupeByTicker(filtered) : filtered;
+    const unique = onePerTicker ? dedupeByTicker(filtered) : filtered;
+    return rankSetups(unique, rankBy);
   }, [
     data,
     eventMap,
@@ -102,6 +133,7 @@ function SetupsPage() {
     watchlist,
     regions,
     onePerTicker,
+    rankBy,
   ]);
 
   return (
@@ -126,6 +158,22 @@ function SetupsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_240px] gap-4">
         <div className="min-w-0">
           <div className="mb-4 flex flex-wrap gap-2 items-center">
+            <label className="inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-md border border-primary/50 bg-primary/10">
+              Rank by
+              <select
+                value={rankBy}
+                onChange={(e) => setRankBy(e.target.value as RankMode)}
+                className="bg-transparent outline-none text-foreground"
+                aria-label="Rank swing setups by"
+              >
+                <option value="opportunity">Best opportunity (risk-adjusted)</option>
+                <option value="remaining">Biggest remaining gain to target</option>
+                <option value="score">Highest setup score</option>
+                <option value="increase">Highest actual % increase</option>
+                <option value="decrease">Highest actual % decrease</option>
+                <option value="newest">Newest event</option>
+              </select>
+            </label>
             <label className="inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-md border border-border/70 bg-card/60">
               Direction
               <select
@@ -155,6 +203,9 @@ function SetupsPage() {
             <Toggle checked={onlyWatchlist} onChange={setOnlyWatchlist} label="Watchlist only" />
             <Toggle checked={onePerTicker} onChange={setOnePerTicker} label="One row per ticker" />
           </div>
+          <p className="mb-4 text-[11px] text-muted-foreground" aria-live="polite">
+            {rankDescriptions[rankBy]} Mechanical comparison only—not a recommendation to invest.
+          </p>
 
           {isLoading ? (
             <div className="rounded-xl border border-border/70 bg-card/40 p-8 text-center text-sm text-muted-foreground">
