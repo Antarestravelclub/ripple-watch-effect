@@ -216,6 +216,7 @@ export const validateTickers = createServerFn({ method: "POST" }).handler(async 
 /** List all signals with lightweight current-price info. */
 export const listSignals = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { quotesFor } = await import("./latest-prices.server");
   const { data: signals, error } = await supabaseAdmin
     .from("signals")
     .select("*")
@@ -237,11 +238,32 @@ export const listSignals = createServerFn({ method: "GET" }).handler(async () =>
     }
   }
 
+  // Shared price store wins for open signals so "Current" is never blank.
+  const openSignals = (signals ?? []).filter((s) => s.status === "open");
+  if (openSignals.length > 0) {
+    try {
+      const quotes = await quotesFor(
+        openSignals.map((s) => (s.quote_symbol || s.ticker).toUpperCase()),
+      );
+      for (const s of openSignals) {
+        const q = quotes.get((s.quote_symbol || s.ticker).toUpperCase());
+        if (!q) continue;
+        latest.set(s.id, {
+          price: q.price,
+          captured_at: q.quoteTime ?? new Date().toISOString(),
+        });
+      }
+    } catch {
+      // Keep snapshot-based prices if the store refresh fails.
+    }
+  }
+
   return {
     signals: (signals ?? []) as unknown as SignalRow[],
     latest: Object.fromEntries(latest),
   };
 });
+
 
 /** Signals for a single event. */
 export const listSignalsForEvent = createServerFn({ method: "GET" })
