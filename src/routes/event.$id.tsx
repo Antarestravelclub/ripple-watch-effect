@@ -6,6 +6,7 @@ import { getLiveEvent } from "@/lib/live-events.functions";
 import { CategoryBadge, StrengthPill } from "@/components/badges";
 import { TickerChip } from "@/components/ticker-chip";
 import { EventSignals } from "@/components/event-signals";
+import { TopOpportunities } from "@/components/top-opportunities";
 import { SimilarEvents } from "@/components/similar-events";
 import { LivePicks } from "@/components/live-picks";
 
@@ -139,6 +140,9 @@ function EventDetail() {
         </h2>
         <Suspense fallback={<div className="text-xs text-muted-foreground">Loading signals…</div>}>
           <EventSignals eventId={event.id} />
+        </Suspense>
+        <Suspense fallback={null}>
+          <TopOpportunities eventId={event.id} />
         </Suspense>
       </div>
 
