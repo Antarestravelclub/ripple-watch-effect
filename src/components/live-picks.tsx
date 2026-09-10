@@ -23,7 +23,14 @@ export function LivePicks({
   eventId: string;
   compact?: boolean;
 }) {
-  const picks = eventTopPicks(eventId).filter((p) => tickerMeta(p.ticker).tradable);
+  // One row per ticker: an event can list the same name more than once.
+  const picks = [
+    ...new Map(
+      eventTopPicks(eventId)
+        .filter((p) => tickerMeta(p.ticker).tradable)
+        .map((p) => [p.ticker, p] as const),
+    ).values(),
+  ];
   const symbols = picks.map((p) => tickerMeta(p.ticker).quote);
   const { quotes, isLoading, status, streaming, marketOpen, updatedAt } =
     useLiveQuotes(symbols);
