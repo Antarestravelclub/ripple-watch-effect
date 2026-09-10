@@ -115,6 +115,17 @@ function TrackerPage() {
       .filter((r) =>
         !onlyWatchlist ? true : watchlist.includes(r.signal.ticker.toUpperCase()),
       )
+      .filter((r) => {
+        const q = search.trim().toUpperCase();
+        if (!q) return true;
+        return (
+          r.signal.ticker.toUpperCase().includes(q) ||
+          (r.signal.quote_symbol ?? "").toUpperCase().includes(q) ||
+          (r.event?.title ?? "").toUpperCase().includes(q) ||
+          (r.signal.rationale ?? "").toUpperCase().includes(q)
+        );
+      })
+
       .sort((a, b) => {
         const dir = sortDir === "asc" ? 1 : -1;
         switch (sortKey) {
