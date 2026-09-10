@@ -67,14 +67,14 @@ export function SetupCard({ setup }: { setup: SwingSetup }) {
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Last</div>
           <div className="font-mono text-sm font-semibold">{fmtPrice(setup.currentPrice)}</div>
           <div className={"text-[11px] " + pctTone(setup.movePctSinceSnapshot)}>
-            {setup.movePctSinceSnapshot == null
+            {setup.actualMovePct == null
               ? "—"
-              : `${fmtPct(setup.movePctSinceSnapshot)} since map`}
+              : `${fmtPct(setup.actualMovePct)} actual since map`}
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2 mt-3">
         <Level
           label="Entry zone"
           value={
@@ -100,6 +100,17 @@ export function SetupCard({ setup }: { setup: SwingSetup }) {
           label="Reward : risk"
           value={`${setup.rewardRisk.toFixed(1)} : 1`}
           hint={`${setup.daysLeft}/${setup.daysOpen + setup.daysLeft} trading days left`}
+        />
+        <Level
+          label="Remaining to target"
+          value={fmtPct(setup.remainingTargetPct)}
+          tone={pctTone(setup.remainingTargetPct)}
+          hint="favorable move"
+        />
+        <Level
+          label="Opportunity rank"
+          value={`${setup.opportunityRank} / 100`}
+          hint="risk-adjusted comparison"
         />
       </div>
 

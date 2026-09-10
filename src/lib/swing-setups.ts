@@ -38,7 +38,16 @@ export interface SwingSetup {
   expectedMovePct: number;
   /** Reward divided by risk, from the level geometry. */
   rewardRisk: number;
+  /** Signed market move since the signal snapshot, independent of setup direction. */
+  actualMovePct: number | null;
   movePctSinceSnapshot: number | null;
+  /** Favorable move still required from the latest price to reach the target. */
+  remainingTargetPct: number | null;
+  /** Distance from the latest price to the invalidation level. */
+  invalidationRiskPct: number | null;
+  eventAgeHours: number | null;
+  /** Mechanical 0–100 comparison of quality, remaining move, freshness, and risk. */
+  opportunityRank: number;
   capturedRatio: number | null;
   captured: boolean;
   daysOpen: number;
@@ -105,6 +114,44 @@ function scoreOf(input: {
   return Math.max(0, Math.min(100, Math.round(score)));
 }
 
+function opportunityRankOf(input: {
+  score: number;
+  remainingTargetPct: number | null;
+  expectedMovePct: number;
+  invalidationRiskPct: number | null;
+  hours: number | null;
+  captured: boolean;
+  conflicted: boolean;
+}): number {
+  const remainingShare =
+    input.remainingTargetPct == null || input.expectedMovePct <= 0
+      ? 0
+      : Math.max(0, Math.min(1, input.remainingTargetPct / input.expectedMovePct));
+  const freshness =
+    input.hours == null
+      ? 4
+      : input.hours <= 6
+        ? 10
+        : input.hours <= 24
+          ? 8
+          : input.hours <= 48
+            ? 6
+            : input.hours <= 96
+              ? 3
+              : 1;
+  const rewardRisk =
+    input.remainingTargetPct != null && input.invalidationRiskPct != null && input.invalidationRiskPct > 0
+      ? input.remainingTargetPct / input.invalidationRiskPct
+      : 0;
+  const riskQuality = Math.max(0, Math.min(10, (rewardRisk / 3) * 10));
+  const penalties = (input.captured ? 10 : 0) + (input.conflicted ? 15 : 0);
+
+  return Math.max(
+    0,
+    Math.min(100, Math.round(input.score * 0.55 + remainingShare * 25 + freshness + riskQuality - penalties)),
+  );
+}
+
 export function buildSetups(input: {
   signals: SignalRow[];
   latest: Record<string, { price: number; captured_at: string }>;
@@ -148,6 +195,16 @@ export function buildSetups(input: {
     const daysLeft = Math.max(0, EXPIRY_TRADING_DAYS - daysOpen);
     const hours = event ? ageHours(event.publishedAt, now) : ageHours(signal.signal_timestamp, now);
     const conflicted = input.conflicted.has(signal.ticker.toUpperCase());
+    const remainingTargetPct =
+      currentPrice != null && currentPrice > 0 && levels?.target != null
+        ? direction === "long"
+          ? ((levels.target - currentPrice) / currentPrice) * 100
+          : ((currentPrice - levels.target) / currentPrice) * 100
+        : null;
+    const invalidationRiskPct =
+      currentPrice != null && currentPrice > 0 && levels?.invalidation != null
+        ? (Math.abs(currentPrice - levels.invalidation) / currentPrice) * 100
+        : null;
 
     const flags: string[] = [];
     if (conflicted) flags.push("Conflicted exposure");
@@ -156,6 +213,18 @@ export function buildSetups(input: {
       flags.push("Move likely captured");
     if (meta.listing !== "US") flags.push(`Non-US listing · quoted as ${quoteSymbol}`);
     if (daysLeft === 0) flags.push("Window expired");
+
+    const score = scoreOf({
+      hours,
+      magnitude,
+      conviction: signal.conviction,
+      capturedRatio,
+      conflicted,
+      hasPrice: currentPrice != null,
+      isUsListing: meta.listing === "US",
+      daysLeft,
+    });
+    const captured = capturedRatio != null && capturedRatio >= CAPTURED_THRESHOLD;
 
     setups.push({
       signal,
@@ -174,22 +243,26 @@ export function buildSetups(input: {
       invalidation: levels?.invalidation ?? null,
       expectedMovePct,
       rewardRisk: 2,
+      actualMovePct: rawMove,
       movePctSinceSnapshot,
+      remainingTargetPct,
+      invalidationRiskPct,
+      eventAgeHours: hours,
+      opportunityRank: opportunityRankOf({
+        score,
+        remainingTargetPct,
+        expectedMovePct,
+        invalidationRiskPct,
+        hours,
+        captured,
+        conflicted,
+      }),
       capturedRatio,
-      captured: capturedRatio != null && capturedRatio >= CAPTURED_THRESHOLD,
+      captured,
       daysOpen,
       daysLeft,
       conflicted,
-      score: scoreOf({
-        hours,
-        magnitude,
-        conviction: signal.conviction,
-        capturedRatio,
-        conflicted,
-        hasPrice: currentPrice != null,
-        isUsListing: meta.listing === "US",
-        daysLeft,
-      }),
+      score,
       flags,
     });
   }
