@@ -51,6 +51,9 @@ export function removeTicker(t: string) {
   emit();
 }
 
+// Stable empty value: a fresh array on every server render loops React.
+const EMPTY: string[] = [];
+
 export function useWatchlist(): string[] {
   return useSyncExternalStore(
     (cb) => {
@@ -61,6 +64,6 @@ export function useWatchlist(): string[] {
       ensure();
       return cache;
     },
-    () => [],
+    () => EMPTY,
   );
 }
