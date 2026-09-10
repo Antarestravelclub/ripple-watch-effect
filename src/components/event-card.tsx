@@ -6,6 +6,7 @@ import { useWatchlist } from "@/lib/watchlist-store";
 import { CategoryBadge, StrengthPill } from "./badges";
 import { REGIONS, eventRegions } from "@/lib/ripple-regions";
 import { EventSignals } from "./event-signals";
+import { TopOpportunities } from "./top-opportunities";
 import { LivePicks } from "./live-picks";
 import { ageLabel, ageHours, STALE_AFTER_HOURS } from "@/lib/event-freshness";
 
@@ -78,6 +79,9 @@ export function EventCard({
         </span>
       </div>
       <LivePicks eventId={event.id} compact />
+      <Suspense fallback={null}>
+        <TopOpportunities eventId={event.id} compact />
+      </Suspense>
       <Suspense fallback={null}>
         <EventSignals eventId={event.id} strength={event.strength} />
       </Suspense>
