@@ -159,7 +159,7 @@ function TrackerPage() {
             return ((a.metrics.currentPct ?? -Infinity) - (b.metrics.currentPct ?? -Infinity)) * dir;
         }
       });
-  }, [data, status, direction, category, onlyWatchlist, sortKey, sortDir, eventById, watchlist]);
+  }, [data, status, direction, category, instrument, onlyWatchlist, search, sortKey, sortDir, eventById, watchlist]);
 
   function toggleSort(k: SortKey) {
     if (sortKey === k) setSortDir(sortDir === "asc" ? "desc" : "asc");
