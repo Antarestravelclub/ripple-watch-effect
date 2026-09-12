@@ -13,12 +13,12 @@ export const Route = createFileRoute("/auth")({
       {
         name: "description",
         content:
-          "Sign in to keep a private paper trade blotter of the signals you choose to track. Research only, no investment advice.",
+          "Sign in to keep a private trade log of the paper signals you choose to track. Research only, no investment advice.",
       },
       { property: "og:title", content: "Sign in — The Ripple Effect" },
       {
         property: "og:description",
-        content: "Private paper trade blotter for event-driven exposure research.",
+        content: "Private paper trade log for event-driven exposure research.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -81,7 +81,7 @@ function AuthPage() {
       <div className="max-w-md mx-auto">
         <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Your paper trade blotter is private to your account. Everything stays paper —
+          Your Trade Log is private to your account. Everything stays paper —
           there is no live execution anywhere in this app.
         </p>
 
@@ -158,7 +158,7 @@ function AuthPage() {
           <Link to="/manual" className="text-primary hover:underline">
             manual
           </Link>{" "}
-          explains how signals and the blotter work.
+          explains how signals and the Trade Log work.
         </p>
       </div>
     </SiteShell>

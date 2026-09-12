@@ -36,13 +36,13 @@ import { AlertTriangle, Loader2, RefreshCw } from "lucide-react";
 export const Route = createFileRoute("/_authenticated/blotter")({
   head: () => ({
     meta: [
-      { title: "Paper Trade Blotter — The Ripple Effect" },
+      { title: "Trade Log — The Ripple Effect" },
       {
         name: "description",
         content:
           "Track paper trades taken from event-driven signals: live P&L, distance to stop and target, realised results and honest statistics.",
       },
-      { property: "og:title", content: "Paper Trade Blotter — The Ripple Effect" },
+      { property: "og:title", content: "Trade Log — The Ripple Effect" },
       {
         property: "og:description",
         content: "Measure signals as traded, not just as issued. Paper only, no live execution.",
@@ -118,11 +118,11 @@ function BlotterPage() {
     <SiteShell>
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Paper Trade Blotter</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Trade Log</h1>
           <p className="mt-1 text-sm text-muted-foreground max-w-2xl">
             Act on signals the way a trader would and measure the result. This is a measurement
             layer only: paper trades never touch live execution, and the Scorecard keeps measuring
-            signals as issued while the Blotter measures them as traded.
+            signals as issued while the Trade Log measures them as traded.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -185,7 +185,7 @@ function BlotterPage() {
 
       {isLoading && (
         <p className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="w-4 h-4 animate-spin" /> Loading your blotter…
+          <Loader2 className="w-4 h-4 animate-spin" /> Loading your trade log…
         </p>
       )}
       {error && (
