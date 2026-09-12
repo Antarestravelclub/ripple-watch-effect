@@ -172,8 +172,8 @@ function ManualPage() {
                 <Term>Score and size.</Term> Each exposure becomes a signal with
                 a conviction score out of 100, a stop, a target, a written
                 kill-condition, and a suggested position size as a percentage of
-                your paper account's starting balance, which you set on the
-                Blotter (default $1,000). If the risk-based size falls below the
+                your paper account's starting balance, which you set in the
+                Trade Log (default $1,000). If the risk-based size falls below the
                 symbol's minimum tradable lot, the trade is flagged{" "}
                 <Term>undersized at this balance</Term> — it is never rounded up
                 silently. You are shown the minimum lot, what it actually risks
@@ -303,7 +303,7 @@ function ManualPage() {
                 </p>
               </Card>
 
-              <Card title="Blotter — signals as you actually traded them">
+              <Card title="Trade Log — signals as you actually traded them">
                 <p>
                   Sign-in required. Press <Term>Paper trade</Term> on any open
                   signal and the form arrives pre-filled with the signal's own
@@ -314,13 +314,13 @@ function ManualPage() {
                   in R, and time in trade. Stops and targets close automatically
                   at the level itself — never at a flattering price — and nothing
                   is ever closed while the price feed is stale. The Scorecard
-                  measures signals as issued; the Blotter measures them as
+                  measures signals as issued; the Trade Log measures them as
                   traded. Everything stays paper: there is no live execution
                   anywhere in this app.
                 </p>
                 <p>
                   You can also trade a symbol that has no signal: press{" "}
-                  <Term>New paper trade</Term> on the Blotter, or{" "}
+                  <Term>New paper trade</Term> in the Trade Log, or{" "}
                   <Term>Paper trade [symbol]</Term> on any symbol page. Type the
                   symbol, pick long or short, and the form suggests an entry from
                   the latest stored price plus a stop at 1.5× ATR(14), a target at
@@ -357,7 +357,7 @@ function ManualPage() {
                   place. It also shows when evaluation last ran, and lets you
                   view alpha using exactly-priced entries only or all entries
                   including backfilled ones. This tab measures the engine, not
-                  your trading — the Blotter does that.
+                  your trading — the Trade Log does that.
                 </p>
               </Card>
 
@@ -368,7 +368,7 @@ function ManualPage() {
                   ban, a rate decision. For those the engine can also raise a
                   signal on an exchange-traded fund, marked with a small{" "}
                   <Term>ETF</Term> tag next to the symbol on the Tracker, the
-                  Blotter and your Watchlist. Fund signals go through exactly the
+                  Trade Log and your Watchlist. Fund signals go through exactly the
                   same volatility-based stop, target, conviction score and sizing
                   as a company signal, and every list with an instrument filter
                   can be narrowed to stocks only or funds only. The Scorecard
@@ -473,11 +473,11 @@ function ManualPage() {
                   pages: net directional pressure per sector, drawn as bars
                   spreading out from the centre — right for net tailwind, left
                   for net headwind — so a sector with heavy pressure both ways
-                  reads as balanced rather than busy. It is hidden on the Blotter
+                  reads as balanced rather than busy. It is hidden on the Trade Log
                   so the trade tables get the full width.
                 </p>
                 <p>
-                  <Term>Sign in</Term> is only needed for the Blotter, Broker and
+                  <Term>Sign in</Term> is only needed for the Trade Log, Broker and
                   Bridge. Everything else — the feed, setups, tracker, scorecard,
                   history — is readable without an account.
                 </p>

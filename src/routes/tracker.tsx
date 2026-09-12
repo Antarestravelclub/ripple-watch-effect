@@ -284,7 +284,7 @@ function TrackerPage() {
                 <Th onClick={() => toggleSort("current")} right>Current</Th>
                 <Th onClick={() => toggleSort("pct")} right>% Move</Th>
                 <Th onClick={() => toggleSort("status")}>Status</Th>
-                <Th>Blotter</Th>
+                <Th>Trade Log</Th>
 
               </tr>
             </thead>
