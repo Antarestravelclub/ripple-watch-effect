@@ -83,12 +83,21 @@ function groupBySector(rows: LiveExposureRow[]): ExposureSector[] {
 export function mapLiveEvents(
   events: LiveEventRow[],
   exposures: LiveExposureRow[],
+  sources: EventSourceRow[] = [],
 ): { events: RippleEvent[]; meta: Record<string, EventMetaEntry> } {
   const byEvent = new Map<string, LiveExposureRow[]>();
   for (const e of exposures) {
     const list = byEvent.get(e.live_event_id) ?? [];
     list.push(e);
     byEvent.set(e.live_event_id, list);
+  }
+
+  const sourcesByEvent = new Map<string, EventSourceLink[]>();
+  for (const s of sources) {
+    const list = sourcesByEvent.get(s.event_id) ?? [];
+    if (!list.some((x) => x.sourceName === s.source_name))
+      list.push({ sourceName: s.source_name, url: s.url, pubDate: s.pub_date });
+    sourcesByEvent.set(s.event_id, list);
   }
 
   const meta: Record<string, EventMetaEntry> = {};
@@ -109,6 +118,10 @@ export function mapLiveEvents(
         })),
     };
 
+    const fallbackSource: EventSourceLink[] = [
+      { sourceName: row.source || "News feed", url: row.source_url, pubDate: row.published_at },
+    ];
+
     return {
       id: row.id,
       headline: row.headline,
@@ -125,6 +138,11 @@ export function mapLiveEvents(
       tailwinds: groupBySector(tail),
       headwinds: groupBySector(head),
       historicalEchoes: [],
+      impactScore: row.impact_score ?? null,
+      impactDirection: (row.impact_direction as ImpactDirection | null) ?? null,
+      impactCategory: row.impact_category ?? null,
+      impactReasoning: row.impact_reasoning ?? null,
+      sources: sourcesByEvent.get(row.id) ?? fallbackSource,
     };
   });
 
