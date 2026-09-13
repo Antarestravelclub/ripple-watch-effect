@@ -133,7 +133,9 @@ export async function runNewsIngest(): Promise<IngestResult> {
           signals_created: result.signalsCreated,
           ok: result.ok,
           error: result.error,
-          stages: { ...stages, detail: detail.slice(0, 10) },
+          stages: JSON.parse(
+            JSON.stringify({ ...stages, detail: detail.slice(0, 10) }),
+          ),
         })
         .eq("id", runId);
     }
