@@ -117,11 +117,19 @@ function MoverRow({ event, rank }: { event: RippleEvent; rank: number }) {
 
   return (
     <li className="rounded-lg border border-border/50 bg-background/30">
-      <button
-        type="button"
+      {/* Not a <button>: the row contains clickable ticker chips. */}
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setOpen((v) => !v)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setOpen((v) => !v);
+          }
+        }}
         aria-expanded={open}
-        className="w-full text-left p-2.5 flex items-start gap-3 hover:bg-accent/30 rounded-lg transition-colors"
+        className="w-full cursor-pointer text-left p-2.5 flex items-start gap-3 hover:bg-accent/30 rounded-lg transition-colors"
       >
         <span className="mt-0.5 w-6 shrink-0 text-center font-mono text-xs text-muted-foreground">
           {rank}
