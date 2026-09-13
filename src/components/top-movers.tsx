@@ -174,7 +174,7 @@ function MoverRow({ event, rank }: { event: RippleEvent; rank: number }) {
         <ChevronDown
           className={"mt-1 h-4 w-4 shrink-0 text-muted-foreground transition-transform " + (open ? "rotate-180" : "")}
         />
-      </button>
+      </div>
 
       {open && (
         <div className="border-t border-border/40 px-3 py-2.5">
