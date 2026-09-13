@@ -9,6 +9,8 @@ import { EventSignals } from "@/components/event-signals";
 import { TopOpportunities } from "@/components/top-opportunities";
 import { SimilarEvents } from "@/components/similar-events";
 import { LivePicks } from "@/components/live-picks";
+import { SourceChips } from "@/components/source-chips";
+import { directionLabel, impactLabel, impactTone } from "@/lib/impact";
 
 import { categoryToArchetypes } from "@/lib/analogue-mapping";
 import { ArrowLeft, TrendingUp, TrendingDown, Target, ShieldAlert, History } from "lucide-react";
