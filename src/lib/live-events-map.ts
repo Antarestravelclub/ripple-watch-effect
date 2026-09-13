@@ -1,6 +1,13 @@
 // Maps stored live-event rows into the app's RippleEvent shape.
 // Pure and client-safe so both server functions and UI can use it.
-import type { EventCategory, RippleEvent, RippleStrength, ExposureSector } from "./ripple-data";
+import type {
+  EventCategory,
+  EventSourceLink,
+  ImpactDirection,
+  RippleEvent,
+  RippleStrength,
+  ExposureSector,
+} from "./ripple-data";
 import type { RegionCode, TopPick } from "./ripple-regions";
 
 export interface LiveEventRow {
@@ -15,6 +22,17 @@ export interface LiveEventRow {
   strength: string;
   regions: string[];
   transmission_channel: string;
+  impact_score?: number | null;
+  impact_direction?: string | null;
+  impact_category?: string | null;
+  impact_reasoning?: string | null;
+}
+
+export interface EventSourceRow {
+  event_id: string;
+  source_name: string;
+  url: string | null;
+  pub_date: string | null;
 }
 
 export interface LiveExposureRow {
