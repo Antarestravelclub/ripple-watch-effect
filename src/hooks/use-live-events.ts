@@ -21,6 +21,12 @@ export interface IngestStages {
   aiBlocked: boolean;
   noExposure: number;
   stored: number;
+  fetched?: number;
+  deduped?: number;
+  newCandidates?: number;
+  accepted?: number;
+  rejectedLowImpact?: number;
+  sources?: Array<{ name: string; ok: boolean; items: number; error: string | null }>;
   detail?: string[];
 }
 
@@ -53,6 +59,7 @@ export function useLiveEvents() {
   return {
     events: (query.data?.events ?? []) as RippleEvent[],
     lastIngest: (query.data?.lastIngest ?? null) as IngestRun | null,
+    sourceHealth: query.data?.sourceHealth ?? [],
     isLoading: query.isLoading,
     error: query.error instanceof Error ? query.error.message : null,
     refetch: query.refetch,
