@@ -7,6 +7,7 @@ import { EventCard } from "@/components/event-card";
 import { RegionFilter } from "@/components/region-filter";
 import { TickerSearch, eventTouchesTicker } from "@/components/ticker-search";
 import { MarketMovers } from "@/components/market-movers";
+import { TopMovers } from "@/components/top-movers";
 import { TopSetupsStrip } from "@/components/top-setups-strip";
 import { QuoteCard } from "@/components/quote-card";
 import { eventMatchesRegions, type RegionCode } from "@/lib/ripple-regions";
