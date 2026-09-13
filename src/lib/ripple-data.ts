@@ -28,6 +28,15 @@ export interface HistoricalEcho {
   }[];
 }
 
+/** One news source that reported an event (an event can have several). */
+export interface EventSourceLink {
+  sourceName: string;
+  url: string | null;
+  pubDate: string | null;
+}
+
+export type ImpactDirection = "risk_on" | "risk_off" | "mixed" | "sector_specific";
+
 export interface RippleEvent {
   id: string;
   headline: string;
@@ -39,6 +48,12 @@ export interface RippleEvent {
   tailwinds: ExposureSector[];
   headwinds: ExposureSector[];
   historicalEchoes: HistoricalEcho[];
+  /** Materiality fields — present on ingested events, absent on legacy rows. */
+  impactScore?: number | null;
+  impactDirection?: ImpactDirection | null;
+  impactCategory?: string | null;
+  impactReasoning?: string | null;
+  sources?: EventSourceLink[];
 }
 
 // The 11 GICS sectors

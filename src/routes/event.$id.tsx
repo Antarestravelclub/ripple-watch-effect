@@ -9,6 +9,8 @@ import { EventSignals } from "@/components/event-signals";
 import { TopOpportunities } from "@/components/top-opportunities";
 import { SimilarEvents } from "@/components/similar-events";
 import { LivePicks } from "@/components/live-picks";
+import { SourceChips } from "@/components/source-chips";
+import { directionLabel, impactLabel, impactTone } from "@/lib/impact";
 
 import { categoryToArchetypes } from "@/lib/analogue-mapping";
 import { ArrowLeft, TrendingUp, TrendingDown, Target, ShieldAlert, History } from "lucide-react";
@@ -122,8 +124,19 @@ function EventDetail() {
               );
             })}
           </span>
-          <span className="ml-auto text-xs text-muted-foreground">
-            {event.source}
+          {event.impactScore != null && (
+            <span
+              className={
+                "text-[10px] font-mono px-1.5 py-0.5 rounded-full border " +
+                impactTone(event.impactScore)
+              }
+              title={`${impactLabel(event.impactScore)} · ${directionLabel(event.impactDirection)}`}
+            >
+              impact {event.impactScore}
+            </span>
+          )}
+          <span className="ml-auto">
+            <SourceChips sources={event.sources} />
           </span>
         </div>
         <h1 className="mt-3 text-xl sm:text-2xl font-semibold tracking-tight">
@@ -132,6 +145,11 @@ function EventDetail() {
         <p className="mt-2 text-sm text-muted-foreground">
           {event.whyMarketsCare}
         </p>
+        {event.impactReasoning && (
+          <p className="mt-1.5 text-xs text-muted-foreground/80">
+            Impact read: {event.impactReasoning}
+          </p>
+        )}
       </div>
 
       <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 mb-6">

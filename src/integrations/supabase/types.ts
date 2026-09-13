@@ -644,6 +644,41 @@ export type Database = {
         }
         Relationships: []
       }
+      event_sources: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          pub_date: string | null
+          source_name: string
+          url: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          pub_date?: string | null
+          source_name: string
+          url?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          pub_date?: string | null
+          source_name?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_sources_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "live_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       historical_events: {
         Row: {
           archetype: Database["public"]["Enums"]["event_archetype"]
@@ -884,12 +919,17 @@ export type Database = {
           dedupe_key: string
           headline: string
           id: string
+          impact_category: string | null
+          impact_direction: string | null
+          impact_reasoning: string | null
+          impact_score: number | null
           published_at: string
           regions: string[]
           source: string
           source_url: string | null
           strength: string
           summary: string
+          title_norm: string | null
           transmission_channel: string
           updated_at: string
           why_markets_care: string
@@ -901,12 +941,17 @@ export type Database = {
           dedupe_key: string
           headline: string
           id?: string
+          impact_category?: string | null
+          impact_direction?: string | null
+          impact_reasoning?: string | null
+          impact_score?: number | null
           published_at?: string
           regions?: string[]
           source?: string
           source_url?: string | null
           strength?: string
           summary?: string
+          title_norm?: string | null
           transmission_channel?: string
           updated_at?: string
           why_markets_care?: string
@@ -918,15 +963,53 @@ export type Database = {
           dedupe_key?: string
           headline?: string
           id?: string
+          impact_category?: string | null
+          impact_direction?: string | null
+          impact_reasoning?: string | null
+          impact_score?: number | null
           published_at?: string
           regions?: string[]
           source?: string
           source_url?: string | null
           strength?: string
           summary?: string
+          title_norm?: string | null
           transmission_channel?: string
           updated_at?: string
           why_markets_care?: string
+        }
+        Relationships: []
+      }
+      news_sources: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          last_error: string | null
+          last_success_at: string | null
+          name: string
+          type: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_error?: string | null
+          last_success_at?: string | null
+          name: string
+          type?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_error?: string | null
+          last_success_at?: string | null
+          name?: string
+          type?: string
+          url?: string
         }
         Relationships: []
       }
@@ -1165,6 +1248,39 @@ export type Database = {
           },
         ]
       }
+      rejected_headlines: {
+        Row: {
+          created_at: string
+          headline: string
+          id: string
+          impact_score: number | null
+          reason: string | null
+          run_id: string | null
+          source: string | null
+          url: string | null
+        }
+        Insert: {
+          created_at?: string
+          headline: string
+          id?: string
+          impact_score?: number | null
+          reason?: string | null
+          run_id?: string | null
+          source?: string | null
+          url?: string | null
+        }
+        Update: {
+          created_at?: string
+          headline?: string
+          id?: string
+          impact_score?: number | null
+          reason?: string | null
+          run_id?: string | null
+          source?: string | null
+          url?: string | null
+        }
+        Relationships: []
+      }
       signal_evaluation_log: {
         Row: {
           benchmark_price: number | null
@@ -1352,6 +1468,14 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      match_recent_event: {
+        Args: { p_threshold?: number; p_title_norm: string }
+        Returns: {
+          id: string
+          published_at: string
+          sim: number
+        }[]
       }
     }
     Enums: {

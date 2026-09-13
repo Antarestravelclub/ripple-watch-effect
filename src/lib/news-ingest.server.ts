@@ -1,41 +1,55 @@
 // Server-only news ingestion engine.
-// Pulls the latest market news, extracts equity exposure with the AI gateway,
-// validates every ticker against the price feed, and stores events, exposures
-// and auto-generated signals.
+// Pulls the latest market news from the market-data feed plus every enabled RSS
+// source (CNBC), deduplicates stories across sources, scores each new candidate
+// for materiality, then extracts equity exposure with the AI gateway, validates
+// every ticker against the price feed and stores events, exposures and signals.
 import {
   normalizeCategory,
   normalizeRegions,
   type ArticleImpact,
 } from "./exposure-schema";
+import { normalizeTitle, normalizeUrl } from "./news-normalize";
+import {
+  IMPACT_THRESHOLD,
+  RUN_ACCEPT_CAP,
+  eventCategoryFor,
+  scoreMateriality,
+  type Materiality,
+} from "./materiality.server";
 import type { EventCategory } from "./ripple-data";
-
 
 const NEWS_URL = "https://finnhub.io/api/v1/news";
 /** Feed categories scanned each run — broader world-event coverage. */
 export const NEWS_CATEGORIES = ["general", "forex", "merger", "crypto"] as const;
 
-/** Max headlines pulled per run, and max sent through the AI per run. */
-export const HEADLINE_SCAN_CAP = 90;
+/** Max headlines pulled per run, max scored by the classifier, max analysed. */
+export const HEADLINE_SCAN_CAP = 120;
+export const CLASSIFY_CAP = 40;
 export const AI_ANALYSE_CAP = 24;
 export const RETENTION_DAYS = 14;
+/** A source that has not succeeded in this long is treated as stale. */
+export const SOURCE_STALE_HOURS = 12;
 
-interface NewsItem {
-  headline?: string;
-  summary?: string;
-  source?: string;
-  url?: string;
-  datetime?: number;
-  id?: number;
+interface Candidate {
+  headline: string;
+  summary: string;
+  sourceName: string;
+  url: string | null;
+  guid: string | null;
+  publishedAt: string;
 }
 
-export function dedupeKeyFor(item: NewsItem): string {
-  if (item.url) return item.url.split("?")[0]!.toLowerCase();
-  return (item.headline ?? "")
-    .toLowerCase()
-    .replace(/[^a-z0-9 ]/g, "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 160);
+export function dedupeKeyFor(item: { url?: string | null; headline?: string | null }): string {
+  const url = normalizeUrl(item.url ?? null);
+  if (url) return url;
+  return normalizeTitle(item.headline ?? "").slice(0, 160);
+}
+
+export interface SourceStatus {
+  name: string;
+  ok: boolean;
+  items: number;
+  error: string | null;
 }
 
 export interface IngestStages {
@@ -45,6 +59,12 @@ export interface IngestStages {
   aiBlocked: boolean;
   noExposure: number;
   stored: number;
+  fetched: number;
+  deduped: number;
+  newCandidates: number;
+  accepted: number;
+  rejectedLowImpact: number;
+  sources: SourceStatus[];
 }
 
 export interface IngestResult {
@@ -73,6 +93,12 @@ export async function runNewsIngest(): Promise<IngestResult> {
     aiBlocked: false,
     noExposure: 0,
     stored: 0,
+    fetched: 0,
+    deduped: 0,
+    newCandidates: 0,
+    accepted: 0,
+    rejectedLowImpact: 0,
+    sources: [],
   };
   const result: IngestResult = {
     ok: false,
@@ -107,71 +133,249 @@ export async function runNewsIngest(): Promise<IngestResult> {
           signals_created: result.signalsCreated,
           ok: result.ok,
           error: result.error,
-          stages: { ...stages, detail: detail.slice(0, 8) },
+          stages: JSON.parse(
+            JSON.stringify({ ...stages, detail: detail.slice(0, 10) }),
+          ),
         })
         .eq("id", runId);
     }
     return result;
   };
 
-  if (!feedKey) {
-    result.error = "Market news feed key is not configured.";
-    return finish();
-  }
   if (!aiKey) {
     result.error = "AI exposure engine is not configured.";
     return finish();
   }
 
-  // Scan several feed categories so more world events reach the analyser.
-  const items: NewsItem[] = [];
-  const fetched = await Promise.all(
-    NEWS_CATEGORIES.map(async (category) => {
-      try {
-        const res = await fetch(
-          `${NEWS_URL}?category=${category}&token=${feedKey}`,
-        );
-        if (!res.ok) return { category, rows: [] as NewsItem[], error: `HTTP ${res.status}` };
-        return { category, rows: (await res.json()) as NewsItem[], error: null };
-      } catch (e) {
-        return {
-          category,
-          rows: [] as NewsItem[],
-          error: e instanceof Error ? e.message : "unreachable",
-        };
+  const items: Candidate[] = [];
+
+  // ---- Market data feed ---------------------------------------------------
+  if (feedKey) {
+    const fetched = await Promise.all(
+      NEWS_CATEGORIES.map(async (category) => {
+        try {
+          const res = await fetch(`${NEWS_URL}?category=${category}&token=${feedKey}`);
+          if (!res.ok) return { category, rows: [], error: `HTTP ${res.status}` };
+          return { category, rows: (await res.json()) as Array<Record<string, unknown>>, error: null };
+        } catch (e) {
+          return {
+            category,
+            rows: [] as Array<Record<string, unknown>>,
+            error: e instanceof Error ? e.message : "unreachable",
+          };
+        }
+      }),
+    );
+    for (const f of fetched) {
+      const rows = Array.isArray(f.rows) ? f.rows : [];
+      stages.sources.push({
+        name: `Market feed · ${f.category}`,
+        ok: !f.error,
+        items: rows.length,
+        error: f.error,
+      });
+      if (f.error) {
+        detail.push(`Feed "${f.category}" failed: ${f.error}`);
+        continue;
       }
-    }),
-  );
-  for (const f of fetched) {
-    if (f.error) detail.push(`Feed "${f.category}" failed: ${f.error}`);
-    else items.push(...f.rows);
+      for (const r of rows) {
+        const dt = Number(r.datetime ?? 0);
+        items.push({
+          headline: String(r.headline ?? "").trim(),
+          summary: String(r.summary ?? "").trim(),
+          sourceName: String(r.source ?? "News feed"),
+          url: (r.url as string) ?? null,
+          guid: r.id != null ? `finnhub:${String(r.id)}` : null,
+          publishedAt: dt > 0 ? new Date(dt * 1000).toISOString() : new Date().toISOString(),
+        });
+      }
+    }
+  } else {
+    stages.sources.push({
+      name: "Market feed",
+      ok: false,
+      items: 0,
+      error: "Market news feed key is not configured.",
+    });
   }
+
+  // ---- RSS sources (CNBC) -------------------------------------------------
+  const { data: rssSources } = await supabaseAdmin
+    .from("news_sources")
+    .select("id,name,url,enabled")
+    .eq("enabled", true)
+    .order("name");
+
+  if ((rssSources ?? []).length > 0) {
+    const { fetchRss } = await import("./rss.server");
+    const results = await Promise.all(
+      (rssSources ?? []).map(async (s) => ({ source: s, out: await fetchRss(s.url) })),
+    );
+    for (const { source, out } of results) {
+      stages.sources.push({
+        name: source.name,
+        ok: out.ok,
+        items: out.items.length,
+        error: out.error,
+      });
+      await supabaseAdmin
+        .from("news_sources")
+        .update(
+          out.ok
+            ? { last_success_at: new Date().toISOString(), last_error: null }
+            : { last_error: out.error },
+        )
+        .eq("id", source.id);
+      if (!out.ok) {
+        detail.push(`Source "${source.name}" failed: ${out.error}`);
+        continue;
+      }
+      for (const i of out.items) {
+        items.push({
+          headline: i.title.trim(),
+          summary: i.description.trim(),
+          sourceName: source.name,
+          url: i.link,
+          guid: i.guid,
+          publishedAt: i.pubDate ?? new Date().toISOString(),
+        });
+      }
+    }
+  }
+
+  stages.fetched = items.length;
   if (items.length === 0) {
-    result.error = "No headlines returned by any news feed.";
+    result.error = "No headlines returned by any news source.";
     return finish();
   }
 
+  // ---- Within-run dedupe --------------------------------------------------
   const cutoff = Date.now() - 48 * 3_600_000;
-  const withinRun = new Map<string, NewsItem>();
+  const withinRun = new Map<string, Candidate>();
   for (const i of items
-    .filter((i) => (i.headline ?? "").trim().length > 20)
-    .filter((i) => !i.datetime || i.datetime * 1000 > cutoff)
-    .sort((a, b) => (b.datetime ?? 0) - (a.datetime ?? 0))) {
+    .filter((i) => i.headline.length > 20)
+    .filter((i) => new Date(i.publishedAt).getTime() > cutoff)
+    .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())) {
     const key = dedupeKeyFor(i);
     if (!withinRun.has(key)) withinRun.set(key, i);
   }
   const candidates = [...withinRun.values()].slice(0, HEADLINE_SCAN_CAP);
   result.headlinesSeen = candidates.length;
 
+  // ---- Cross-run dedupe: exact key, exact source url, then fuzzy title ----
   const keys = candidates.map(dedupeKeyFor);
   const { data: existing } = await supabaseAdmin
     .from("live_events")
-    .select("dedupe_key")
+    .select("id,dedupe_key,published_at")
     .in("dedupe_key", keys.length > 0 ? keys : ["__none__"]);
-  const seen = new Set((existing ?? []).map((r) => r.dedupe_key));
+  const byKey = new Map((existing ?? []).map((r) => [r.dedupe_key, r]));
 
-  const fresh = candidates.filter((i) => !seen.has(dedupeKeyFor(i)));
-  stages.duplicates = candidates.length - fresh.length;
+  const urls = candidates.map((c) => normalizeUrl(c.url)).filter(Boolean) as string[];
+  const { data: knownSources } = await supabaseAdmin
+    .from("event_sources")
+    .select("event_id,url")
+    .in("url", urls.length > 0 ? urls : ["__none__"]);
+  const byUrl = new Map((knownSources ?? []).map((r) => [r.url ?? "", r.event_id]));
+
+  async function attachSource(eventId: string, c: Candidate) {
+    const { error: srcErr } = await supabaseAdmin.from("event_sources").upsert(
+      {
+        event_id: eventId,
+        source_name: c.sourceName,
+        url: normalizeUrl(c.url) ?? c.url,
+        pub_date: c.publishedAt,
+      },
+      { onConflict: "event_id,url", ignoreDuplicates: true },
+    );
+    // A silent failure here would hide multi-source stories, so surface it.
+    if (srcErr && !/duplicate key/i.test(srcErr.message))
+      detail.push(`Source link failed for "${c.sourceName}": ${srcErr.message}`);
+    // Keep the earliest publication time as the event time.
+    const { data: ev } = await supabaseAdmin
+      .from("live_events")
+      .select("published_at")
+      .eq("id", eventId)
+      .maybeSingle();
+    if (ev && new Date(c.publishedAt).getTime() < new Date(ev.published_at).getTime()) {
+      await supabaseAdmin
+        .from("live_events")
+        .update({ published_at: c.publishedAt })
+        .eq("id", eventId);
+    }
+  }
+
+  const fresh: Candidate[] = [];
+  for (const c of candidates) {
+    const titleNorm = normalizeTitle(c.headline);
+    const exact = byKey.get(dedupeKeyFor(c));
+    const urlHit = byUrl.get(normalizeUrl(c.url) ?? "");
+    let matchId: string | null = exact?.id ?? urlHit ?? null;
+
+    if (!matchId && titleNorm.length > 12) {
+      const { data: fuzzy } = await supabaseAdmin.rpc("match_recent_event", {
+        p_title_norm: titleNorm,
+        p_threshold: 0.55,
+      });
+      const hit = Array.isArray(fuzzy) ? fuzzy[0] : null;
+      if (hit?.id) matchId = hit.id as string;
+    }
+
+    if (matchId) {
+      stages.deduped++;
+      stages.duplicates++;
+      await attachSource(matchId, c);
+      continue;
+    }
+    fresh.push(c);
+  }
+  stages.newCandidates = fresh.length;
+
+  // ---- Materiality scoring -----------------------------------------------
+  const scored: Array<{ candidate: Candidate; impact: Materiality }> = [];
+  for (const c of fresh.slice(0, CLASSIFY_CAP)) {
+    let impact: Materiality;
+    try {
+      impact = await scoreMateriality(`${c.headline}\n\n${c.summary}`.trim(), aiKey);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "unknown error";
+      stages.aiFailed++;
+      if (isTerminalAiError(message)) {
+        stages.aiBlocked = true;
+        result.error = `AI impact classifier blocked: ${message}`;
+        return finish();
+      }
+      detail.push(`Impact scoring failed for "${c.headline}": ${message}`);
+      continue;
+    }
+
+    if (impact.impact_score < IMPACT_THRESHOLD) {
+      stages.rejectedLowImpact++;
+      await supabaseAdmin.from("rejected_headlines").insert({
+        headline: c.headline,
+        source: c.sourceName,
+        url: c.url,
+        impact_score: impact.impact_score,
+        reason: impact.reasoning || "below impact threshold",
+        run_id: runId,
+      });
+      continue;
+    }
+    scored.push({ candidate: c, impact });
+  }
+
+  scored.sort((a, b) => b.impact.impact_score - a.impact.impact_score);
+  const accepted = scored.slice(0, Math.min(RUN_ACCEPT_CAP, AI_ANALYSE_CAP));
+  for (const overflow of scored.slice(accepted.length)) {
+    await supabaseAdmin.from("rejected_headlines").insert({
+      headline: overflow.candidate.headline,
+      source: overflow.candidate.sourceName,
+      url: overflow.candidate.url,
+      impact_score: overflow.impact.impact_score,
+      reason: "run_cap",
+      run_id: runId,
+    });
+  }
+  stages.accepted = accepted.length;
 
   const { fetchQuoteWithRetry } = await import("./signal-prices.server");
   const { tickerMeta } = await import("./ticker-registry");
@@ -180,7 +384,6 @@ export async function runNewsIngest(): Promise<IngestResult> {
   // ETF universe for theme matching. Leveraged/inverse funds are excluded at source.
   const { suggestableEtfs, matchEtfs } = await import("./etf-reference.server");
   const etfUniverse = await suggestableEtfs().catch(() => []);
-
 
   const priceCache = new Map<string, Awaited<ReturnType<typeof fetchQuoteWithRetry>>>();
   async function priceFor(symbol: string) {
@@ -191,9 +394,9 @@ export async function runNewsIngest(): Promise<IngestResult> {
     return out;
   }
 
-  for (const item of fresh.slice(0, AI_ANALYSE_CAP)) {
-    const text = `${item.headline ?? ""}\n\n${item.summary ?? ""}`.trim();
-    if (text.length < 60) {
+  for (const { candidate: item, impact: materiality } of accepted) {
+    const text = `${item.headline}\n\n${item.summary}`.trim();
+    if (text.length < 40) {
       stages.tooThin++;
       continue;
     }
@@ -210,9 +413,7 @@ export async function runNewsIngest(): Promise<IngestResult> {
         stages.aiBlocked = true;
         result.error = `AI exposure engine blocked: ${message}`;
         detail.push(
-          `AI blocked after ${stages.aiFailed} attempt(s) — remaining ${
-            fresh.length - stages.aiFailed
-          } headline(s) parked until the next run.`,
+          `AI blocked after ${stages.aiFailed} attempt(s) — remaining headline(s) parked until the next run.`,
         );
         result.skipped =
           stages.duplicates + stages.tooThin + stages.aiFailed + stages.noExposure;
@@ -226,29 +427,28 @@ export async function runNewsIngest(): Promise<IngestResult> {
       { side: "tailwind", rows: impact.positive ?? [] },
       { side: "headwind", rows: impact.negative ?? [] },
     ];
-    if (sides.every((s) => s.rows.length === 0)) {
-      stages.noExposure++;
-      continue;
-    }
 
-    const publishedAt = item.datetime
-      ? new Date(item.datetime * 1000).toISOString()
-      : new Date().toISOString();
+    const publishedAt = item.publishedAt;
 
     const { data: ev, error: evErr } = await supabaseAdmin
       .from("live_events")
       .insert({
-        headline: item.headline ?? impact.headline,
+        headline: item.headline || impact.headline,
         summary: impact.summary,
-        why_markets_care: impact.summary,
-        source: item.source ?? "News feed",
+        why_markets_care: impact.summary || materiality.reasoning,
+        source: item.sourceName,
         source_url: item.url ?? null,
         published_at: publishedAt,
-        category: normalizeCategory(impact.category),
+        category: normalizeCategory(impact.category || eventCategoryFor(materiality.category)),
         strength: impact.strength,
         regions: normalizeRegions(impact.regions),
         transmission_channel: impact.transmissionChannel,
         dedupe_key: dedupeKeyFor(item),
+        title_norm: normalizeTitle(item.headline),
+        impact_score: materiality.impact_score,
+        impact_direction: materiality.impact_direction,
+        impact_category: materiality.category,
+        impact_reasoning: materiality.reasoning,
       })
       .select("id,strength")
       .maybeSingle();
@@ -258,6 +458,9 @@ export async function runNewsIngest(): Promise<IngestResult> {
     }
     stages.stored++;
     result.eventsCreated++;
+    await attachSource(ev.id, item);
+
+    if (sides.every((s) => s.rows.length === 0)) stages.noExposure++;
 
     for (const { side, rows } of sides) {
       for (const row of rows) {
@@ -284,7 +487,6 @@ export async function runNewsIngest(): Promise<IngestResult> {
             dayLow = out.dayLow ?? null;
           }
         }
-
 
         await supabaseAdmin.from("live_event_exposures").insert({
           live_event_id: ev.id,
@@ -318,7 +520,6 @@ export async function runNewsIngest(): Promise<IngestResult> {
               strength: magnitude,
               confidence: (row.confidence as "Low" | "Medium" | "High") ?? "Medium",
               category: normalizeCategory(impact.category) as EventCategory,
-
               eventText: text,
               eventPublishedAt: publishedAt,
               generatedBy: "ripple-news-v2",
@@ -328,7 +529,6 @@ export async function runNewsIngest(): Promise<IngestResult> {
           if (outcome.ok) result.signalsCreated++;
           else detail.push(`Signal rejected for ${raw}: ${outcome.reason}`);
         }
-
       }
     }
 
@@ -404,9 +604,8 @@ export async function runNewsIngest(): Promise<IngestResult> {
     }
   }
 
-
   result.skipped =
-    stages.duplicates + stages.tooThin + stages.aiFailed + stages.noExposure;
+    stages.duplicates + stages.tooThin + stages.aiFailed + stages.rejectedLowImpact;
 
   // Retention: archive events beyond the window (keeps permalinks + open signals).
   const pruneBefore = new Date(Date.now() - RETENTION_DAYS * 86_400_000).toISOString();
@@ -416,19 +615,25 @@ export async function runNewsIngest(): Promise<IngestResult> {
     .lt("published_at", pruneBefore)
     .eq("archived", false);
 
+  const allSourcesFailed =
+    stages.sources.length > 0 && stages.sources.every((s) => !s.ok);
+  if (allSourcesFailed) {
+    result.ok = false;
+    result.error = "Every news source failed this run.";
+    return finish();
+  }
 
-  // A run that saw fresh headlines but stored nothing is degraded, not fine —
-  // say so and record why so the UI can show the real reason.
-  if (result.eventsCreated === 0 && fresh.length > 0) {
-    const analysed = fresh.slice(0, AI_ANALYSE_CAP).length - stages.tooThin;
-    if (analysed > 0 && stages.noExposure === analysed && stages.aiFailed === 0) {
-      result.ok = true; // genuinely quiet news cycle — nothing had equity exposure
+  // A run that saw fresh candidates but stored nothing is only fine when the
+  // classifier honestly rejected them all as noise.
+  if (result.eventsCreated === 0 && stages.newCandidates > 0) {
+    if (stages.accepted === 0 && stages.aiFailed === 0) {
+      result.ok = true; // quiet news cycle — nothing scored above the threshold
+    } else if (stages.aiFailed > 0) {
+      result.ok = false;
+      result.error = `AI analysis failed for ${stages.aiFailed} headline(s).`;
     } else {
       result.ok = false;
-      result.error =
-        stages.aiFailed > 0
-          ? `AI analysis failed for ${stages.aiFailed}/${analysed} headline(s).`
-          : "No new events stored despite fresh headlines.";
+      result.error = "No new events stored despite material headlines.";
     }
     return finish();
   }
