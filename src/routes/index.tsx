@@ -137,11 +137,26 @@ function TodayPage() {
   const [regions, setRegions] = useState<RegionCode[]>([]);
   const [query, setQuery] = useState("");
   const [showOlder, setShowOlder] = useState(false);
-  const { events: liveEvents, isLoading } = useLiveEvents();
+  const [sort, setSort] = useState<"newest" | "impact">("newest");
+  const {
+    events: liveEvents,
+    isLoading,
+    lastIngest,
+    sourceHealth,
+  } = useLiveEvents();
 
-  const events = sortByStrengthThenRecency(liveEvents)
+  const filtered = sortByStrengthThenRecency(liveEvents)
     .filter((e) => eventMatchesRegions(e.id, regions))
     .filter((e) => eventTouchesTicker(e, query));
+
+  const events =
+    sort === "impact"
+      ? [...filtered].sort(
+          (a, b) =>
+            (b.impactScore ?? -1) - (a.impactScore ?? -1) ||
+            new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
+        )
+      : filtered;
 
   const fresh = events.filter((e) => !isStale(e.publishedAt));
   const older = events.filter((e) => isStale(e.publishedAt));
@@ -160,6 +175,13 @@ function TodayPage() {
 
       <IngestStatus />
 
+      <TopMovers
+        events={liveEvents}
+        lastIngest={lastIngest}
+        sourceHealth={sourceHealth}
+        isLoading={isLoading}
+      />
+
       <div className="mb-4">
         <TickerSearch query={query} onChange={setQuery} events={liveEvents} />
       </div>
@@ -170,8 +192,19 @@ function TodayPage() {
 
       <TopSetupsStrip events={liveEvents} />
 
-      <div className="mb-5">
+      <div className="mb-5 flex items-end justify-between gap-3 flex-wrap">
         <RegionFilter selected={regions} onChange={setRegions} />
+        <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          Sort
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as "newest" | "impact")}
+            className="rounded-md border border-border/60 bg-background/60 px-2 py-1 text-[11px] text-foreground"
+          >
+            <option value="newest">Newest first</option>
+            <option value="impact">Impact</option>
+          </select>
+        </label>
       </div>
 
       {isLoading ? (
