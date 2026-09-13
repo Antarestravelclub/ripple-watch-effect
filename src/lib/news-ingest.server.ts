@@ -278,7 +278,7 @@ export async function runNewsIngest(): Promise<IngestResult> {
   const byUrl = new Map((knownSources ?? []).map((r) => [r.url ?? "", r.event_id]));
 
   async function attachSource(eventId: string, c: Candidate) {
-    await supabaseAdmin.from("event_sources").upsert(
+    const { error: srcErr } = await supabaseAdmin.from("event_sources").upsert(
       {
         event_id: eventId,
         source_name: c.sourceName,
@@ -287,6 +287,9 @@ export async function runNewsIngest(): Promise<IngestResult> {
       },
       { onConflict: "event_id,url", ignoreDuplicates: true },
     );
+    // A silent failure here would hide multi-source stories, so surface it.
+    if (srcErr && !/duplicate key/i.test(srcErr.message))
+      detail.push(`Source link failed for "${c.sourceName}": ${srcErr.message}`);
     // Keep the earliest publication time as the event time.
     const { data: ev } = await supabaseAdmin
       .from("live_events")
