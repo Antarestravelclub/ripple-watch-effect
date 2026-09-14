@@ -71,6 +71,7 @@ function TrackerPage() {
   const [instrument, setInstrument] = useState<InstrumentFilter>("all");
   const [onlyWatchlist, setOnlyWatchlist] = useState(false);
   const [search, setSearch] = useState("");
+  const [source, setSource] = useState<"all" | "engine" | "mine">("all");
 
   const [sortKey, setSortKey] = useState<SortKey>("pct");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
@@ -109,6 +110,13 @@ function TrackerPage() {
     return enriched
       .filter((r) => (status === "all" ? true : r.signal.status === status))
       .filter((r) => (direction === "all" ? true : r.signal.direction === direction))
+      .filter((r) =>
+        source === "all"
+          ? true
+          : source === "mine"
+            ? r.signal.generated_by === "manual"
+            : r.signal.generated_by !== "manual",
+      )
       .filter((r) => matchesInstrument(instrument, r.signal.instrument_type))
       .filter((r) =>
         category === "all" ? true : r.event?.category === category,
