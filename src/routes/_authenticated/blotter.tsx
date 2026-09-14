@@ -54,8 +54,6 @@ export const Route = createFileRoute("/_authenticated/blotter")({
   component: BlotterPage,
 });
 
-type Tab = "open" | "closed" | "stats";
-
 function pctTone(n: number | null | undefined) {
   if (n == null) return "text-muted-foreground";
   return n > 0 ? "text-tailwind" : n < 0 ? "text-headwind" : "text-muted-foreground";
@@ -69,7 +67,6 @@ function BlotterPage() {
   const list = useServerFn(listPaperTrades);
   const closeFn = useServerFn(closePaperTrade);
   const qc = useQueryClient();
-  const [tab, setTab] = useState<Tab>("open");
   const [confirm, setConfirm] = useState<{ trade: PaperTradeRow; price: number | null } | null>(
     null,
   );
