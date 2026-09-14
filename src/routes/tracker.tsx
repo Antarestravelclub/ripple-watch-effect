@@ -238,6 +238,8 @@ function TrackerPage() {
 
         <Select label="Direction" value={direction} onChange={(v) => setDirection(v as typeof direction)}
           options={[["all", "All"], ["long", "Long"], ["short", "Short"]]} />
+        <Select label="Source" value={source} onChange={(v) => setSource(v as typeof source)}
+          options={[["all", "All"], ["engine", "Engine"], ["mine", "Mine"]]} />
         <Select label="Instrument" value={instrument} onChange={(v) => setInstrument(v as InstrumentFilter)}
           options={[["all", "All"], ["stock", INSTRUMENT_LABEL.stock], ["etf", INSTRUMENT_LABEL.etf]]} />
         <Select label="Category" value={category} onChange={(v) => setCategory(v as typeof category)}
