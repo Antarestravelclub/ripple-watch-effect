@@ -16,6 +16,7 @@ import { useWatchlist } from "@/lib/watchlist-store";
 import { RefreshCw, Search, X } from "lucide-react";
 import { TradingViewWatchlist } from "@/components/tradingview";
 import { PaperTradeButton } from "@/components/paper-trade-dialog";
+import { ManualSignalButton } from "@/components/manual-signal-dialog";
 
 export const Route = createFileRoute("/tracker")({
   head: () => ({
