@@ -53,6 +53,8 @@ export interface SignalRow {
   mode?: string | null;
   /** "stock" (default) or "etf" — fund-level exposure. */
   instrument_type?: InstrumentType | null;
+  /** Owner of a user-authored ("manual") signal; null on engine signals. */
+  user_id?: string | null;
 }
 
 export interface SnapshotRow {

@@ -1358,6 +1358,7 @@ export type Database = {
           suggested_size_pct: number | null
           target_price: number | null
           ticker: string
+          user_id: string | null
         }
         Insert: {
           atr_at_signal?: number | null
@@ -1397,6 +1398,7 @@ export type Database = {
           suggested_size_pct?: number | null
           target_price?: number | null
           ticker: string
+          user_id?: string | null
         }
         Update: {
           atr_at_signal?: number | null
@@ -1436,6 +1438,7 @@ export type Database = {
           suggested_size_pct?: number | null
           target_price?: number | null
           ticker?: string
+          user_id?: string | null
         }
         Relationships: []
       }
