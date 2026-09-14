@@ -54,8 +54,6 @@ export const Route = createFileRoute("/_authenticated/blotter")({
   component: BlotterPage,
 });
 
-type Tab = "open" | "closed" | "stats";
-
 function pctTone(n: number | null | undefined) {
   if (n == null) return "text-muted-foreground";
   return n > 0 ? "text-tailwind" : n < 0 ? "text-headwind" : "text-muted-foreground";
@@ -69,7 +67,6 @@ function BlotterPage() {
   const list = useServerFn(listPaperTrades);
   const closeFn = useServerFn(closePaperTrade);
   const qc = useQueryClient();
-  const [tab, setTab] = useState<Tab>("open");
   const [confirm, setConfirm] = useState<{ trade: PaperTradeRow; price: number | null } | null>(
     null,
   );
@@ -159,30 +156,6 @@ function BlotterPage() {
         <DemoAccountPanel />
       </div>
 
-      <div className="mt-5 flex items-center gap-1 border-b border-border/60">
-        {(
-          [
-            ["open", `Open (${openTrades.length})`],
-            ["closed", `Closed (${closedTrades.length})`],
-            ["stats", "Stats"],
-          ] as Array<[Tab, string]>
-        ).map(([key, label]) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setTab(key)}
-            className={
-              "px-3 py-2 text-sm -mb-px border-b-2 transition-colors " +
-              (tab === key
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground")
-            }
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
       {isLoading && (
         <p className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="w-4 h-4 animate-spin" /> Loading your trade log…
@@ -194,20 +167,46 @@ function BlotterPage() {
         </p>
       )}
 
-      {!isLoading && tab === "open" && (
-        <OpenTable
-          trades={openTrades}
-          priceOf={priceOf}
-          onClose={(t) => setConfirm({ trade: t, price: priceOf(t) })}
-        />
-      )}
-      {!isLoading && tab === "closed" && (
-        <ClosedTable rows={filteredClosed} filters={filters} setFilters={setFilters} />
-      )}
-      {!isLoading && tab === "stats" && (
+      {!isLoading && (
         <>
-          <StatsView trades={closedTrades} notional={data?.notional ?? DEFAULT_STARTING_BALANCE} />
-          <MirrorStats trades={data?.trades ?? []} />
+          <section className="mt-6">
+            <div className="flex items-center gap-2 border-b border-border/60 pb-2">
+              <h2 className="text-sm font-semibold tracking-tight">
+                Open trades ({openTrades.length})
+              </h2>
+              <span className="text-xs text-muted-foreground">
+                Still running — profit and loss move with the latest price.
+              </span>
+            </div>
+            <OpenTable
+              trades={openTrades}
+              priceOf={priceOf}
+              onClose={(t) => setConfirm({ trade: t, price: priceOf(t) })}
+            />
+          </section>
+
+          <section className="mt-10">
+            <div className="flex items-center gap-2 border-b border-border/60 pb-2">
+              <h2 className="text-sm font-semibold tracking-tight">
+                Closed — cashed out ({closedTrades.length})
+              </h2>
+              <span className="text-xs text-muted-foreground">
+                Finished trades with their final profit or loss.
+              </span>
+            </div>
+            <ClosedTable rows={filteredClosed} filters={filters} setFilters={setFilters} />
+          </section>
+
+          <section className="mt-10">
+            <div className="flex items-center gap-2 border-b border-border/60 pb-2">
+              <h2 className="text-sm font-semibold tracking-tight">Stats</h2>
+              <span className="text-xs text-muted-foreground">
+                Performance across closed trades.
+              </span>
+            </div>
+            <StatsView trades={closedTrades} notional={data?.notional ?? DEFAULT_STARTING_BALANCE} />
+            <MirrorStats trades={data?.trades ?? []} />
+          </section>
         </>
       )}
 
