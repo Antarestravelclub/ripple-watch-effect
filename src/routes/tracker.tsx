@@ -311,15 +311,33 @@ function TrackerPage() {
                   <td className="p-2 font-mono font-semibold">
                     <TickerLink symbol={signal.ticker} className="font-mono" />
                     <EtfBadge type={signal.instrument_type} />
+                    {signal.generated_by === "manual" && (
+                      <span
+                        className="ml-1.5 rounded border border-primary/40 bg-primary/10 px-1 py-px text-[9px] font-medium uppercase tracking-wider text-primary"
+                        title="Your own signal"
+                      >
+                        Mine
+                      </span>
+                    )}
                   </td>
                   <td className="p-2 max-w-[220px] truncate text-muted-foreground">
-                    <Link
-                      to="/event/$id"
-                      params={{ id: event?.id ?? signal.event_id }}
-                      className="hover:text-primary"
-                    >
-                      {event ? event.headline : "Earlier event"}
-                    </Link>
+                    {signal.generated_by === "manual" ? (
+                      <Link
+                        to="/signal/$id"
+                        params={{ id: signal.id }}
+                        className="hover:text-primary"
+                      >
+                        My signal
+                      </Link>
+                    ) : (
+                      <Link
+                        to="/event/$id"
+                        params={{ id: event?.id ?? signal.event_id }}
+                        className="hover:text-primary"
+                      >
+                        {event ? event.headline : "Earlier event"}
+                      </Link>
+                    )}
 
                   </td>
                   <td className="p-2">
