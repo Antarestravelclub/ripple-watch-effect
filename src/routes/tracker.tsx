@@ -168,7 +168,7 @@ function TrackerPage() {
             return ((a.metrics.currentPct ?? -Infinity) - (b.metrics.currentPct ?? -Infinity)) * dir;
         }
       });
-  }, [data, status, direction, category, instrument, onlyWatchlist, search, sortKey, sortDir, eventById, watchlist]);
+  }, [data, status, direction, source, category, instrument, onlyWatchlist, search, sortKey, sortDir, eventById, watchlist]);
 
   function toggleSort(k: SortKey) {
     if (sortKey === k) setSortDir(sortDir === "asc" ? "desc" : "asc");
@@ -192,14 +192,17 @@ function TrackerPage() {
             historical correlation only — delayed prices, no advice.
           </p>
         </div>
-        <button
-          onClick={() => seedMut.mutate()}
-          disabled={seedMut.isPending}
-          className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-border/70 bg-card/60 hover:bg-card transition-colors disabled:opacity-50"
-        >
-          <RefreshCw className={"w-3.5 h-3.5 " + (seedMut.isPending ? "animate-spin" : "")} />
-          {empty ? "Generate signals" : "Refresh signals"}
-        </button>
+        <div className="flex items-center gap-2">
+          <ManualSignalButton compact />
+          <button
+            onClick={() => seedMut.mutate()}
+            disabled={seedMut.isPending}
+            className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-border/70 bg-card/60 hover:bg-card transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={"w-3.5 h-3.5 " + (seedMut.isPending ? "animate-spin" : "")} />
+            {empty ? "Generate signals" : "Refresh signals"}
+          </button>
+        </div>
       </div>
 
       <div className="mb-3 flex items-center gap-2 rounded-xl border border-border/70 bg-card/70 px-3 py-2 focus-within:border-primary/60 transition-colors max-w-xl">
