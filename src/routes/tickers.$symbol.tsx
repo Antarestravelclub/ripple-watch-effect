@@ -217,7 +217,10 @@ function TickerDetail() {
       <section className="mb-5">
         <div className="flex items-center justify-between gap-3 flex-wrap mb-2">
           <h2 className="text-sm font-semibold tracking-tight">Active exposure</h2>
-          <ManualPaperTradeButton symbol={symbol} label={`Paper trade ${symbol}`} compact />
+          <div className="flex items-center gap-2">
+            <ManualSignalButton symbol={symbol} compact label="Add my signal" />
+            <ManualPaperTradeButton symbol={symbol} label={`Paper trade ${symbol}`} compact />
+          </div>
         </div>
         {row?.stance === "conflicted" && (
           <div className="rounded-lg border border-border/70 bg-muted/20 p-3 text-xs text-muted-foreground mb-3">
@@ -263,6 +266,14 @@ function TickerDetail() {
                             className="hover:underline"
                           >
                             {ev.headline}
+                          </Link>
+                        ) : s.event_id.startsWith("manual:") ? (
+                          <Link
+                            to="/signal/$id"
+                            params={{ id: s.id }}
+                            className="hover:underline text-primary"
+                          >
+                            My signal
                           </Link>
                         ) : (
                           s.event_id
