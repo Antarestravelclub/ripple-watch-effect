@@ -23,6 +23,7 @@ import {
   PaperTradeButton,
 } from "@/components/paper-trade-dialog";
 
+import { ManualSignalButton } from "@/components/manual-signal-dialog";
 import { tickerMeta } from "@/lib/ticker-registry";
 import { addTicker, removeTicker, useWatchlist } from "@/lib/watchlist-store";
 import { ROLE_LABEL, formatPct, formatWindow, roleTone } from "@/lib/analogue-mapping";
