@@ -133,7 +133,7 @@ function Scorecard() {
     [liveEvents],
   );
 
-  const enriched = useMemo(
+  const allEnriched = useMemo(
     () =>
       data.signals.map((s) => {
         const snap = data.latest[s.id];
@@ -145,6 +145,19 @@ function Scorecard() {
       }),
     [data, eventById],
   );
+
+  const hasMine = allEnriched.some((r) => r.signal.generated_by === "manual");
+  const [signalSet, setSignalSet] = useState<"engine" | "mine" | "all">("engine");
+  const enriched = useMemo(
+    () =>
+      allEnriched.filter((r) => {
+        if (signalSet === "all") return true;
+        const mine = r.signal.generated_by === "manual";
+        return signalSet === "mine" ? mine : !mine;
+      }),
+    [allEnriched, signalSet],
+  );
+
 
   const totalTracked = enriched.length;
   const targetHits = enriched.filter((r) => r.signal.close_reason === "target").length;
