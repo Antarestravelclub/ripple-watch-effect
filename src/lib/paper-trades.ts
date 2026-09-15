@@ -133,6 +133,17 @@ export function riskPerUnit(entry: number, stop: number): number | null {
   return r > 0 ? r : null;
 }
 
+/** Money put in: entry price × lots. */
+export function positionCost(entry: number, size: number): number {
+  return +(entry * size).toFixed(2);
+}
+
+/** What the position is worth at a given price. */
+export function marketValue(price: number | null, size: number): number | null {
+  if (price == null || !(price > 0)) return null;
+  return +(price * size).toFixed(2);
+}
+
 /** How many R the move is worth. */
 export function rMultipleFor(
   direction: TradeDirection,
