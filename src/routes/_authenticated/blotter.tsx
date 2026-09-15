@@ -565,6 +565,8 @@ function ClosedTable({
                     </Td>
                     <Td mono>{t.entry_price.toFixed(2)}</Td>
                     <Td mono>{t.exit_price != null ? t.exit_price.toFixed(2) : "—"}</Td>
+                    <Td mono>{fmtMoney(positionCost(t.entry_price, t.position_size))}</Td>
+                    <Td mono>{fmtMoney(marketValue(t.exit_price, t.position_size))}</Td>
                     <Td>{t.exit_reason ? EXIT_REASON_LABEL[t.exit_reason] : "—"}</Td>
                     <Td>
                       <span className={pctTone(t.realized_pnl)}>
