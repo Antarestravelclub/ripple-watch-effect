@@ -289,7 +289,27 @@ function Scorecard() {
             : "Signals resolve on target, invalidation, or after 10 trading days (expired). Delayed prices."}
         </p>
         <LastCheckedLine />
+        {hasMine && (
+          <div className="mt-3 flex items-center gap-2 text-xs">
+            <span className="text-muted-foreground">Showing</span>
+            {(["engine", "mine", "all"] as const).map((k) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setSignalSet(k)}
+                className={`rounded-md border px-2 py-1 ${
+                  signalSet === k
+                    ? "border-primary text-primary bg-primary/10"
+                    : "border-border text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {k === "engine" ? "Engine signals" : k === "mine" ? "My signals" : "All"}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
+
 
       <BenchmarkSection
         signals={enriched.map((r) => ({
