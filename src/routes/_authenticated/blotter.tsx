@@ -302,13 +302,14 @@ function OpenTable({
           <tr>
             <Th>Symbol</Th>
             <Th>Dir</Th>
-            <Th>Entry</Th>
+            <Th>Cost/share</Th>
             <Th>Lots</Th>
-            <Th>Current</Th>
-            <Th>To target</Th>
-            <Th>Unrealised</Th>
-            <Th>To stop</Th>
-            <Th>In trade</Th>
+            <Th>Total cost</Th>
+            <Th>Price now</Th>
+            <Th>Market value</Th>
+            <Th>Gain/Loss $</Th>
+            <Th>Gain/Loss %</Th>
+            <Th>Target / stop</Th>
             <Th />
           </tr>
         </thead>
@@ -323,6 +324,9 @@ function OpenTable({
                   {t.overrides_used && (
                     <span className="ml-1 text-[9px] uppercase text-muted-foreground">ovr</span>
                   )}
+                  <span className="block text-[10px] text-muted-foreground">
+                    {fmtDuration(t.entry_time)} in trade
+                  </span>
                 </Td>
                 <Td>
                   <span className={t.direction === "long" ? "text-tailwind" : "text-headwind"}>
@@ -331,22 +335,23 @@ function OpenTable({
                 </Td>
                 <Td mono>{t.entry_price.toFixed(2)}</Td>
                 <Td mono>{t.position_size}</Td>
+                <Td mono>{fmtMoney(positionCost(t.entry_price, t.position_size))}</Td>
                 <Td mono>{m.price != null ? m.price.toFixed(2) : "—"}</Td>
-                <Td mono>
-                  {t.target_price.toFixed(2)} ({fmtPct(m.toTargetPct)} / {fmtR(m.toTargetR)})
+                <Td mono>{fmtMoney(marketValue(m.price, t.position_size))}</Td>
+                <Td>
+                  <span className={pctTone(m.pnl)}>{fmtMoney(m.pnl)}</span>
                 </Td>
                 <Td>
-                  <span className={pctTone(m.pnl)}>
-                    {fmtMoney(m.pnl)} · {fmtPct(m.pct)} · {fmtR(m.r)}
-                  </span>
-                  <span className="block text-[10px] text-muted-foreground">
-                    {t.position_size} lot{t.position_size === 1 ? "" : "s"}
-                  </span>
+                  <span className={pctTone(m.pnl)}>{fmtPct(m.pct)}</span>
                 </Td>
                 <Td mono>
-                  {t.stop_price.toFixed(2)} ({fmtPct(m.toStopPct)} / {fmtR(m.toStopR)})
+                  <span className="block text-tailwind" title="Distance to target">
+                    ▲ {t.target_price.toFixed(2)} ({fmtPct(m.toTargetPct)})
+                  </span>
+                  <span className="block text-headwind" title="Distance to stop">
+                    ▼ {t.stop_price.toFixed(2)} ({fmtPct(m.toStopPct)})
+                  </span>
                 </Td>
-                <Td>{fmtDuration(t.entry_time)}</Td>
                 <Td>
                   <div className="flex items-center gap-2">
                     {t.signal_id ? (
