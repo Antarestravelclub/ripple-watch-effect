@@ -497,6 +497,7 @@ function ClosedTable({
       {rows.length === 0 ? (
         <p className="mt-5 text-sm text-muted-foreground">No closed paper trades in this range.</p>
       ) : (
+        <>
         <div className="mt-4 overflow-x-auto rounded-xl border border-border/70">
           <table className="w-full text-sm">
             <thead className="bg-card/60 text-[10px] uppercase tracking-wider text-muted-foreground">
@@ -583,6 +584,11 @@ function ClosedTable({
             </tbody>
           </table>
         </div>
+        <p className="mt-2 text-[10px] text-muted-foreground">
+          Stop/target exit times reflect when the automatic price check detected the touch
+          (checks run on live quotes, roughly every 15 minutes), not necessarily the exact tick.
+        </p>
+        </>
       )}
     </div>
   );
