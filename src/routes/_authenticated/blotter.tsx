@@ -508,9 +508,8 @@ function ClosedTable({
                 <Th>Exit</Th>
                 <Th>Total cost</Th>
                 <Th>Proceeds</Th>
-                <Th>Reason</Th>
                 <Th>Gain/Loss</Th>
-                <Th>Duration</Th>
+                <Th>Exit / time in trade</Th>
 
               </tr>
             </thead>
@@ -567,13 +566,17 @@ function ClosedTable({
                     <Td mono>{t.exit_price != null ? t.exit_price.toFixed(2) : "—"}</Td>
                     <Td mono>{fmtMoney(positionCost(t.entry_price, t.position_size))}</Td>
                     <Td mono>{fmtMoney(marketValue(t.exit_price, t.position_size))}</Td>
-                    <Td>{t.exit_reason ? EXIT_REASON_LABEL[t.exit_reason] : "—"}</Td>
                     <Td>
                       <span className={pctTone(t.realized_pnl)}>
                         {fmtMoney(t.realized_pnl)} · {fmtPct(pct)} · {fmtR(r)}
                       </span>
                     </Td>
-                    <Td>{fmtDuration(t.entry_time, t.exit_time)}</Td>
+                    <Td>
+                      <div>{t.exit_reason ? EXIT_REASON_LABEL[t.exit_reason] : "—"}</div>
+                      <div className="text-[10px] text-muted-foreground">
+                        in {fmtDuration(t.entry_time, t.exit_time)}
+                      </div>
+                    </Td>
                   </tr>
                 );
               })}
