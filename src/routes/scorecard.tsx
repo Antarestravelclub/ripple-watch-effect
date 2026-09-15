@@ -133,7 +133,7 @@ function Scorecard() {
     [liveEvents],
   );
 
-  const enriched = useMemo(
+  const allEnriched = useMemo(
     () =>
       data.signals.map((s) => {
         const snap = data.latest[s.id];
@@ -145,6 +145,19 @@ function Scorecard() {
       }),
     [data, eventById],
   );
+
+  const hasMine = allEnriched.some((r) => r.signal.generated_by === "manual");
+  const [signalSet, setSignalSet] = useState<"engine" | "mine" | "all">("engine");
+  const enriched = useMemo(
+    () =>
+      allEnriched.filter((r) => {
+        if (signalSet === "all") return true;
+        const mine = r.signal.generated_by === "manual";
+        return signalSet === "mine" ? mine : !mine;
+      }),
+    [allEnriched, signalSet],
+  );
+
 
   const totalTracked = enriched.length;
   const targetHits = enriched.filter((r) => r.signal.close_reason === "target").length;
@@ -276,7 +289,27 @@ function Scorecard() {
             : "Signals resolve on target, invalidation, or after 10 trading days (expired). Delayed prices."}
         </p>
         <LastCheckedLine />
+        {hasMine && (
+          <div className="mt-3 flex items-center gap-2 text-xs">
+            <span className="text-muted-foreground">Showing</span>
+            {(["engine", "mine", "all"] as const).map((k) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setSignalSet(k)}
+                className={`rounded-md border px-2 py-1 ${
+                  signalSet === k
+                    ? "border-primary text-primary bg-primary/10"
+                    : "border-border text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {k === "engine" ? "Engine signals" : k === "mine" ? "My signals" : "All"}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
+
 
       <BenchmarkSection
         signals={enriched.map((r) => ({

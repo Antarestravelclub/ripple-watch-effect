@@ -284,6 +284,29 @@ function ManualPage() {
                 </p>
               </Card>
 
+              <Card title="Add my signal — your own ideas, scored the same way">
+                <p>
+                  On the Tracker (and on any symbol page) the{" "}
+                  <Term>Add my signal</Term> button lets you log your own idea:
+                  symbol, long or short, the theme, your read on strength and
+                  confidence, and your thesis. The app then treats it exactly
+                  like an engine signal — the latest stored price becomes the
+                  entry, volatility sets the stop and target, the same conviction
+                  rubric produces the score, and a risk-based size suggestion is
+                  attached.
+                </p>
+                <p>
+                  An idea is refused if there is no price feed for the symbol or
+                  not enough daily history to set levels, and you can only have
+                  one open idea per symbol and direction. Your signals carry a{" "}
+                  <Term>Mine</Term> badge, can be isolated with the Tracker's
+                  source filter, get the same automatic checks every 15 minutes,
+                  and resolve on target, stop or expiry like anything else. The
+                  Scorecard shows engine results by default, with a toggle to see
+                  yours on their own or everything together.
+                </p>
+              </Card>
+
               <Card title="Tickers — the conflict resolver">
                 <p>
                   The same company can be helped by one event and hurt by
