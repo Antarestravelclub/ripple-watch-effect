@@ -21,6 +21,8 @@ import {
   fmtMoney,
   fmtR,
   liveMetrics,
+  marketValue,
+  positionCost,
   SMALL_SAMPLE,
   SOURCE_LABEL,
   SPLIT_LABEL,
@@ -502,10 +504,12 @@ function ClosedTable({
                 <Th>Symbol</Th>
                 <Th>Came from</Th>
                 <Th>Dir</Th>
-                <Th>Entry</Th>
+                <Th>Cost/share</Th>
                 <Th>Exit</Th>
+                <Th>Total cost</Th>
+                <Th>Proceeds</Th>
                 <Th>Reason</Th>
-                <Th>Realised</Th>
+                <Th>Gain/Loss</Th>
                 <Th>Duration</Th>
 
               </tr>
