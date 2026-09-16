@@ -126,10 +126,6 @@ export function SiteShell({ children }: { children: ReactNode }) {
               <NavLink to="/bridge">Bridge</NavLink>
               <NavLink to="/manual">Manual</NavLink>
             </nav>
-            <div className="ml-auto flex items-center gap-2">
-              <DataRefreshStamp />
-              <AccountMenu />
-            </div>
           </div>
         </div>
       </header>
