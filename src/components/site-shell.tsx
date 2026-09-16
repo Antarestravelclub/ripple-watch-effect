@@ -76,33 +76,35 @@ export function SiteShell({ children }: { children: ReactNode }) {
   const showSidebar = !pathname.startsWith("/blotter");
   return (
     <div className="min-h-screen flex flex-col bg-background gradient-radial">
-      <header className="sticky top-0 z-30 border-b border-border/60 backdrop-blur bg-background/70">
-        <div className="mx-auto max-w-7xl px-4 min-h-14 py-1.5 flex items-center justify-between gap-3 flex-wrap">
-          <Link to="/" className="flex items-center">
-            <RippleLogo />
-          </Link>
-          <nav className="flex items-center gap-1 flex-wrap">
-            <NavLink to="/">Today</NavLink>
-            <NavLink to="/setups">Setups</NavLink>
-            <NavLink to="/calendar">Calendar</NavLink>
-            <NavLink to="/analyze">Analyser</NavLink>
+      <header className="sticky top-0 z-30 px-3 pt-3">
+        <div className="mx-auto max-w-7xl rounded-2xl border border-border/60 backdrop-blur-md bg-background/75 shadow-lg shadow-black/25">
+          <div className="px-4 min-h-14 py-1.5 flex items-center justify-between gap-3 flex-wrap">
+            <Link to="/" className="flex items-center">
+              <RippleLogo />
+            </Link>
+            <nav className="flex items-center gap-1 flex-wrap">
+              <NavLink to="/">Today</NavLink>
+              <NavLink to="/setups">Setups</NavLink>
+              <NavLink to="/calendar">Calendar</NavLink>
+              <NavLink to="/analyze">Analyser</NavLink>
 
-            <NavLink to="/tracker">Tracker</NavLink>
-            <NavLink to="/tickers">Tickers</NavLink>
-            <NavLink to="/blotter">Trade Log</NavLink>
+              <NavLink to="/tracker">Tracker</NavLink>
+              <NavLink to="/tickers">Tickers</NavLink>
+              <NavLink to="/blotter">Trade Log</NavLink>
 
-            <NavLink to="/scorecard">Scorecard</NavLink>
-            <NavLink to="/analogues">Analogues</NavLink>
-            <NavLink to="/playbooks">Playbooks</NavLink>
-            <NavLink to="/watchlist">Watchlist</NavLink>
-            <NavLink to="/broker">Broker</NavLink>
-            <NavLink to="/bridge">Bridge</NavLink>
-            <NavLink to="/manual">Manual</NavLink>
-          </nav>
-        </div>
-        <div className="mx-auto max-w-7xl px-4 pb-1.5 flex items-center justify-end gap-3">
-          <DataRefreshStamp />
-          <AccountMenu />
+              <NavLink to="/scorecard">Scorecard</NavLink>
+              <NavLink to="/analogues">Analogues</NavLink>
+              <NavLink to="/playbooks">Playbooks</NavLink>
+              <NavLink to="/watchlist">Watchlist</NavLink>
+              <NavLink to="/broker">Broker</NavLink>
+              <NavLink to="/bridge">Bridge</NavLink>
+              <NavLink to="/manual">Manual</NavLink>
+            </nav>
+          </div>
+          <div className="px-4 pb-1.5 flex items-center justify-end gap-3">
+            <DataRefreshStamp />
+            <AccountMenu />
+          </div>
         </div>
       </header>
 
