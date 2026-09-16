@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { RippleLogo } from "./ripple-logo";
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { SectorHeat } from "./sector-heat";
 import { useLiveEvents } from "@/hooks/use-live-events";
 import { OperonBadge } from "./operon-badge";
