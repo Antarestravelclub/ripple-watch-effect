@@ -59,7 +59,7 @@ function NavLink({ to, children }: { to: string; children: ReactNode }) {
     <Link
       to={to}
       className={
-        "text-[13px] px-2 py-1 rounded-md transition-colors " +
+        "text-[13px] px-2 py-1 rounded-md transition-colors shrink-0 whitespace-nowrap " +
         (active
           ? "bg-primary/15 text-primary"
           : "text-muted-foreground hover:text-foreground hover:bg-accent")
