@@ -104,7 +104,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
             <Link to="/" className="flex items-center shrink-0">
               <RippleLogo />
             </Link>
-            <nav className="flex items-center gap-0.5 flex-wrap">
+            <nav className="flex items-center gap-0.5 flex-nowrap overflow-x-auto min-w-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <NavLink to="/">Today</NavLink>
               <NavLink to="/setups">Setups</NavLink>
               <NavLink to="/calendar">Calendar</NavLink>
