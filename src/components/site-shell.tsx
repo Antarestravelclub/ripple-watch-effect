@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { RippleLogo } from "./ripple-logo";
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { SectorHeat } from "./sector-heat";
 import { useLiveEvents } from "@/hooks/use-live-events";
 import { OperonBadge } from "./operon-badge";
@@ -58,7 +59,7 @@ function NavLink({ to, children }: { to: string; children: ReactNode }) {
     <Link
       to={to}
       className={
-        "text-sm px-3 py-1.5 rounded-md transition-colors " +
+        "text-[13px] px-2 py-1 rounded-md transition-colors shrink-0 whitespace-nowrap " +
         (active
           ? "bg-primary/15 text-primary"
           : "text-muted-foreground hover:text-foreground hover:bg-accent")
@@ -72,17 +73,42 @@ function NavLink({ to, children }: { to: string; children: ReactNode }) {
 export function SiteShell({ children }: { children: ReactNode }) {
   const { events } = useLiveEvents();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const [hidden, setHidden] = useState(false);
   // Blotter needs the full page width for its trade tables.
   const showSidebar = !pathname.startsWith("/blotter");
+
+  // Slide the header out of the way when scrolling down; bring it back on scroll up.
+  useEffect(() => {
+    let lastY = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      if (y < 80) setHidden(false);
+      else if (y > lastY + 4) setHidden(true);
+      else if (y < lastY - 4) setHidden(false);
+      lastY = y;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-background gradient-radial">
-      <header className="sticky top-0 z-30 px-3 pt-3">
+      <header
+        className={
+          "sticky top-0 z-30 px-3 pt-3 transition-all duration-200 " +
+          (hidden ? "-translate-y-[130%] opacity-0 pointer-events-none" : "")
+        }
+      >
         <div className="mx-auto max-w-7xl rounded-2xl border border-border/60 backdrop-blur-md bg-background/75 shadow-lg shadow-black/25">
-          <div className="px-4 min-h-14 py-1.5 flex items-center justify-between gap-3 flex-wrap">
-            <Link to="/" className="flex items-center">
+          <div className="px-3 py-1.5 flex items-center gap-2 flex-wrap">
+            <Link to="/" className="flex items-center shrink-0">
               <RippleLogo />
             </Link>
-            <nav className="flex items-center gap-1 flex-wrap">
+            <div className="ml-auto flex items-center gap-2">
+              <span className="hidden sm:block"><DataRefreshStamp /></span>
+              <AccountMenu />
+            </div>
+            <nav className="order-last w-full flex items-center gap-0.5 flex-nowrap overflow-x-auto min-w-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <NavLink to="/">Today</NavLink>
               <NavLink to="/setups">Setups</NavLink>
               <NavLink to="/calendar">Calendar</NavLink>
@@ -100,10 +126,6 @@ export function SiteShell({ children }: { children: ReactNode }) {
               <NavLink to="/bridge">Bridge</NavLink>
               <NavLink to="/manual">Manual</NavLink>
             </nav>
-          </div>
-          <div className="px-4 pb-1.5 flex items-center justify-end gap-3">
-            <DataRefreshStamp />
-            <AccountMenu />
           </div>
         </div>
       </header>
