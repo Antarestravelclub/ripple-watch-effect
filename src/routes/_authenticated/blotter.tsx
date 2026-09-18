@@ -468,6 +468,14 @@ function ClosedTable({
   const setFrom = (v: string) => setFilters({ ...filters, from: v });
   const setTo = (v: string) => setFilters({ ...filters, to: v });
 
+  const totalCost = rows.reduce((s, t) => s + positionCost(t.entry_price, t.position_size), 0);
+  const totalProceeds = rows.reduce(
+    (s, t) => s + (marketValue(t.exit_price, t.position_size) ?? 0),
+    0,
+  );
+  const totalPnl = rows.reduce((s, t) => s + (t.realized_pnl ?? 0), 0);
+  const totalPct = totalCost > 0 ? +((totalPnl / totalCost) * 100).toFixed(2) : null;
+
   return (
     <div className="mt-5">
       <div className="flex flex-wrap items-end gap-3">
