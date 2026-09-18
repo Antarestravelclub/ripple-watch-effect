@@ -400,11 +400,38 @@ function OpenTable({
               </tr>
             );
           })}
-        </tbody>
-      </table>
-    </div>
-  );
-}
+          </tbody>
+          <tfoot>
+            <tr className="border-t border-border/70 bg-card/60 text-xs font-semibold">
+              <Td>Total</Td>
+              <Td />
+              <Td />
+              <Td mono>{totalLots}</Td>
+              <Td mono>{fmtMoney(totalCost)}</Td>
+              <Td />
+              <Td mono>{fmtMoney(totalMv)}</Td>
+              <Td>
+                <span className={pctTone(totalPnl)}>{fmtMoney(totalPnl)}</span>
+              </Td>
+              <Td>
+                <span className={pctTone(totalPnl)}>{fmtPct(totalPct)}</span>
+              </Td>
+              <Td />
+              <Td />
+            </tr>
+            {unpriced > 0 && (
+              <tr className="border-t border-border/40">
+                <td colSpan={11} className="px-3 py-1.5 text-[10px] text-muted-foreground">
+                  {unpriced} trade{unpriced === 1 ? "" : "s"} without a current price — market
+                  value and gain/loss totals cover priced trades only.
+                </td>
+              </tr>
+            )}
+          </tfoot>
+        </table>
+      </div>
+    );
+  }
 
 /** Filter state lives on the page so the Accumulated Results strip matches. */
 export interface ClosedFilters {
