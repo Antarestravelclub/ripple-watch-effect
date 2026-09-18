@@ -297,6 +297,17 @@ function OpenTable({
     );
   }
 
+  const priced = trades.filter((t) => (priceOf(t) ?? 0) > 0);
+  const unpriced = trades.length - priced.length;
+  const totalLots = trades.reduce((s, t) => s + t.position_size, 0);
+  const totalCost = trades.reduce((s, t) => s + positionCost(t.entry_price, t.position_size), 0);
+  const totalMv = priced.reduce(
+    (s, t) => s + (marketValue(priceOf(t), t.position_size) ?? 0),
+    0,
+  );
+  const totalPnl = priced.reduce((s, t) => s + (liveMetrics(t, priceOf(t)).pnl ?? 0), 0);
+  const totalPct = totalCost > 0 ? +((totalPnl / totalCost) * 100).toFixed(2) : null;
+
   return (
     <div className="mt-5 overflow-x-auto rounded-xl border border-border/70">
       <table className="w-full text-sm">
@@ -389,11 +400,38 @@ function OpenTable({
               </tr>
             );
           })}
-        </tbody>
-      </table>
-    </div>
-  );
-}
+          </tbody>
+          <tfoot>
+            <tr className="border-t border-border/70 bg-card/60 text-xs font-semibold">
+              <Td>Total</Td>
+              <Td />
+              <Td />
+              <Td mono>{totalLots}</Td>
+              <Td mono>{fmtMoney(totalCost)}</Td>
+              <Td />
+              <Td mono>{fmtMoney(totalMv)}</Td>
+              <Td>
+                <span className={pctTone(totalPnl)}>{fmtMoney(totalPnl)}</span>
+              </Td>
+              <Td>
+                <span className={pctTone(totalPnl)}>{fmtPct(totalPct)}</span>
+              </Td>
+              <Td />
+              <Td />
+            </tr>
+            {unpriced > 0 && (
+              <tr className="border-t border-border/40">
+                <td colSpan={11} className="px-3 py-1.5 text-[10px] text-muted-foreground">
+                  {unpriced} trade{unpriced === 1 ? "" : "s"} without a current price — market
+                  value and gain/loss totals cover priced trades only.
+                </td>
+              </tr>
+            )}
+          </tfoot>
+        </table>
+      </div>
+    );
+  }
 
 /** Filter state lives on the page so the Accumulated Results strip matches. */
 export interface ClosedFilters {
@@ -429,6 +467,14 @@ function ClosedTable({
   const setInstrument = (v: InstrumentFilter) => setFilters({ ...filters, instrument: v });
   const setFrom = (v: string) => setFilters({ ...filters, from: v });
   const setTo = (v: string) => setFilters({ ...filters, to: v });
+
+  const totalCost = rows.reduce((s, t) => s + positionCost(t.entry_price, t.position_size), 0);
+  const totalProceeds = rows.reduce(
+    (s, t) => s + (marketValue(t.exit_price, t.position_size) ?? 0),
+    0,
+  );
+  const totalPnl = rows.reduce((s, t) => s + (t.realized_pnl ?? 0), 0);
+  const totalPct = totalCost > 0 ? +((totalPnl / totalCost) * 100).toFixed(2) : null;
 
   return (
     <div className="mt-5">
@@ -581,8 +627,27 @@ function ClosedTable({
                   </tr>
                 );
               })}
-            </tbody>
-          </table>
+              </tbody>
+              <tfoot>
+                <tr className="border-t border-border/70 bg-card/60 text-xs font-semibold">
+                  <Td>
+                    Total ({rows.length} trade{rows.length === 1 ? "" : "s"})
+                  </Td>
+                  <Td />
+                  <Td />
+                  <Td />
+                  <Td />
+                  <Td mono>{fmtMoney(totalCost)}</Td>
+                  <Td mono>{fmtMoney(totalProceeds)}</Td>
+                  <Td>
+                    <span className={pctTone(totalPnl)}>
+                      {fmtMoney(totalPnl)} · {fmtPct(totalPct)}
+                    </span>
+                  </Td>
+                  <Td />
+                </tr>
+              </tfoot>
+            </table>
         </div>
         <p className="mt-2 text-[10px] text-muted-foreground">
           Stop/target exit times reflect when the automatic price check detected the touch
