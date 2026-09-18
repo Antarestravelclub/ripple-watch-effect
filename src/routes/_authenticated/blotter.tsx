@@ -627,8 +627,27 @@ function ClosedTable({
                   </tr>
                 );
               })}
-            </tbody>
-          </table>
+              </tbody>
+              <tfoot>
+                <tr className="border-t border-border/70 bg-card/60 text-xs font-semibold">
+                  <Td>
+                    Total ({rows.length} trade{rows.length === 1 ? "" : "s"})
+                  </Td>
+                  <Td />
+                  <Td />
+                  <Td />
+                  <Td />
+                  <Td mono>{fmtMoney(totalCost)}</Td>
+                  <Td mono>{fmtMoney(totalProceeds)}</Td>
+                  <Td>
+                    <span className={pctTone(totalPnl)}>
+                      {fmtMoney(totalPnl)} · {fmtPct(totalPct)}
+                    </span>
+                  </Td>
+                  <Td />
+                </tr>
+              </tfoot>
+            </table>
         </div>
         <p className="mt-2 text-[10px] text-muted-foreground">
           Stop/target exit times reflect when the automatic price check detected the touch
