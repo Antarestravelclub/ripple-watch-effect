@@ -297,6 +297,17 @@ function OpenTable({
     );
   }
 
+  const priced = trades.filter((t) => (priceOf(t) ?? 0) > 0);
+  const unpriced = trades.length - priced.length;
+  const totalLots = trades.reduce((s, t) => s + t.position_size, 0);
+  const totalCost = trades.reduce((s, t) => s + positionCost(t.entry_price, t.position_size), 0);
+  const totalMv = priced.reduce(
+    (s, t) => s + (marketValue(priceOf(t), t.position_size) ?? 0),
+    0,
+  );
+  const totalPnl = priced.reduce((s, t) => s + (liveMetrics(t, priceOf(t)).pnl ?? 0), 0);
+  const totalPct = totalCost > 0 ? +((totalPnl / totalCost) * 100).toFixed(2) : null;
+
   return (
     <div className="mt-5 overflow-x-auto rounded-xl border border-border/70">
       <table className="w-full text-sm">
