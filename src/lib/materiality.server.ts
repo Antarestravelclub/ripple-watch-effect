@@ -2,8 +2,7 @@
 // scored before it is allowed to become an event, so feed noise never reaches
 // the Today tab. Research framing only — never advice.
 
-const ENDPOINT = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const MODEL = "google/gemini-3.6-flash";
+import { chatJSON } from "./ai-provider.server";
 
 export const IMPACT_THRESHOLD = 40;
 export const RUN_ACCEPT_CAP = 15;
@@ -75,32 +74,8 @@ export function normalizeMateriality(raw: unknown): Materiality {
   };
 }
 
-export async function scoreMateriality(text: string, apiKey: string): Promise<Materiality> {
-  const res = await fetch(ENDPOINT, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: MODEL,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: RUBRIC },
-        { role: "user", content: `Score this headline and summary:\n\n${text}` },
-      ],
-    }),
-  });
-
-  if (!res.ok) {
-    const body = await res.text();
-    console.error(`Materiality classifier failed [${res.status}]: ${body}`);
-    if (res.status === 402) throw new Error("AI credits exhausted for this workspace. [402]");
-    if (res.status === 403) throw new Error("AI access blocked by workspace policy. [403]");
-    if (res.status === 429) throw new Error("AI rate limit reached — try again shortly.");
-    throw new Error(`AI request failed [${res.status}]`);
-  }
-
-  const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-  const content = json.choices?.[0]?.message?.content ?? "";
-  if (!content.trim()) throw new Error("Classifier returned an empty response");
+export async function scoreMateriality(text: string): Promise<Materiality> {
+  const content = await chatJSON(RUBRIC, `Score this headline and summary:\n\n${text}`);
   return normalizeMateriality(parseLoose(content));
 }
 

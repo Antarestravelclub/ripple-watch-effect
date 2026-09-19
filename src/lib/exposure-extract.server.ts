@@ -1,10 +1,9 @@
-// Server-only exposure extraction against the Lovable AI Gateway.
+// Server-only exposure extraction via the swappable AI provider module.
 // Uses plain JSON-mode completion + tolerant normalization so a slightly
 // off-shape model answer still yields usable exposure rows.
 import { EXPOSURE_SYSTEM_PROMPT, normalizeImpact, type ArticleImpact } from "./exposure-schema";
 
-const ENDPOINT = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const MODEL = "google/gemini-3.6-flash";
+import { chatJSON } from "./ai-provider.server";
 
 const SHAPE = `Reply with ONLY a JSON object of this exact shape:
 {
@@ -36,36 +35,10 @@ function parseJsonLoose(text: string): unknown {
   }
 }
 
-export async function extractExposure(text: string, apiKey: string): Promise<ArticleImpact> {
-  const res = await fetch(ENDPOINT, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: `${EXPOSURE_SYSTEM_PROMPT}\n\n${SHAPE}` },
-        { role: "user", content: `Analyse this article:\n\n${text}` },
-      ],
-    }),
-  });
-
-  if (!res.ok) {
-    const body = await res.text();
-    console.error(`AI gateway failed [${res.status}]: ${body}`);
-    if (res.status === 429) throw new Error("AI rate limit reached — try again shortly.");
-    if (res.status === 402)
-      throw new Error("AI credits exhausted for this workspace.");
-    throw new Error(`AI request failed [${res.status}]`);
-  }
-
-  const json = (await res.json()) as {
-    choices?: Array<{ message?: { content?: string } }>;
-  };
-  const content = json.choices?.[0]?.message?.content ?? "";
-  if (!content.trim()) throw new Error("AI returned an empty response");
+export async function extractExposure(text: string): Promise<ArticleImpact> {
+  const content = await chatJSON(
+    `${EXPOSURE_SYSTEM_PROMPT}\n\n${SHAPE}`,
+    `Analyse this article:\n\n${text}`,
+  );
   return normalizeImpact(parseJsonLoose(content));
 }

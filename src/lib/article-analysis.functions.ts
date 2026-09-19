@@ -13,8 +13,8 @@ export const analyzeArticle = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }): Promise<ArticleImpact> => {
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("AI is not configured for this project.");
+    const { aiConfigured } = await import("./ai-provider.server");
+    if (!aiConfigured()) throw new Error("AI is not configured for this project.");
     const { extractExposure } = await import("./exposure-extract.server");
-    return extractExposure(data.text, key);
+    return extractExposure(data.text);
   });

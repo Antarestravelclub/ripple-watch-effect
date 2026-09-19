@@ -112,7 +112,8 @@ export async function runNewsIngest(): Promise<IngestResult> {
   };
 
   const feedKey = process.env.FINNHUB_API_KEY ?? "";
-  const aiKey = process.env.LOVABLE_API_KEY ?? "";
+  const { aiProviderLabel } = await import("./ai-provider.server");
+  detail.push(`AI provider: ${aiProviderLabel()}`);
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: runRow } = await supabaseAdmin
     .from("ingest_runs")
@@ -142,8 +143,9 @@ export async function runNewsIngest(): Promise<IngestResult> {
     return result;
   };
 
-  if (!aiKey) {
-    result.error = "AI exposure engine is not configured.";
+  const { aiConfigured } = await import("./ai-provider.server");
+  if (!aiConfigured()) {
+    result.error = "AI exposure engine is not configured (set OPENAI_API_KEY).";
     return finish();
   }
 
@@ -335,7 +337,7 @@ export async function runNewsIngest(): Promise<IngestResult> {
   for (const c of fresh.slice(0, CLASSIFY_CAP)) {
     let impact: Materiality;
     try {
-      impact = await scoreMateriality(`${c.headline}\n\n${c.summary}`.trim(), aiKey);
+      impact = await scoreMateriality(`${c.headline}\n\n${c.summary}`.trim());
     } catch (e) {
       const message = e instanceof Error ? e.message : "unknown error";
       stages.aiFailed++;
@@ -403,7 +405,7 @@ export async function runNewsIngest(): Promise<IngestResult> {
     let impact: ArticleImpact;
     try {
       const { extractExposure } = await import("./exposure-extract.server");
-      impact = await extractExposure(text, aiKey);
+      impact = await extractExposure(text);
     } catch (e) {
       const message = e instanceof Error ? e.message : "unknown error";
       stages.aiFailed++;
