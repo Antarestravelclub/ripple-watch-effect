@@ -15,8 +15,7 @@ const TTL_MS = 10 * 60_000;
 async function allReactions(): Promise<ReactionLite[]> {
   if (cache && Date.now() - cache.at < TTL_MS) return cache.rows;
   try {
-    const { publicSupabase } = await import("./supabase-public.server");
-    const supabase = publicSupabase();
+    const { supabaseAdmin: supabase } = await import("@/integrations/supabase/client.server");
     const { data } = await supabase
       .from("historical_reactions")
       .select("ticker,direction,historical_events(archetype)");

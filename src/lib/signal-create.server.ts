@@ -37,8 +37,8 @@ export type CreateSignalResult =
 /** Reads the paper portfolio settings, falling back to the documented defaults. */
 export async function portfolioSettings(): Promise<PortfolioSettings> {
   try {
-    const { publicSupabase } = await import("./supabase-public.server");
-    const { data } = await publicSupabase()
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin
       .from("portfolio_settings")
       .select("notional_value,risk_per_trade_pct,max_position_pct")
       .limit(1);

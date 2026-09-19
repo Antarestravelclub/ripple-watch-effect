@@ -7,8 +7,8 @@ export async function eventMagnitudes(): Promise<Map<string, RippleStrength>> {
     EVENTS.map((e) => [e.id, e.strength as RippleStrength]),
   );
   try {
-    const { publicSupabase } = await import("./supabase-public.server");
-    const { data } = await publicSupabase()
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin
       .from("live_events")
       .select("id,strength");
     for (const row of (data ?? []) as Array<{ id: string; strength: string }>) {
