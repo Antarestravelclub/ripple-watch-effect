@@ -340,8 +340,7 @@ export interface EvaluationRunRow {
 
 /** Newest automatic (or on-page) evaluation run, for the "last checked" readout. */
 export const lastEvaluationRun = createServerFn({ method: "GET" }).handler(async () => {
-  const { publicSupabase } = await import("./supabase-public.server");
-  const supabase = publicSupabase();
+  const { supabaseAdmin: supabase } = await import("@/integrations/supabase/client.server");
   const { data } = await supabase
     .from("evaluation_runs")
     .select("finished_at,evaluated,target_hits,invalidated,expired,ok,error")

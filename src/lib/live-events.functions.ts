@@ -21,8 +21,7 @@ export interface NewsSourceHealth {
 }
 
 export const listLiveEvents = createServerFn({ method: "GET" }).handler(async () => {
-  const { publicSupabase } = await import("./supabase-public.server");
-  const supabase = publicSupabase();
+  const { supabaseAdmin: supabase } = await import("@/integrations/supabase/client.server");
 
   const { data: events, error } = await supabase
     .from("live_events")
@@ -80,8 +79,7 @@ export const listLiveEvents = createServerFn({ method: "GET" }).handler(async ()
 export const getLiveEvent = createServerFn({ method: "GET" })
   .inputValidator((input: { id: string }) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data }) => {
-    const { publicSupabase } = await import("./supabase-public.server");
-    const supabase = publicSupabase();
+    const { supabaseAdmin: supabase } = await import("@/integrations/supabase/client.server");
 
     const { data: event } = await supabase
       .from("live_events")
