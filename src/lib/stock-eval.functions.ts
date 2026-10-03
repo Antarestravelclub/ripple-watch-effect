@@ -258,16 +258,17 @@ async function fill(list: string[]) {
     for (const e of batch) {
       if (!e) continue;
       // Rate-limited responses come back without company data; don't cache those.
-      if (e.pillars.find((p) => p.key === "profit")?.score == null && e.confidence === "Low") continue;
+      // ASX (.AX) names legitimately have no Finnhub fundamentals — cache them anyway.
+      if (!e.symbol.endsWith(".AX") && e.pillars.find((p) => p.key === "profit")?.score == null && e.confidence === "Low") continue;
       symCache.set(e.symbol, { at: Date.now(), row: toRow(e) });
     }
   }
 }
 
 export const getRankings = createServerFn({ method: "GET" })
-  .inputValidator((d) => z.object({ universe: z.enum(["major", "xm"]).default("major") }).parse(d ?? {}))
+  .inputValidator((d) => z.object({ universe: z.enum(["major", "xm", "au"]).default("major") }).parse(d ?? {}))
   .handler(async ({ data }) => {
-    const list = data.universe === "xm" ? XM_UNIVERSE : RANK_UNIVERSE;
+    const list = data.universe === "xm" ? XM_UNIVERSE : data.universe === "au" ? AU_UNIVERSE : RANK_UNIVERSE;
     inflight ??= fill(list).finally(() => { inflight = null; });
     await inflight;
     const rows: RankedStock[] = [];
