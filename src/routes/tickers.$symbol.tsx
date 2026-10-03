@@ -18,6 +18,7 @@ import { listSignals } from "@/lib/signals.functions";
 import { getQuote } from "@/lib/quotes.functions";
 import { listAnalogues } from "@/lib/analogues.functions";
 import { TradingViewChart } from "@/components/tradingview";
+import { StockEvaluation } from "@/components/stock-evaluation";
 import {
   ManualPaperTradeButton,
   PaperTradeButton,
@@ -203,6 +204,8 @@ function TickerDetail() {
           </div>
         )}
       </section>
+
+      {meta.tradable && <StockEvaluation ticker={quoteSymbol} />}
 
       {/* Chart */}
       {meta.tradable && (
