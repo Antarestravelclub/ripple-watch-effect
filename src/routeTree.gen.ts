@@ -9,82 +9,47 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as WatchlistRouteImport } from './routes/watchlist'
-import { Route as TrackerRouteImport } from './routes/tracker'
-import { Route as SetupsRouteImport } from './routes/setups'
-import { Route as ScorecardRouteImport } from './routes/scorecard'
-import { Route as PlaybooksRouteImport } from './routes/playbooks'
-import { Route as ManualRouteImport } from './routes/manual'
-import { Route as CalendarRouteImport } from './routes/calendar'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AnalyzeRouteImport } from './routes/analyze'
-import { Route as AnaloguesRouteImport } from './routes/analogues'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AnaloguesRouteImport } from './routes/analogues'
+import { Route as AnalyzeRouteImport } from './routes/analyze'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as CalendarRouteImport } from './routes/calendar'
+import { Route as EvaluateRouteImport } from './routes/evaluate'
+import { Route as ManualRouteImport } from './routes/manual'
+import { Route as PlaybooksRouteImport } from './routes/playbooks'
+import { Route as ScorecardRouteImport } from './routes/scorecard'
+import { Route as SetupsRouteImport } from './routes/setups'
+import { Route as TrackerRouteImport } from './routes/tracker'
+import { Route as WatchlistRouteImport } from './routes/watchlist'
+import { Route as AuthenticatedBlotterRouteImport } from './routes/_authenticated/blotter'
+import { Route as AuthenticatedBridgeRouteImport } from './routes/_authenticated/bridge'
+import { Route as AuthenticatedBrokerRouteImport } from './routes/_authenticated/broker'
+import { Route as AdminBrokerSymbolsRouteImport } from './routes/admin.broker-symbols'
+import { Route as AdminEtfsRouteImport } from './routes/admin.etfs'
+import { Route as EventIdRouteImport } from './routes/event.$id'
+import { Route as SignalIdRouteImport } from './routes/signal.$id'
 import { Route as TickersIndexRouteImport } from './routes/tickers.index'
 import { Route as TickersSymbolRouteImport } from './routes/tickers.$symbol'
-import { Route as SignalIdRouteImport } from './routes/signal.$id'
-import { Route as EventIdRouteImport } from './routes/event.$id'
-import { Route as AdminEtfsRouteImport } from './routes/admin.etfs'
-import { Route as AdminBrokerSymbolsRouteImport } from './routes/admin.broker-symbols'
-import { Route as AuthenticatedBrokerRouteImport } from './routes/_authenticated/broker'
-import { Route as AuthenticatedBridgeRouteImport } from './routes/_authenticated/bridge'
-import { Route as AuthenticatedBlotterRouteImport } from './routes/_authenticated/blotter'
-import { Route as ApiPublicStreamQuotesRouteImport } from './routes/api/public/stream/quotes'
-import { Route as ApiPublicHooksIngestNewsRouteImport } from './routes/api/public/hooks/ingest-news'
-import { Route as ApiPublicHooksEvaluateSignalsRouteImport } from './routes/api/public/hooks/evaluate-signals'
-import { Route as ApiPublicHooksBackfillBenchmarksRouteImport } from './routes/api/public/hooks/backfill-benchmarks'
-import { Route as ApiPublicBridgePositionsRouteImport } from './routes/api/public/bridge/positions'
-import { Route as ApiPublicBridgeOrdersRouteImport } from './routes/api/public/bridge/orders'
-import { Route as ApiPublicBridgeInstructionsRouteImport } from './routes/api/public/bridge/instructions'
-import { Route as ApiPublicBridgeFillsRouteImport } from './routes/api/public/bridge/fills'
-import { Route as ApiPublicBridgeDealsRouteImport } from './routes/api/public/bridge/deals'
 import { Route as ApiPublicBridgeAccountRouteImport } from './routes/api/public/bridge/account'
+import { Route as ApiPublicBridgeDealsRouteImport } from './routes/api/public/bridge/deals'
+import { Route as ApiPublicBridgeFillsRouteImport } from './routes/api/public/bridge/fills'
+import { Route as ApiPublicBridgeInstructionsRouteImport } from './routes/api/public/bridge/instructions'
+import { Route as ApiPublicBridgeOrdersRouteImport } from './routes/api/public/bridge/orders'
+import { Route as ApiPublicBridgePositionsRouteImport } from './routes/api/public/bridge/positions'
+import { Route as ApiPublicHooksBackfillBenchmarksRouteImport } from './routes/api/public/hooks/backfill-benchmarks'
+import { Route as ApiPublicHooksEvaluateSignalsRouteImport } from './routes/api/public/hooks/evaluate-signals'
+import { Route as ApiPublicHooksIngestNewsRouteImport } from './routes/api/public/hooks/ingest-news'
+import { Route as ApiPublicStreamQuotesRouteImport } from './routes/api/public/stream/quotes'
 import { Route as ApiPublicBridgeInstructionsIdResultRouteImport } from './routes/api/public/bridge/instructions.$id.result'
 
-const WatchlistRoute = WatchlistRouteImport.update({
-  id: '/watchlist',
-  path: '/watchlist',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TrackerRoute = TrackerRouteImport.update({
-  id: '/tracker',
-  path: '/tracker',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SetupsRoute = SetupsRouteImport.update({
-  id: '/setups',
-  path: '/setups',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ScorecardRoute = ScorecardRouteImport.update({
-  id: '/scorecard',
-  path: '/scorecard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PlaybooksRoute = PlaybooksRouteImport.update({
-  id: '/playbooks',
-  path: '/playbooks',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ManualRoute = ManualRouteImport.update({
-  id: '/manual',
-  path: '/manual',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CalendarRoute = CalendarRouteImport.update({
-  id: '/calendar',
-  path: '/calendar',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AnalyzeRoute = AnalyzeRouteImport.update({
-  id: '/analyze',
-  path: '/analyze',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AnaloguesRoute = AnaloguesRouteImport.update({
@@ -92,13 +57,89 @@ const AnaloguesRoute = AnaloguesRouteImport.update({
   path: '/analogues',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
+const AnalyzeRoute = AnalyzeRouteImport.update({
+  id: '/analyze',
+  path: '/analyze',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CalendarRoute = CalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EvaluateRoute = EvaluateRouteImport.update({
+  id: '/evaluate',
+  path: '/evaluate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ManualRoute = ManualRouteImport.update({
+  id: '/manual',
+  path: '/manual',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlaybooksRoute = PlaybooksRouteImport.update({
+  id: '/playbooks',
+  path: '/playbooks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScorecardRoute = ScorecardRouteImport.update({
+  id: '/scorecard',
+  path: '/scorecard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SetupsRoute = SetupsRouteImport.update({
+  id: '/setups',
+  path: '/setups',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrackerRoute = TrackerRouteImport.update({
+  id: '/tracker',
+  path: '/tracker',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WatchlistRoute = WatchlistRouteImport.update({
+  id: '/watchlist',
+  path: '/watchlist',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedBlotterRoute = AuthenticatedBlotterRouteImport.update({
+  id: '/blotter',
+  path: '/blotter',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedBridgeRoute = AuthenticatedBridgeRouteImport.update({
+  id: '/bridge',
+  path: '/bridge',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedBrokerRoute = AuthenticatedBrokerRouteImport.update({
+  id: '/broker',
+  path: '/broker',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AdminBrokerSymbolsRoute = AdminBrokerSymbolsRouteImport.update({
+  id: '/admin/broker-symbols',
+  path: '/admin/broker-symbols',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminEtfsRoute = AdminEtfsRouteImport.update({
+  id: '/admin/etfs',
+  path: '/admin/etfs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EventIdRoute = EventIdRouteImport.update({
+  id: '/event/$id',
+  path: '/event/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignalIdRoute = SignalIdRouteImport.update({
+  id: '/signal/$id',
+  path: '/signal/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TickersIndexRoute = TickersIndexRouteImport.update({
@@ -111,73 +152,19 @@ const TickersSymbolRoute = TickersSymbolRouteImport.update({
   path: '/tickers/$symbol',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SignalIdRoute = SignalIdRouteImport.update({
-  id: '/signal/$id',
-  path: '/signal/$id',
+const ApiPublicBridgeAccountRoute = ApiPublicBridgeAccountRouteImport.update({
+  id: '/api/public/bridge/account',
+  path: '/api/public/bridge/account',
   getParentRoute: () => rootRouteImport,
 } as any)
-const EventIdRoute = EventIdRouteImport.update({
-  id: '/event/$id',
-  path: '/event/$id',
+const ApiPublicBridgeDealsRoute = ApiPublicBridgeDealsRouteImport.update({
+  id: '/api/public/bridge/deals',
+  path: '/api/public/bridge/deals',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminEtfsRoute = AdminEtfsRouteImport.update({
-  id: '/admin/etfs',
-  path: '/admin/etfs',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminBrokerSymbolsRoute = AdminBrokerSymbolsRouteImport.update({
-  id: '/admin/broker-symbols',
-  path: '/admin/broker-symbols',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedBrokerRoute = AuthenticatedBrokerRouteImport.update({
-  id: '/broker',
-  path: '/broker',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedBridgeRoute = AuthenticatedBridgeRouteImport.update({
-  id: '/bridge',
-  path: '/bridge',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedBlotterRoute = AuthenticatedBlotterRouteImport.update({
-  id: '/blotter',
-  path: '/blotter',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const ApiPublicStreamQuotesRoute = ApiPublicStreamQuotesRouteImport.update({
-  id: '/api/public/stream/quotes',
-  path: '/api/public/stream/quotes',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicHooksIngestNewsRoute =
-  ApiPublicHooksIngestNewsRouteImport.update({
-    id: '/api/public/hooks/ingest-news',
-    path: '/api/public/hooks/ingest-news',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksEvaluateSignalsRoute =
-  ApiPublicHooksEvaluateSignalsRouteImport.update({
-    id: '/api/public/hooks/evaluate-signals',
-    path: '/api/public/hooks/evaluate-signals',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksBackfillBenchmarksRoute =
-  ApiPublicHooksBackfillBenchmarksRouteImport.update({
-    id: '/api/public/hooks/backfill-benchmarks',
-    path: '/api/public/hooks/backfill-benchmarks',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicBridgePositionsRoute =
-  ApiPublicBridgePositionsRouteImport.update({
-    id: '/api/public/bridge/positions',
-    path: '/api/public/bridge/positions',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicBridgeOrdersRoute = ApiPublicBridgeOrdersRouteImport.update({
-  id: '/api/public/bridge/orders',
-  path: '/api/public/bridge/orders',
+const ApiPublicBridgeFillsRoute = ApiPublicBridgeFillsRouteImport.update({
+  id: '/api/public/bridge/fills',
+  path: '/api/public/bridge/fills',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicBridgeInstructionsRoute =
@@ -186,19 +173,38 @@ const ApiPublicBridgeInstructionsRoute =
     path: '/api/public/bridge/instructions',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicBridgeFillsRoute = ApiPublicBridgeFillsRouteImport.update({
-  id: '/api/public/bridge/fills',
-  path: '/api/public/bridge/fills',
+const ApiPublicBridgeOrdersRoute = ApiPublicBridgeOrdersRouteImport.update({
+  id: '/api/public/bridge/orders',
+  path: '/api/public/bridge/orders',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicBridgeDealsRoute = ApiPublicBridgeDealsRouteImport.update({
-  id: '/api/public/bridge/deals',
-  path: '/api/public/bridge/deals',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicBridgeAccountRoute = ApiPublicBridgeAccountRouteImport.update({
-  id: '/api/public/bridge/account',
-  path: '/api/public/bridge/account',
+const ApiPublicBridgePositionsRoute =
+  ApiPublicBridgePositionsRouteImport.update({
+    id: '/api/public/bridge/positions',
+    path: '/api/public/bridge/positions',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksBackfillBenchmarksRoute =
+  ApiPublicHooksBackfillBenchmarksRouteImport.update({
+    id: '/api/public/hooks/backfill-benchmarks',
+    path: '/api/public/hooks/backfill-benchmarks',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksEvaluateSignalsRoute =
+  ApiPublicHooksEvaluateSignalsRouteImport.update({
+    id: '/api/public/hooks/evaluate-signals',
+    path: '/api/public/hooks/evaluate-signals',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksIngestNewsRoute =
+  ApiPublicHooksIngestNewsRouteImport.update({
+    id: '/api/public/hooks/ingest-news',
+    path: '/api/public/hooks/ingest-news',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicStreamQuotesRoute = ApiPublicStreamQuotesRouteImport.update({
+  id: '/api/public/stream/quotes',
+  path: '/api/public/stream/quotes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicBridgeInstructionsIdResultRoute =
@@ -214,6 +220,7 @@ export interface FileRoutesByFullPath {
   '/analyze': typeof AnalyzeRoute
   '/auth': typeof AuthRoute
   '/calendar': typeof CalendarRoute
+  '/evaluate': typeof EvaluateRoute
   '/manual': typeof ManualRoute
   '/playbooks': typeof PlaybooksRoute
   '/scorecard': typeof ScorecardRoute
@@ -247,6 +254,7 @@ export interface FileRoutesByTo {
   '/analyze': typeof AnalyzeRoute
   '/auth': typeof AuthRoute
   '/calendar': typeof CalendarRoute
+  '/evaluate': typeof EvaluateRoute
   '/manual': typeof ManualRoute
   '/playbooks': typeof PlaybooksRoute
   '/scorecard': typeof ScorecardRoute
@@ -282,6 +290,7 @@ export interface FileRoutesById {
   '/analyze': typeof AnalyzeRoute
   '/auth': typeof AuthRoute
   '/calendar': typeof CalendarRoute
+  '/evaluate': typeof EvaluateRoute
   '/manual': typeof ManualRoute
   '/playbooks': typeof PlaybooksRoute
   '/scorecard': typeof ScorecardRoute
@@ -317,6 +326,7 @@ export interface FileRouteTypes {
     | '/analyze'
     | '/auth'
     | '/calendar'
+    | '/evaluate'
     | '/manual'
     | '/playbooks'
     | '/scorecard'
@@ -350,6 +360,7 @@ export interface FileRouteTypes {
     | '/analyze'
     | '/auth'
     | '/calendar'
+    | '/evaluate'
     | '/manual'
     | '/playbooks'
     | '/scorecard'
@@ -384,6 +395,7 @@ export interface FileRouteTypes {
     | '/analyze'
     | '/auth'
     | '/calendar'
+    | '/evaluate'
     | '/manual'
     | '/playbooks'
     | '/scorecard'
@@ -419,6 +431,7 @@ export interface RootRouteChildren {
   AnalyzeRoute: typeof AnalyzeRoute
   AuthRoute: typeof AuthRoute
   CalendarRoute: typeof CalendarRoute
+  EvaluateRoute: typeof EvaluateRoute
   ManualRoute: typeof ManualRoute
   PlaybooksRoute: typeof PlaybooksRoute
   ScorecardRoute: typeof ScorecardRoute
@@ -445,74 +458,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/watchlist': {
-      id: '/watchlist'
-      path: '/watchlist'
-      fullPath: '/watchlist'
-      preLoaderRoute: typeof WatchlistRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/tracker': {
-      id: '/tracker'
-      path: '/tracker'
-      fullPath: '/tracker'
-      preLoaderRoute: typeof TrackerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/setups': {
-      id: '/setups'
-      path: '/setups'
-      fullPath: '/setups'
-      preLoaderRoute: typeof SetupsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/scorecard': {
-      id: '/scorecard'
-      path: '/scorecard'
-      fullPath: '/scorecard'
-      preLoaderRoute: typeof ScorecardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/playbooks': {
-      id: '/playbooks'
-      path: '/playbooks'
-      fullPath: '/playbooks'
-      preLoaderRoute: typeof PlaybooksRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/manual': {
-      id: '/manual'
-      path: '/manual'
-      fullPath: '/manual'
-      preLoaderRoute: typeof ManualRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/calendar': {
-      id: '/calendar'
-      path: '/calendar'
-      fullPath: '/calendar'
-      preLoaderRoute: typeof CalendarRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/analyze': {
-      id: '/analyze'
-      path: '/analyze'
-      fullPath: '/analyze'
-      preLoaderRoute: typeof AnalyzeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/analogues': {
-      id: '/analogues'
-      path: '/analogues'
-      fullPath: '/analogues'
-      preLoaderRoute: typeof AnaloguesRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -522,11 +472,130 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/analogues': {
+      id: '/analogues'
+      path: '/analogues'
+      fullPath: '/analogues'
+      preLoaderRoute: typeof AnaloguesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/analyze': {
+      id: '/analyze'
+      path: '/analyze'
+      fullPath: '/analyze'
+      preLoaderRoute: typeof AnalyzeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calendar': {
+      id: '/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof CalendarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/evaluate': {
+      id: '/evaluate'
+      path: '/evaluate'
+      fullPath: '/evaluate'
+      preLoaderRoute: typeof EvaluateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/manual': {
+      id: '/manual'
+      path: '/manual'
+      fullPath: '/manual'
+      preLoaderRoute: typeof ManualRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/playbooks': {
+      id: '/playbooks'
+      path: '/playbooks'
+      fullPath: '/playbooks'
+      preLoaderRoute: typeof PlaybooksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scorecard': {
+      id: '/scorecard'
+      path: '/scorecard'
+      fullPath: '/scorecard'
+      preLoaderRoute: typeof ScorecardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/setups': {
+      id: '/setups'
+      path: '/setups'
+      fullPath: '/setups'
+      preLoaderRoute: typeof SetupsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tracker': {
+      id: '/tracker'
+      path: '/tracker'
+      fullPath: '/tracker'
+      preLoaderRoute: typeof TrackerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/watchlist': {
+      id: '/watchlist'
+      path: '/watchlist'
+      fullPath: '/watchlist'
+      preLoaderRoute: typeof WatchlistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/blotter': {
+      id: '/_authenticated/blotter'
+      path: '/blotter'
+      fullPath: '/blotter'
+      preLoaderRoute: typeof AuthenticatedBlotterRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/bridge': {
+      id: '/_authenticated/bridge'
+      path: '/bridge'
+      fullPath: '/bridge'
+      preLoaderRoute: typeof AuthenticatedBridgeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/broker': {
+      id: '/_authenticated/broker'
+      path: '/broker'
+      fullPath: '/broker'
+      preLoaderRoute: typeof AuthenticatedBrokerRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/admin/broker-symbols': {
+      id: '/admin/broker-symbols'
+      path: '/admin/broker-symbols'
+      fullPath: '/admin/broker-symbols'
+      preLoaderRoute: typeof AdminBrokerSymbolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/etfs': {
+      id: '/admin/etfs'
+      path: '/admin/etfs'
+      fullPath: '/admin/etfs'
+      preLoaderRoute: typeof AdminEtfsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/event/$id': {
+      id: '/event/$id'
+      path: '/event/$id'
+      fullPath: '/event/$id'
+      preLoaderRoute: typeof EventIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signal/$id': {
+      id: '/signal/$id'
+      path: '/signal/$id'
+      fullPath: '/signal/$id'
+      preLoaderRoute: typeof SignalIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tickers/': {
@@ -543,109 +612,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TickersSymbolRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/signal/$id': {
-      id: '/signal/$id'
-      path: '/signal/$id'
-      fullPath: '/signal/$id'
-      preLoaderRoute: typeof SignalIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/event/$id': {
-      id: '/event/$id'
-      path: '/event/$id'
-      fullPath: '/event/$id'
-      preLoaderRoute: typeof EventIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/etfs': {
-      id: '/admin/etfs'
-      path: '/admin/etfs'
-      fullPath: '/admin/etfs'
-      preLoaderRoute: typeof AdminEtfsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/broker-symbols': {
-      id: '/admin/broker-symbols'
-      path: '/admin/broker-symbols'
-      fullPath: '/admin/broker-symbols'
-      preLoaderRoute: typeof AdminBrokerSymbolsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/broker': {
-      id: '/_authenticated/broker'
-      path: '/broker'
-      fullPath: '/broker'
-      preLoaderRoute: typeof AuthenticatedBrokerRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/bridge': {
-      id: '/_authenticated/bridge'
-      path: '/bridge'
-      fullPath: '/bridge'
-      preLoaderRoute: typeof AuthenticatedBridgeRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/blotter': {
-      id: '/_authenticated/blotter'
-      path: '/blotter'
-      fullPath: '/blotter'
-      preLoaderRoute: typeof AuthenticatedBlotterRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/api/public/stream/quotes': {
-      id: '/api/public/stream/quotes'
-      path: '/api/public/stream/quotes'
-      fullPath: '/api/public/stream/quotes'
-      preLoaderRoute: typeof ApiPublicStreamQuotesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/ingest-news': {
-      id: '/api/public/hooks/ingest-news'
-      path: '/api/public/hooks/ingest-news'
-      fullPath: '/api/public/hooks/ingest-news'
-      preLoaderRoute: typeof ApiPublicHooksIngestNewsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/evaluate-signals': {
-      id: '/api/public/hooks/evaluate-signals'
-      path: '/api/public/hooks/evaluate-signals'
-      fullPath: '/api/public/hooks/evaluate-signals'
-      preLoaderRoute: typeof ApiPublicHooksEvaluateSignalsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/backfill-benchmarks': {
-      id: '/api/public/hooks/backfill-benchmarks'
-      path: '/api/public/hooks/backfill-benchmarks'
-      fullPath: '/api/public/hooks/backfill-benchmarks'
-      preLoaderRoute: typeof ApiPublicHooksBackfillBenchmarksRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/bridge/positions': {
-      id: '/api/public/bridge/positions'
-      path: '/api/public/bridge/positions'
-      fullPath: '/api/public/bridge/positions'
-      preLoaderRoute: typeof ApiPublicBridgePositionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/bridge/orders': {
-      id: '/api/public/bridge/orders'
-      path: '/api/public/bridge/orders'
-      fullPath: '/api/public/bridge/orders'
-      preLoaderRoute: typeof ApiPublicBridgeOrdersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/bridge/instructions': {
-      id: '/api/public/bridge/instructions'
-      path: '/api/public/bridge/instructions'
-      fullPath: '/api/public/bridge/instructions'
-      preLoaderRoute: typeof ApiPublicBridgeInstructionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/bridge/fills': {
-      id: '/api/public/bridge/fills'
-      path: '/api/public/bridge/fills'
-      fullPath: '/api/public/bridge/fills'
-      preLoaderRoute: typeof ApiPublicBridgeFillsRouteImport
+    '/api/public/bridge/account': {
+      id: '/api/public/bridge/account'
+      path: '/api/public/bridge/account'
+      fullPath: '/api/public/bridge/account'
+      preLoaderRoute: typeof ApiPublicBridgeAccountRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/bridge/deals': {
@@ -655,11 +626,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBridgeDealsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/bridge/account': {
-      id: '/api/public/bridge/account'
-      path: '/api/public/bridge/account'
-      fullPath: '/api/public/bridge/account'
-      preLoaderRoute: typeof ApiPublicBridgeAccountRouteImport
+    '/api/public/bridge/fills': {
+      id: '/api/public/bridge/fills'
+      path: '/api/public/bridge/fills'
+      fullPath: '/api/public/bridge/fills'
+      preLoaderRoute: typeof ApiPublicBridgeFillsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/bridge/instructions': {
+      id: '/api/public/bridge/instructions'
+      path: '/api/public/bridge/instructions'
+      fullPath: '/api/public/bridge/instructions'
+      preLoaderRoute: typeof ApiPublicBridgeInstructionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/bridge/orders': {
+      id: '/api/public/bridge/orders'
+      path: '/api/public/bridge/orders'
+      fullPath: '/api/public/bridge/orders'
+      preLoaderRoute: typeof ApiPublicBridgeOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/bridge/positions': {
+      id: '/api/public/bridge/positions'
+      path: '/api/public/bridge/positions'
+      fullPath: '/api/public/bridge/positions'
+      preLoaderRoute: typeof ApiPublicBridgePositionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/backfill-benchmarks': {
+      id: '/api/public/hooks/backfill-benchmarks'
+      path: '/api/public/hooks/backfill-benchmarks'
+      fullPath: '/api/public/hooks/backfill-benchmarks'
+      preLoaderRoute: typeof ApiPublicHooksBackfillBenchmarksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/evaluate-signals': {
+      id: '/api/public/hooks/evaluate-signals'
+      path: '/api/public/hooks/evaluate-signals'
+      fullPath: '/api/public/hooks/evaluate-signals'
+      preLoaderRoute: typeof ApiPublicHooksEvaluateSignalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/ingest-news': {
+      id: '/api/public/hooks/ingest-news'
+      path: '/api/public/hooks/ingest-news'
+      fullPath: '/api/public/hooks/ingest-news'
+      preLoaderRoute: typeof ApiPublicHooksIngestNewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/stream/quotes': {
+      id: '/api/public/stream/quotes'
+      path: '/api/public/stream/quotes'
+      fullPath: '/api/public/stream/quotes'
+      preLoaderRoute: typeof ApiPublicStreamQuotesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/bridge/instructions/$id/result': {
@@ -709,6 +729,7 @@ const rootRouteChildren: RootRouteChildren = {
   AnalyzeRoute: AnalyzeRoute,
   AuthRoute: AuthRoute,
   CalendarRoute: CalendarRoute,
+  EvaluateRoute: EvaluateRoute,
   ManualRoute: ManualRoute,
   PlaybooksRoute: PlaybooksRoute,
   ScorecardRoute: ScorecardRoute,
