@@ -12,7 +12,7 @@ const COLS: { key: "Buy" | "Hold" | "Sell"; label: string; tone: string }[] = [
 
 export function RatingLeaderboard({ onPick }: { onPick: (s: string) => void }) {
   const fn = useServerFn(getRankings);
-  const [universe, setUniverse] = useState<"major" | "xm" | "au">("major");
+  const [universe, setUniverse] = useState<"major" | "xm" | "au" | "xmetf" | "auetf">("major");
   const q = useQuery({
     queryKey: ["eval-rankings", universe],
     queryFn: () => fn({ data: { universe } }),
@@ -33,15 +33,19 @@ export function RatingLeaderboard({ onPick }: { onPick: (s: string) => void }) {
         <div>
           <h2 className="text-lg font-semibold">Market ratings at a glance</h2>
           <p className="text-xs text-muted-foreground">
-            {universe === "xm"
+            {universe === "xmetf"
+              ? "20 popular US ETFs tradable as CFDs on XM (.US suffix). Funds have no company profits, so scores lean on price trend and risk."
+              : universe === "auetf"
+              ? "15 popular ASX-listed ETFs (.AX). Scores lean on price trend and risk."
+              : universe === "xm"
               ? "Top 100 US stocks tradable as CFDs on XM (listed there with a .US suffix)."
               : universe === "au"
                 ? "25 top ASX listings (.AX). Less company data is available for Australian stocks, so confidence is often lower."
                 : "30 major US stocks"} scored with the same model. Click one to see its full breakdown. Research only — not advice.
           </p>
         </div>
-        <div className="flex gap-1 text-xs">
-          {([["major", "Major 30"], ["xm", "XM tradable (100)"], ["au", "Australia (ASX 25)"]] as const).map(([k, l]) => (
+        <div className="flex flex-wrap gap-1 text-xs">
+          {([["major", "Major 30"], ["xm", "XM tradable (100)"], ["au", "Australia (ASX 25)"], ["xmetf", "XM ETFs (20)"], ["auetf", "ASX ETFs (15)"]] as const).map(([k, l]) => (
             <button
               key={k}
               onClick={() => setUniverse(k)}
@@ -88,7 +92,7 @@ export function RatingLeaderboard({ onPick }: { onPick: (s: string) => void }) {
                         <div className="flex items-center justify-between gap-2">
                           <span className="font-mono text-sm font-semibold">
                             {r.symbol}
-                            {universe === "xm" && <span className="ml-1 text-[10px] font-normal text-muted-foreground">XM: {r.symbol.replace(".", "")}.US</span>}
+                            {(universe === "xm" || universe === "xmetf") && <span className="ml-1 text-[10px] font-normal text-muted-foreground">XM: {r.symbol.replace(".", "")}.US</span>}
                           </span>
                           <span className="font-mono text-xs">
                             {r.price != null ? `$${r.price.toFixed(2)}` : "—"} · <b>{Math.round(r.score)}</b>/100

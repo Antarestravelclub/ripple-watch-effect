@@ -222,7 +222,7 @@ export const XM_UNIVERSE = [
   "RTX","DE","MMM","F","GM","T","VZ","CMCSA","TMUS","COP",
   "SLB","OXY","DUK","SO","LIN","FDX","BKNG","SPGI","PANW","MRNA",
 ];
-const XM_SET = new Set(XM_UNIVERSE);
+
 
 // Top ASX listings (Yahoo ".AX" suffix). Finnhub fundamentals are thin for ASX
 // names, so scores lean on price history — expect lower confidence ratings.
@@ -244,7 +244,7 @@ export const AU_ETF_UNIVERSE = [
   "GOLD.AX","HACK.AX","FANG.AX","VAP.AX","VAF.AX","IXJ.AX","STW.AX",
 ];
 const ETF_SET = new Set([...XM_ETF_UNIVERSE, ...AU_ETF_UNIVERSE]);
-for (const s of XM_ETF_UNIVERSE) XM_SET_EXTRA.push(s);
+const XM_SET = new Set([...XM_UNIVERSE, ...XM_ETF_UNIVERSE]);
 
 export interface RankedStock { symbol: string; name: string | null; price: number | null; score: number; verdict: Verdict; confidence: Evaluation["confidence"]; reason: string; xm: boolean }
 
@@ -273,16 +273,16 @@ async function fill(list: string[]) {
       if (!e) continue;
       // Rate-limited responses come back without company data; don't cache those.
       // ASX (.AX) names legitimately have no Finnhub fundamentals — cache them anyway.
-      if (!e.symbol.endsWith(".AX") && e.pillars.find((p) => p.key === "profit")?.score == null && e.confidence === "Low") continue;
+      if (!e.symbol.endsWith(".AX") && !ETF_SET.has(e.symbol) && e.pillars.find((p) => p.key === "profit")?.score == null && e.confidence === "Low") continue;
       symCache.set(e.symbol, { at: Date.now(), row: toRow(e) });
     }
   }
 }
 
 export const getRankings = createServerFn({ method: "GET" })
-  .inputValidator((d) => z.object({ universe: z.enum(["major", "xm", "au"]).default("major") }).parse(d ?? {}))
+  .inputValidator((d) => z.object({ universe: z.enum(["major", "xm", "au", "xmetf", "auetf"]).default("major") }).parse(d ?? {}))
   .handler(async ({ data }) => {
-    const list = data.universe === "xm" ? XM_UNIVERSE : data.universe === "au" ? AU_UNIVERSE : RANK_UNIVERSE;
+    const list = data.universe === "xm" ? XM_UNIVERSE : data.universe === "au" ? AU_UNIVERSE : data.universe === "xmetf" ? XM_ETF_UNIVERSE : data.universe === "auetf" ? AU_ETF_UNIVERSE : RANK_UNIVERSE;
     inflight ??= fill(list).finally(() => { inflight = null; });
     await inflight;
     const rows: RankedStock[] = [];
