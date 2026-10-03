@@ -229,7 +229,7 @@ async function buildRankings(): Promise<RankedStock[]> {
       const top = e.verdict === "Sell" ? best[best.length - 1] : best[0];
       rows.push({
         symbol: e.symbol, name: e.name, price: e.price, score: e.score, verdict: e.verdict, confidence: e.confidence,
-        reason: top ? `${e.verdict === "Sell" ? "Weakest" : "Strongest"}: ${top.name} (${Math.round(top.score ?? 0)})` : "",
+        reason: top ? `${e.verdict === "Sell" ? "Weakest" : "Strongest"}: ${top.title} (${Math.round(top.score ?? 0)})` : "",
       });
     }
   }
