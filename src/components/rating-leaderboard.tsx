@@ -12,7 +12,13 @@ const COLS: { key: "Buy" | "Hold" | "Sell"; label: string; tone: string }[] = [
 
 export function RatingLeaderboard({ onPick }: { onPick: (s: string) => void }) {
   const fn = useServerFn(getRankings);
-  const q = useQuery({ queryKey: ["eval-rankings"], queryFn: () => fn(), staleTime: 30 * 60_000 });
+  const [universe, setUniverse] = useState<"major" | "xm">("major");
+  const q = useQuery({
+    queryKey: ["eval-rankings", universe],
+    queryFn: () => fn({ data: { universe } }),
+    staleTime: 30 * 60_000,
+    refetchInterval: (query) => ((query.state.data?.pending ?? 0) > 0 ? 15_000 : false),
+  });
   const [tab, setTab] = useState<Tab>("overview");
   const rows = q.data?.rows ?? [];
   const bucket = (v: RankedStock["verdict"]) => {
@@ -27,8 +33,21 @@ export function RatingLeaderboard({ onPick }: { onPick: (s: string) => void }) {
         <div>
           <h2 className="text-lg font-semibold">Market ratings at a glance</h2>
           <p className="text-xs text-muted-foreground">
-            30 major US stocks scored with the same model. Click one to see its full breakdown. Research only — not advice.
+            {universe === "xm"
+              ? "Top 100 US stocks tradable as CFDs on XM (listed there with a .US suffix)."
+              : "30 major US stocks"} scored with the same model. Click one to see its full breakdown. Research only — not advice.
           </p>
+        </div>
+        <div className="flex gap-1 text-xs">
+          {([["major", "Major 30"], ["xm", "XM tradable (100)"]] as const).map(([k, l]) => (
+            <button
+              key={k}
+              onClick={() => setUniverse(k)}
+              className={`rounded-md px-2 py-1 border ${universe === k ? "bg-secondary text-secondary-foreground border-primary" : "border-border text-muted-foreground"}`}
+            >
+              {l}
+            </button>
+          ))}
         </div>
         <div className="flex gap-1 text-xs">
           {(["overview", "Buy", "Hold", "Sell"] as Tab[]).map((t) => (
@@ -65,7 +84,10 @@ export function RatingLeaderboard({ onPick }: { onPick: (s: string) => void }) {
                         className="w-full text-left rounded-md px-2 py-1.5 hover:bg-muted/50"
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <span className="font-mono text-sm font-semibold">{r.symbol}</span>
+                          <span className="font-mono text-sm font-semibold">
+                            {r.symbol}
+                            {universe === "xm" && <span className="ml-1 text-[10px] font-normal text-muted-foreground">XM: {r.symbol.replace(".", "")}.US</span>}
+                          </span>
                           <span className="font-mono text-xs">
                             {r.price != null ? `$${r.price.toFixed(2)}` : "—"} · <b>{Math.round(r.score)}</b>/100
                           </span>
@@ -81,6 +103,11 @@ export function RatingLeaderboard({ onPick }: { onPick: (s: string) => void }) {
             );
           })}
         </div>
+      )}
+      {q.data && q.data.pending > 0 && (
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          Scoring more stocks… {q.data.total - q.data.pending} of {q.data.total} done. The list fills in automatically.
+        </p>
       )}
       {q.data && (
         <p className="mt-2 text-[11px] text-muted-foreground">
