@@ -12,7 +12,7 @@ const COLS: { key: "Buy" | "Hold" | "Sell"; label: string; tone: string }[] = [
 
 export function RatingLeaderboard({ onPick }: { onPick: (s: string) => void }) {
   const fn = useServerFn(getRankings);
-  const [universe, setUniverse] = useState<"major" | "xm">("major");
+  const [universe, setUniverse] = useState<"major" | "xm" | "au">("major");
   const q = useQuery({
     queryKey: ["eval-rankings", universe],
     queryFn: () => fn({ data: { universe } }),
@@ -35,11 +35,13 @@ export function RatingLeaderboard({ onPick }: { onPick: (s: string) => void }) {
           <p className="text-xs text-muted-foreground">
             {universe === "xm"
               ? "Top 100 US stocks tradable as CFDs on XM (listed there with a .US suffix)."
-              : "30 major US stocks"} scored with the same model. Click one to see its full breakdown. Research only — not advice.
+              : universe === "au"
+                ? "25 top ASX listings (.AX). Less company data is available for Australian stocks, so confidence is often lower."
+                : "30 major US stocks"} scored with the same model. Click one to see its full breakdown. Research only — not advice.
           </p>
         </div>
         <div className="flex gap-1 text-xs">
-          {([["major", "Major 30"], ["xm", "XM tradable (100)"]] as const).map(([k, l]) => (
+          {([["major", "Major 30"], ["xm", "XM tradable (100)"], ["au", "Australia (ASX 25)"]] as const).map(([k, l]) => (
             <button
               key={k}
               onClick={() => setUniverse(k)}

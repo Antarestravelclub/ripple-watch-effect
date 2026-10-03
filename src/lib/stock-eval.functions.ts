@@ -224,6 +224,14 @@ export const XM_UNIVERSE = [
 ];
 const XM_SET = new Set(XM_UNIVERSE);
 
+// Top ASX listings (Yahoo ".AX" suffix). Finnhub fundamentals are thin for ASX
+// names, so scores lean on price history — expect lower confidence ratings.
+export const AU_UNIVERSE = [
+  "BHP.AX","CBA.AX","CSL.AX","NAB.AX","WBC.AX","ANZ.AX","RIO.AX","FMG.AX","WDS.AX","MQG.AX",
+  "WOW.AX","WES.AX","TLS.AX","GMG.AX","TCL.AX","ALL.AX","QAN.AX","SUN.AX","QBE.AX","REA.AX",
+  "XRO.AX","WTC.AX","MIN.AX","S32.AX","STO.AX",
+];
+
 export interface RankedStock { symbol: string; name: string | null; price: number | null; score: number; verdict: Verdict; confidence: Evaluation["confidence"]; reason: string; xm: boolean }
 
 const symCache = new Map<string, { at: number; row: RankedStock | null }>();
@@ -250,16 +258,17 @@ async function fill(list: string[]) {
     for (const e of batch) {
       if (!e) continue;
       // Rate-limited responses come back without company data; don't cache those.
-      if (e.pillars.find((p) => p.key === "profit")?.score == null && e.confidence === "Low") continue;
+      // ASX (.AX) names legitimately have no Finnhub fundamentals — cache them anyway.
+      if (!e.symbol.endsWith(".AX") && e.pillars.find((p) => p.key === "profit")?.score == null && e.confidence === "Low") continue;
       symCache.set(e.symbol, { at: Date.now(), row: toRow(e) });
     }
   }
 }
 
 export const getRankings = createServerFn({ method: "GET" })
-  .inputValidator((d) => z.object({ universe: z.enum(["major", "xm"]).default("major") }).parse(d ?? {}))
+  .inputValidator((d) => z.object({ universe: z.enum(["major", "xm", "au"]).default("major") }).parse(d ?? {}))
   .handler(async ({ data }) => {
-    const list = data.universe === "xm" ? XM_UNIVERSE : RANK_UNIVERSE;
+    const list = data.universe === "xm" ? XM_UNIVERSE : data.universe === "au" ? AU_UNIVERSE : RANK_UNIVERSE;
     inflight ??= fill(list).finally(() => { inflight = null; });
     await inflight;
     const rows: RankedStock[] = [];
