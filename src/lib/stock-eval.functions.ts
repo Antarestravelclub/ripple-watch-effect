@@ -232,6 +232,20 @@ export const AU_UNIVERSE = [
   "XRO.AX","WTC.AX","MIN.AX","S32.AX","STO.AX",
 ];
 
+// US ETFs offered as CFDs on XM (".US" suffix there). Funds have no company
+// fundamentals, so scores lean on price, trend and risk.
+export const XM_ETF_UNIVERSE = [
+  "SPY","QQQ","DIA","IWM","VTI","XLK","XLF","XLE","XLV","XLI",
+  "SMH","XBI","GLD","SLV","USO","TLT","HYG","EEM","EFA","ARKK",
+];
+// Popular ASX-listed ETFs.
+export const AU_ETF_UNIVERSE = [
+  "VAS.AX","A200.AX","IOZ.AX","VGS.AX","IVV.AX","NDQ.AX","QUAL.AX","VHY.AX",
+  "GOLD.AX","HACK.AX","FANG.AX","VAP.AX","VAF.AX","IXJ.AX","STW.AX",
+];
+const ETF_SET = new Set([...XM_ETF_UNIVERSE, ...AU_ETF_UNIVERSE]);
+for (const s of XM_ETF_UNIVERSE) XM_SET_EXTRA.push(s);
+
 export interface RankedStock { symbol: string; name: string | null; price: number | null; score: number; verdict: Verdict; confidence: Evaluation["confidence"]; reason: string; xm: boolean }
 
 const symCache = new Map<string, { at: number; row: RankedStock | null }>();
