@@ -224,6 +224,14 @@ export const XM_UNIVERSE = [
 ];
 const XM_SET = new Set(XM_UNIVERSE);
 
+// Top ASX listings (Yahoo ".AX" suffix). Finnhub fundamentals are thin for ASX
+// names, so scores lean on price history — expect lower confidence ratings.
+export const AU_UNIVERSE = [
+  "BHP.AX","CBA.AX","CSL.AX","NAB.AX","WBC.AX","ANZ.AX","RIO.AX","FMG.AX","WDS.AX","MQG.AX",
+  "WOW.AX","WES.AX","TLS.AX","GMG.AX","TCL.AX","ALL.AX","QAN.AX","SUN.AX","QBE.AX","REA.AX",
+  "XRO.AX","WTC.AX","MIN.AX","S32.AX","STO.AX",
+];
+
 export interface RankedStock { symbol: string; name: string | null; price: number | null; score: number; verdict: Verdict; confidence: Evaluation["confidence"]; reason: string; xm: boolean }
 
 const symCache = new Map<string, { at: number; row: RankedStock | null }>();
