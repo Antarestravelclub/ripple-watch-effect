@@ -15,6 +15,7 @@ import { Route as SetupsRouteImport } from './routes/setups'
 import { Route as ScorecardRouteImport } from './routes/scorecard'
 import { Route as PlaybooksRouteImport } from './routes/playbooks'
 import { Route as ManualRouteImport } from './routes/manual'
+import { Route as EvaluateRouteImport } from './routes/evaluate'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AnalyzeRouteImport } from './routes/analyze'
@@ -70,6 +71,11 @@ const PlaybooksRoute = PlaybooksRouteImport.update({
 const ManualRoute = ManualRouteImport.update({
   id: '/manual',
   path: '/manual',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EvaluateRoute = EvaluateRouteImport.update({
+  id: '/evaluate',
+  path: '/evaluate',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CalendarRoute = CalendarRouteImport.update({
@@ -214,6 +220,7 @@ export interface FileRoutesByFullPath {
   '/analyze': typeof AnalyzeRoute
   '/auth': typeof AuthRoute
   '/calendar': typeof CalendarRoute
+  '/evaluate': typeof EvaluateRoute
   '/manual': typeof ManualRoute
   '/playbooks': typeof PlaybooksRoute
   '/scorecard': typeof ScorecardRoute
@@ -247,6 +254,7 @@ export interface FileRoutesByTo {
   '/analyze': typeof AnalyzeRoute
   '/auth': typeof AuthRoute
   '/calendar': typeof CalendarRoute
+  '/evaluate': typeof EvaluateRoute
   '/manual': typeof ManualRoute
   '/playbooks': typeof PlaybooksRoute
   '/scorecard': typeof ScorecardRoute
@@ -282,6 +290,7 @@ export interface FileRoutesById {
   '/analyze': typeof AnalyzeRoute
   '/auth': typeof AuthRoute
   '/calendar': typeof CalendarRoute
+  '/evaluate': typeof EvaluateRoute
   '/manual': typeof ManualRoute
   '/playbooks': typeof PlaybooksRoute
   '/scorecard': typeof ScorecardRoute
@@ -317,6 +326,7 @@ export interface FileRouteTypes {
     | '/analyze'
     | '/auth'
     | '/calendar'
+    | '/evaluate'
     | '/manual'
     | '/playbooks'
     | '/scorecard'
@@ -350,6 +360,7 @@ export interface FileRouteTypes {
     | '/analyze'
     | '/auth'
     | '/calendar'
+    | '/evaluate'
     | '/manual'
     | '/playbooks'
     | '/scorecard'
@@ -384,6 +395,7 @@ export interface FileRouteTypes {
     | '/analyze'
     | '/auth'
     | '/calendar'
+    | '/evaluate'
     | '/manual'
     | '/playbooks'
     | '/scorecard'
@@ -419,6 +431,7 @@ export interface RootRouteChildren {
   AnalyzeRoute: typeof AnalyzeRoute
   AuthRoute: typeof AuthRoute
   CalendarRoute: typeof CalendarRoute
+  EvaluateRoute: typeof EvaluateRoute
   ManualRoute: typeof ManualRoute
   PlaybooksRoute: typeof PlaybooksRoute
   ScorecardRoute: typeof ScorecardRoute
@@ -485,6 +498,13 @@ declare module '@tanstack/react-router' {
       path: '/manual'
       fullPath: '/manual'
       preLoaderRoute: typeof ManualRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/evaluate': {
+      id: '/evaluate'
+      path: '/evaluate'
+      fullPath: '/evaluate'
+      preLoaderRoute: typeof EvaluateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/calendar': {
@@ -709,6 +729,7 @@ const rootRouteChildren: RootRouteChildren = {
   AnalyzeRoute: AnalyzeRoute,
   AuthRoute: AuthRoute,
   CalendarRoute: CalendarRoute,
+  EvaluateRoute: EvaluateRoute,
   ManualRoute: ManualRoute,
   PlaybooksRoute: PlaybooksRoute,
   ScorecardRoute: ScorecardRoute,
