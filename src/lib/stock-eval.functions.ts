@@ -53,12 +53,8 @@ async function finnhub<T>(path: string, key: string): Promise<T | null> {
   }
 }
 
-export const evaluateStock = createServerFn({ method: "POST" })
-  .inputValidator((d) =>
-    z.object({ ticker: z.string().trim().min(1).max(15).regex(/^[A-Za-z0-9.\-^=]+$/) }).parse(d),
-  )
-  .handler(async ({ data }): Promise<Evaluation> => {
-    const symbol = data.ticker.toUpperCase();
+export async function evaluateSymbol(symbol: string): Promise<Evaluation> {
+    
     const key = process.env.FINNHUB_API_KEY ?? "";
     const [bars, metricRes, recRes, profile] = await Promise.all([
       dailyBars(symbol, "1y"),
@@ -201,4 +197,49 @@ export const evaluateStock = createServerFn({ method: "POST" })
       symbol, name: profile?.name ?? null, price, verdict, score, confidence, pillars, risks,
       closes: closes.slice(-126), generatedAt: new Date().toISOString(),
     };
-  });
+  }
+
+const TICKER = z.string().trim().min(1).max(15).regex(/^[A-Za-z0-9.\-^=]+$/);
+
+export const evaluateStock = createServerFn({ method: "POST" })
+  .inputValidator((d) => z.object({ ticker: TICKER }).parse(d))
+  .handler(({ data }) => evaluateSymbol(data.ticker.toUpperCase()));
+
+export const RANK_UNIVERSE = [
+  "AAPL","MSFT","NVDA","AMZN","GOOGL","META","TSLA","AVGO","JPM","V",
+  "XOM","CVX","LLY","UNH","JNJ","PG","KO","WMT","COST","HD",
+  "BAC","NFLX","AMD","INTC","CAT","BA","LMT","NEE","PFE","DIS",
+];
+
+export interface RankedStock { symbol: string; name: string | null; price: number | null; score: number; verdict: Verdict; confidence: Evaluation["confidence"]; reason: string }
+
+let rankCache: { at: number; rows: RankedStock[] } | null = null;
+let rankInflight: Promise<RankedStock[]> | null = null;
+const RANK_TTL = 6 * 3600_000;
+
+async function buildRankings(): Promise<RankedStock[]> {
+  const rows: RankedStock[] = [];
+  for (let i = 0; i < RANK_UNIVERSE.length; i += 5) {
+    const batch = await Promise.all(
+      RANK_UNIVERSE.slice(i, i + 5).map((s) => evaluateSymbol(s).catch(() => null)),
+    );
+    for (const e of batch) {
+      if (!e || e.score == null || !e.verdict) continue;
+      const best = [...e.pillars].filter((p) => p.score != null).sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+      const top = e.verdict === "Sell" ? best[best.length - 1] : best[0];
+      rows.push({
+        symbol: e.symbol, name: e.name, price: e.price, score: e.score, verdict: e.verdict, confidence: e.confidence,
+        reason: top ? `${e.verdict === "Sell" ? "Weakest" : "Strongest"}: ${top.title} (${Math.round(top.score ?? 0)})` : "",
+      });
+    }
+  }
+  return rows.sort((a, b) => b.score - a.score);
+}
+
+export const getRankings = createServerFn({ method: "GET" }).handler(async () => {
+  if (rankCache && Date.now() - rankCache.at < RANK_TTL) return { rows: rankCache.rows, generatedAt: new Date(rankCache.at).toISOString() };
+  rankInflight ??= buildRankings().finally(() => { rankInflight = null; });
+  const rows = await rankInflight;
+  if (rows.length) rankCache = { at: Date.now(), rows };
+  return { rows, generatedAt: new Date().toISOString() };
+});

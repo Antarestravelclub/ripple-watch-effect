@@ -3,6 +3,7 @@ import { useState } from "react";
 import { z } from "zod";
 import { SiteShell } from "@/components/site-shell";
 import { StockEvaluation } from "@/components/stock-evaluation";
+import { RatingLeaderboard } from "@/components/rating-leaderboard";
 
 export const Route = createFileRoute("/evaluate")({
   validateSearch: (s) => z.object({ symbol: z.string().optional() }).parse(s),
@@ -56,8 +57,17 @@ function EvaluatePage() {
           </Link>
         </>
       ) : (
-        <p className="text-xs text-muted-foreground">No symbol yet.</p>
+        <p className="text-xs text-muted-foreground mb-4">No symbol yet — pick one below.</p>
       )}
+      <div className="mt-6">
+        <RatingLeaderboard
+          onPick={(s) => {
+            setText(s);
+            navigate({ search: { symbol: s } });
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        />
+      </div>
     </SiteShell>
   );
 }
