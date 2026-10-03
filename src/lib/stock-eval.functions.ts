@@ -211,35 +211,65 @@ export const RANK_UNIVERSE = [
   "BAC","NFLX","AMD","INTC","CAT","BA","LMT","NEE","PFE","DIS",
 ];
 
-export interface RankedStock { symbol: string; name: string | null; price: number | null; score: number; verdict: Verdict; confidence: Evaluation["confidence"]; reason: string }
+// Curated top-100 liquid US stocks offered as stock CFDs on XM MT5 (".US" suffix there).
+export const XM_UNIVERSE = [
+  ...RANK_UNIVERSE,
+  "BRK.B","MA","ORCL","CRM","ADBE","CSCO","QCOM","TXN","IBM","MU",
+  "AMAT","LRCX","INTU","NOW","PYPL","SHOP","UBER","ABNB","PLTR","SNOW",
+  "MRK","ABBV","TMO","ABT","AMGN","BMY","GILD","CVS","MDT","ISRG",
+  "PEP","MCD","SBUX","NKE","LOW","TGT","MO","PM","CL","MDLZ",
+  "WFC","C","GS","MS","AXP","SCHW","BLK","GE","HON","UPS",
+  "RTX","DE","MMM","F","GM","T","VZ","CMCSA","TMUS","COP",
+  "SLB","OXY","DUK","SO","LIN","FDX","BKNG","SPGI","PANW","MRNA",
+];
+const XM_SET = new Set(XM_UNIVERSE);
 
-let rankCache: { at: number; rows: RankedStock[] } | null = null;
-let rankInflight: Promise<RankedStock[]> | null = null;
+export interface RankedStock { symbol: string; name: string | null; price: number | null; score: number; verdict: Verdict; confidence: Evaluation["confidence"]; reason: string; xm: boolean }
+
+const symCache = new Map<string, { at: number; row: RankedStock | null }>();
 const RANK_TTL = 6 * 3600_000;
+const PER_CALL = 20;
+let inflight: Promise<void> | null = null;
 
-async function buildRankings(): Promise<RankedStock[]> {
-  const rows: RankedStock[] = [];
-  for (let i = 0; i < RANK_UNIVERSE.length; i += 5) {
-    const batch = await Promise.all(
-      RANK_UNIVERSE.slice(i, i + 5).map((s) => evaluateSymbol(s).catch(() => null)),
-    );
-    for (const e of batch) {
-      if (!e || e.score == null || !e.verdict) continue;
-      const best = [...e.pillars].filter((p) => p.score != null).sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
-      const top = e.verdict === "Sell" ? best[best.length - 1] : best[0];
-      rows.push({
-        symbol: e.symbol, name: e.name, price: e.price, score: e.score, verdict: e.verdict, confidence: e.confidence,
-        reason: top ? `${e.verdict === "Sell" ? "Weakest" : "Strongest"}: ${top.title} (${Math.round(top.score ?? 0)})` : "",
-      });
-    }
-  }
-  return rows.sort((a, b) => b.score - a.score);
+function toRow(e: Evaluation): RankedStock | null {
+  if (e.score == null || !e.verdict) return null;
+  const best = [...e.pillars].filter((p) => p.score != null).sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  const top = e.verdict === "Sell" ? best[best.length - 1] : best[0];
+  return {
+    symbol: e.symbol, name: e.name, price: e.price, score: e.score, verdict: e.verdict, confidence: e.confidence,
+    reason: top ? `${e.verdict === "Sell" ? "Weakest" : "Strongest"}: ${top.title} (${Math.round(top.score ?? 0)})` : "",
+    xm: XM_SET.has(e.symbol),
+  };
 }
 
-export const getRankings = createServerFn({ method: "GET" }).handler(async () => {
-  if (rankCache && Date.now() - rankCache.at < RANK_TTL) return { rows: rankCache.rows, generatedAt: new Date(rankCache.at).toISOString() };
-  rankInflight ??= buildRankings().finally(() => { rankInflight = null; });
-  const rows = await rankInflight;
-  if (rows.length) rankCache = { at: Date.now(), rows };
-  return { rows, generatedAt: new Date().toISOString() };
-});
+async function fill(list: string[]) {
+  const now = Date.now();
+  const todo = list.filter((s) => { const c = symCache.get(s); return !c || now - c.at > RANK_TTL; }).slice(0, PER_CALL);
+  for (let i = 0; i < todo.length; i += 5) {
+    const batch = await Promise.all(todo.slice(i, i + 5).map((s) => evaluateSymbol(s).catch(() => null)));
+    for (const e of batch) {
+      if (!e) continue;
+      // Rate-limited responses come back without company data; don't cache those.
+      if (e.pillars.find((p) => p.key === "profit")?.score == null && e.confidence === "Low") continue;
+      symCache.set(e.symbol, { at: Date.now(), row: toRow(e) });
+    }
+  }
+}
+
+export const getRankings = createServerFn({ method: "GET" })
+  .inputValidator((d) => z.object({ universe: z.enum(["major", "xm"]).default("major") }).parse(d ?? {}))
+  .handler(async ({ data }) => {
+    const list = data.universe === "xm" ? XM_UNIVERSE : RANK_UNIVERSE;
+    inflight ??= fill(list).finally(() => { inflight = null; });
+    await inflight;
+    const rows: RankedStock[] = [];
+    let pending = 0, oldest = Date.now();
+    for (const s of list) {
+      const c = symCache.get(s);
+      if (!c) { pending++; continue; }
+      oldest = Math.min(oldest, c.at);
+      if (c.row) rows.push(c.row);
+    }
+    rows.sort((a, b) => b.score - a.score);
+    return { rows, total: list.length, pending, generatedAt: new Date(oldest).toISOString() };
+  });
