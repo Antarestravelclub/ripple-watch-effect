@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Maximize2, Minimize2 } from "lucide-react";
 
 /**
  * Sealed TradingView embed panes — display only.
