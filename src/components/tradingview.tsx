@@ -40,6 +40,12 @@ function useVisible<T extends HTMLElement>() {
   return { ref, visible };
 }
 
+const SIZE_OPTIONS = [
+  { label: "S", height: 320 },
+  { label: "M", height: 420 },
+  { label: "L", height: 600 },
+];
+
 function Embed({
   kind,
   config,
@@ -54,7 +60,21 @@ function Embed({
   const { ref, visible } = useVisible<HTMLDivElement>();
   const holder = useRef<HTMLDivElement | null>(null);
   const [failed, setFailed] = useState(false);
-  const json = JSON.stringify(config);
+  const [sizeIdx, setSizeIdx] = useState(() =>
+    Math.max(
+      0,
+      SIZE_OPTIONS.findIndex((s) => s.height === height),
+    ),
+  );
+  const [expanded, setExpanded] = useState(false);
+  const chartHeight = SIZE_OPTIONS[sizeIdx]!.height;
+  // The overview widget sizes itself from its config, so its height lives in
+  // the JSON and changes remount it; the advanced chart autosizes with CSS.
+  const json = JSON.stringify(
+    kind === "market-overview"
+      ? { ...config, height: expanded ? 900 : chartHeight }
+      : config,
+  );
 
   useEffect(() => {
     if (!visible || !holder.current) return;
@@ -84,20 +104,58 @@ function Embed({
   }, [visible, kind, json]);
 
   return (
-    <div ref={ref}>
-      <div className="flex items-baseline justify-between gap-3 mb-2">
+    <div
+      ref={ref}
+      className={expanded ? "fixed inset-0 z-50 bg-background p-3 sm:p-4" : ""}
+    >
+      <div className="flex items-center justify-between gap-3 mb-1">
         <h2 className="text-sm font-semibold tracking-tight">{label}</h2>
-        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-          Display only · not used by the engine
-        </span>
+        <div className="flex items-center gap-1">
+          {!expanded &&
+            SIZE_OPTIONS.map((s, i) => (
+              <button
+                key={s.label}
+                onClick={() => setSizeIdx(i)}
+                aria-label={"Chart height " + s.label}
+                title={"Chart height " + s.label}
+                className={
+                  "rounded border px-1.5 py-0.5 text-[10px] font-medium " +
+                  (i === sizeIdx
+                    ? "border-primary/50 bg-primary/15 text-primary"
+                    : "border-border/60 text-muted-foreground hover:text-foreground")
+                }
+              >
+                {s.label}
+              </button>
+            ))}
+          <button
+            onClick={() => setExpanded((e) => !e)}
+            aria-label={expanded ? "Collapse chart" : "Expand chart"}
+            title={expanded ? "Collapse chart" : "Expand chart"}
+            className="rounded border border-border/60 p-1 text-muted-foreground hover:text-foreground"
+          >
+            {expanded ? (
+              <Minimize2 className="w-3 h-3" />
+            ) : (
+              <Maximize2 className="w-3 h-3" />
+            )}
+          </button>
+        </div>
       </div>
+      {!expanded && (
+        <p className="mb-2 text-right text-[10px] uppercase tracking-wider text-muted-foreground">
+          Display only · not used by the engine
+        </p>
+      )}
       {failed ? (
         <p className="text-xs text-muted-foreground">Chart unavailable.</p>
       ) : (
         <div
           className="tradingview-widget-container"
           ref={holder}
-          style={{ height }}
+          style={{
+            height: expanded ? "calc(100vh - 5.5rem)" : chartHeight,
+          }}
           aria-label={label}
         />
       )}
