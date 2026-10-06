@@ -12,7 +12,7 @@ const COLS: { key: "Buy" | "Hold" | "Sell"; label: string; tone: string }[] = [
 
 export function RatingLeaderboard({ onPick }: { onPick: (s: string) => void }) {
   const fn = useServerFn(getRankings);
-  const [universe, setUniverse] = useState<"major" | "xm" | "au" | "ca" | "xmetf" | "auetf">("major");
+  const [universe, setUniverse] = useState<"major" | "xm" | "au" | "ca" | "xmetf" | "auetf" | "caetf">("major");
   const q = useQuery({
     queryKey: ["eval-rankings", universe],
     queryFn: () => fn({ data: { universe } }),
@@ -37,6 +37,8 @@ export function RatingLeaderboard({ onPick }: { onPick: (s: string) => void }) {
               ? "20 popular US ETFs tradable as CFDs on XM (.US suffix). Funds have no company profits, so scores lean on price trend and risk."
               : universe === "auetf"
               ? "15 popular ASX-listed ETFs (.AX). Scores lean on price trend and risk."
+              : universe === "caetf"
+                ? "15 popular TSX-listed ETFs (.TO), priced in Canadian dollars. Scores lean on price trend and risk."
               : universe === "xm"
               ? "Top 100 US stocks tradable as CFDs on XM (listed there with a .US suffix)."
               : universe === "au"
@@ -47,7 +49,7 @@ export function RatingLeaderboard({ onPick }: { onPick: (s: string) => void }) {
           </p>
         </div>
         <div className="flex flex-wrap gap-1 text-xs">
-          {([["major", "Major 30"], ["xm", "XM tradable (100)"], ["au", "Australia (ASX 25)"], ["ca", "Canada (TSX 25)"], ["xmetf", "XM ETFs (20)"], ["auetf", "ASX ETFs (15)"]] as const).map(([k, l]) => (
+          {([["major", "Major 30"], ["xm", "XM tradable (100)"], ["au", "Australia (ASX 25)"], ["ca", "Canada (TSX 25)"], ["xmetf", "XM ETFs (20)"], ["auetf", "ASX ETFs (15)"], ["caetf", "TSX ETFs (15)"]] as const).map(([k, l]) => (
             <button
               key={k}
               onClick={() => setUniverse(k)}

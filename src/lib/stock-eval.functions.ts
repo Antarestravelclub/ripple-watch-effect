@@ -237,7 +237,14 @@ export const AU_UNIVERSE = [
 export const CA_UNIVERSE = [
   "RY.TO","TD.TO","ENB.TO","CNR.TO","CP.TO","BMO.TO","BNS.TO","TRI.TO","BCE.TO","SU.TO",
   "TRP.TO","CM.TO","MFC.TO","SLF.TO","ABX.TO","WPM.TO","FM.TO","CCO.TO","NTR.TO","SHOP.TO",
-  "CNQ.TO","IMO.TO","CVE.TO","BAM.TO","BN.TO",
+  "CNQ.TO","IMO.TO","CVE.TO","BAM.TO","BN.TO","X.TO",
+];
+
+// Popular TSX-listed ETFs. Funds have no company fundamentals, so scores
+// lean on price, trend and risk.
+export const CA_ETF_UNIVERSE = [
+  "XIU.TO","VCN.TO","XEQT.TO","VEQT.TO","VFV.TO","ZSP.TO","VDY.TO","XDIV.TO",
+  "XGD.TO","HXT.TO","QQC.TO","ZEB.TO","CASH.TO","VAB.TO","XBB.TO",
 ];
 
 // US ETFs offered as CFDs on XM (".US" suffix there). Funds have no company
@@ -251,7 +258,7 @@ export const AU_ETF_UNIVERSE = [
   "VAS.AX","A200.AX","IOZ.AX","VGS.AX","IVV.AX","NDQ.AX","QUAL.AX","VHY.AX",
   "GOLD.AX","HACK.AX","FANG.AX","VAP.AX","VAF.AX","IXJ.AX","STW.AX",
 ];
-const ETF_SET = new Set([...XM_ETF_UNIVERSE, ...AU_ETF_UNIVERSE]);
+const ETF_SET = new Set([...XM_ETF_UNIVERSE, ...AU_ETF_UNIVERSE, ...CA_ETF_UNIVERSE]);
 const XM_SET = new Set([...XM_UNIVERSE, ...XM_ETF_UNIVERSE]);
 
 export interface RankedStock { symbol: string; name: string | null; price: number | null; score: number; verdict: Verdict; confidence: Evaluation["confidence"]; reason: string; xm: boolean }
@@ -288,9 +295,9 @@ async function fill(list: string[]) {
 }
 
 export const getRankings = createServerFn({ method: "GET" })
-  .inputValidator((d) => z.object({ universe: z.enum(["major", "xm", "au", "ca", "xmetf", "auetf"]).default("major") }).parse(d ?? {}))
+  .inputValidator((d) => z.object({ universe: z.enum(["major", "xm", "au", "ca", "xmetf", "auetf", "caetf"]).default("major") }).parse(d ?? {}))
   .handler(async ({ data }) => {
-    const list = data.universe === "xm" ? XM_UNIVERSE : data.universe === "au" ? AU_UNIVERSE : data.universe === "ca" ? CA_UNIVERSE : data.universe === "xmetf" ? XM_ETF_UNIVERSE : data.universe === "auetf" ? AU_ETF_UNIVERSE : RANK_UNIVERSE;
+    const list = data.universe === "xm" ? XM_UNIVERSE : data.universe === "au" ? AU_UNIVERSE : data.universe === "ca" ? CA_UNIVERSE : data.universe === "xmetf" ? XM_ETF_UNIVERSE : data.universe === "auetf" ? AU_ETF_UNIVERSE : data.universe === "caetf" ? CA_ETF_UNIVERSE : RANK_UNIVERSE;
     inflight ??= fill(list).finally(() => { inflight = null; });
     await inflight;
     const rows: RankedStock[] = [];
