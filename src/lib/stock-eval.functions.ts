@@ -232,6 +232,14 @@ export const AU_UNIVERSE = [
   "XRO.AX","WTC.AX","MIN.AX","S32.AX","STO.AX",
 ];
 
+// Top TSX listings (Yahoo ".TO" suffix). Finnhub fundamentals are thin for
+// Canadian names, so scores lean on price history — expect lower confidence.
+export const CA_UNIVERSE = [
+  "RY.TO","TD.TO","ENB.TO","CNR.TO","CP.TO","BMO.TO","BNS.TO","TRI.TO","BCE.TO","SU.TO",
+  "TRP.TO","CM.TO","MFC.TO","SLF.TO","ABX.TO","WPM.TO","FM.TO","CCO.TO","NTR.TO","SHOP.TO",
+  "CNQ.TO","IMO.TO","CVE.TO","BAM.TO","BN.TO",
+];
+
 // US ETFs offered as CFDs on XM (".US" suffix there). Funds have no company
 // fundamentals, so scores lean on price, trend and risk.
 export const XM_ETF_UNIVERSE = [
@@ -273,16 +281,16 @@ async function fill(list: string[]) {
       if (!e) continue;
       // Rate-limited responses come back without company data; don't cache those.
       // ASX (.AX) names legitimately have no Finnhub fundamentals — cache them anyway.
-      if (!e.symbol.endsWith(".AX") && !ETF_SET.has(e.symbol) && e.pillars.find((p) => p.key === "profit")?.score == null && e.confidence === "Low") continue;
+      if (!e.symbol.endsWith(".AX") && !e.symbol.endsWith(".TO") && !ETF_SET.has(e.symbol) && e.pillars.find((p) => p.key === "profit")?.score == null && e.confidence === "Low") continue;
       symCache.set(e.symbol, { at: Date.now(), row: toRow(e) });
     }
   }
 }
 
 export const getRankings = createServerFn({ method: "GET" })
-  .inputValidator((d) => z.object({ universe: z.enum(["major", "xm", "au", "xmetf", "auetf"]).default("major") }).parse(d ?? {}))
+  .inputValidator((d) => z.object({ universe: z.enum(["major", "xm", "au", "ca", "xmetf", "auetf"]).default("major") }).parse(d ?? {}))
   .handler(async ({ data }) => {
-    const list = data.universe === "xm" ? XM_UNIVERSE : data.universe === "au" ? AU_UNIVERSE : data.universe === "xmetf" ? XM_ETF_UNIVERSE : data.universe === "auetf" ? AU_ETF_UNIVERSE : RANK_UNIVERSE;
+    const list = data.universe === "xm" ? XM_UNIVERSE : data.universe === "au" ? AU_UNIVERSE : data.universe === "ca" ? CA_UNIVERSE : data.universe === "xmetf" ? XM_ETF_UNIVERSE : data.universe === "auetf" ? AU_ETF_UNIVERSE : RANK_UNIVERSE;
     inflight ??= fill(list).finally(() => { inflight = null; });
     await inflight;
     const rows: RankedStock[] = [];
