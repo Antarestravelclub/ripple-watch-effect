@@ -99,6 +99,24 @@ function Body({ e }: { e: Evaluation }) {
         ))}
       </div>
 
+      {e.dividend && (
+        <div className="mt-3 rounded-lg border border-border/60 bg-background/40 p-3">
+          <div className="flex items-center justify-between text-xs font-medium mb-2">
+            <span>Dividend</span>
+            <span className={"rounded border px-1.5 py-0.5 text-[10px] " + (e.dividend.safety === "Safe" ? "border-tailwind/40 text-tailwind" : e.dividend.safety === "At risk" ? "border-headwind/40 text-headwind" : "border-border text-muted-foreground")}>
+              {e.dividend.safety}
+            </span>
+          </div>
+          <dl className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+            <div><dt className="text-muted-foreground">Yield</dt><dd className="font-mono text-sm">{e.dividend.yieldPct.toFixed(2)}%</dd></div>
+            <div><dt className="text-muted-foreground">Per share / yr</dt><dd className="font-mono text-sm">{e.dividend.perShare == null ? "—" : `$${e.dividend.perShare.toFixed(2)}`}</dd></div>
+            <div><dt className="text-muted-foreground">Payout of profit</dt><dd className="font-mono text-sm">{e.dividend.payoutPct == null ? "—" : `${e.dividend.payoutPct.toFixed(0)}%`}</dd></div>
+            <div><dt className="text-muted-foreground">5-yr growth</dt><dd className="font-mono text-sm">{e.dividend.growth5yPct == null ? "—" : `${e.dividend.growth5yPct.toFixed(1)}%/yr`}</dd></div>
+          </dl>
+          <p className="mt-2 text-[11px] text-muted-foreground">Safety check: {e.dividend.note}.</p>
+        </div>
+      )}
+
       {e.risks.length > 0 && (
         <div className="mt-3 rounded-lg border border-border/60 bg-muted/20 p-3">
           <div className="text-xs font-medium mb-1">Risk check</div>

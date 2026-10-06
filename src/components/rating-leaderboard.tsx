@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { getRankings, type RankedStock } from "@/lib/stock-eval.functions";
 
-type Tab = "overview" | "Buy" | "Hold" | "Sell";
+type Tab = "overview" | "Buy" | "Hold" | "Sell" | "div";
 const COLS: { key: "Buy" | "Hold" | "Sell"; label: string; tone: string }[] = [
   { key: "Buy", label: "Top Buys", tone: "text-emerald-400 border-emerald-500/40" },
   { key: "Hold", label: "Holds", tone: "text-amber-400 border-amber-500/40" },
@@ -26,6 +26,7 @@ export function RatingLeaderboard({ onPick }: { onPick: (s: string) => void }) {
     return v === "Sell" ? r.sort((a, b) => a.score - b.score) : r;
   };
   const cols = tab === "overview" ? COLS : COLS.filter((c) => c.key === tab);
+  const divs = rows.filter((r) => (r.dividendYield ?? 0) > 0).sort((a, b) => (b.dividendYield ?? 0) - (a.dividendYield ?? 0));
 
   return (
     <section className="mb-6 rounded-xl border border-border bg-card p-4">
@@ -60,13 +61,13 @@ export function RatingLeaderboard({ onPick }: { onPick: (s: string) => void }) {
           ))}
         </div>
         <div className="flex gap-1 text-xs">
-          {(["overview", "Buy", "Hold", "Sell"] as Tab[]).map((t) => (
+          {(["overview", "Buy", "Hold", "Sell", "div"] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
               className={`rounded-md px-2 py-1 border ${tab === t ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground"}`}
             >
-              {t === "overview" ? "Overview" : t === "Sell" ? "Sells" : `${t}s`}
+              {t === "div" ? "Dividends" : t === "overview" ? "Overview" : t === "Sell" ? "Sells" : `${t}s`}
             </button>
           ))}
         </div>
@@ -75,6 +76,24 @@ export function RatingLeaderboard({ onPick }: { onPick: (s: string) => void }) {
         <p className="text-sm text-muted-foreground">Scoring the universe… this can take up to a minute the first time.</p>
       ) : q.isError || !rows.length ? (
         <p className="text-sm text-muted-foreground">Ratings unavailable right now. Try again shortly.</p>
+      ) : tab === "div" ? (
+        <div className="rounded-lg border border-border p-3">
+          <h3 className="text-sm font-semibold mb-1">Highest dividend yields <span className="text-muted-foreground font-normal">({divs.length})</span></h3>
+          <p className="text-[11px] text-muted-foreground mb-2">Sorted by yield. Safety = whether profits cover the payout; very high yields can be a trap. Funds and non-US listings often lack dividend data.</p>
+          {!divs.length && <p className="text-xs text-muted-foreground">No dividend data in this list yet.</p>}
+          <ul className="space-y-1">
+            {divs.map((r) => (
+              <li key={r.symbol}>
+                <button onClick={() => onPick(r.symbol)} className="w-full text-left rounded-md px-2 py-1.5 hover:bg-muted/50 flex items-center justify-between gap-2">
+                  <span className="font-mono text-sm font-semibold">{r.symbol} <span className="text-[11px] font-normal text-muted-foreground">{r.name ?? ""}</span></span>
+                  <span className="font-mono text-xs">
+                    <b>{r.dividendYield!.toFixed(2)}%</b> · {r.dividendSafety} · {r.verdict} {Math.round(r.score)}/100
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       ) : (
         <div className={`grid gap-3 ${cols.length > 1 ? "md:grid-cols-3" : ""}`}>
           {cols.map((c) => {
