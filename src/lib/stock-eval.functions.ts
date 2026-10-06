@@ -237,7 +237,14 @@ export const AU_UNIVERSE = [
 export const CA_UNIVERSE = [
   "RY.TO","TD.TO","ENB.TO","CNR.TO","CP.TO","BMO.TO","BNS.TO","TRI.TO","BCE.TO","SU.TO",
   "TRP.TO","CM.TO","MFC.TO","SLF.TO","ABX.TO","WPM.TO","FM.TO","CCO.TO","NTR.TO","SHOP.TO",
-  "CNQ.TO","IMO.TO","CVE.TO","BAM.TO","BN.TO",
+  "CNQ.TO","IMO.TO","CVE.TO","BAM.TO","BN.TO","X.TO",
+];
+
+// Popular TSX-listed ETFs. Funds have no company fundamentals, so scores
+// lean on price, trend and risk.
+export const CA_ETF_UNIVERSE = [
+  "XIU.TO","VCN.TO","XEQT.TO","VEQT.TO","VFV.TO","ZSP.TO","VDY.TO","XDIV.TO",
+  "XGD.TO","HXT.TO","QQC.TO","ZEB.TO","CASH.TO","VAB.TO","XBB.TO",
 ];
 
 // US ETFs offered as CFDs on XM (".US" suffix there). Funds have no company
