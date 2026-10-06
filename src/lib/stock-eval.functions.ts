@@ -28,7 +28,33 @@ export interface Evaluation {
   pillars: Pillar[];
   risks: string[];
   closes: number[];
+  dividend: Dividend | null;
   generatedAt: string;
+}
+
+export interface Dividend {
+  yieldPct: number;
+  perShare: number | null;
+  payoutPct: number | null;
+  growth5yPct: number | null;
+  safety: "Safe" | "Watch" | "At risk";
+  note: string;
+}
+
+function dividendFrom(m: Record<string, unknown>): Dividend | null {
+  const y = num(m["currentDividendYieldTTM"]) ?? num(m["dividendYieldIndicatedAnnual"]);
+  if (y == null || y <= 0) return null;
+  const payout = num(m["payoutRatioTTM"]) ?? num(m["payoutRatioAnnual"]);
+  const growth = num(m["dividendGrowthRate5Y"]);
+  const perShare = num(m["dividendPerShareTTM"]) ?? num(m["dividendPerShareAnnual"]);
+  let safety: Dividend["safety"] = "Safe";
+  const notes: string[] = [];
+  if (payout != null && payout > 100) { safety = "At risk"; notes.push("pays out more than it earns"); }
+  else if (payout != null && payout > 75) { safety = "Watch"; notes.push("high share of profit paid out"); }
+  if (y > 10) { safety = "At risk"; notes.push("very high yield can signal a falling price or coming cut"); }
+  if (growth != null && growth < 0) { if (safety === "Safe") safety = "Watch"; notes.push("dividend shrank over 5 years"); }
+  if (payout == null) notes.push("payout ratio unavailable");
+  return { yieldPct: y, perShare, payoutPct: payout, growth5yPct: growth, safety, note: notes.length ? notes.join("; ") : "payout covered by earnings" };
 }
 
 const clamp = (v: number) => Math.max(0, Math.min(100, v));
@@ -195,7 +221,7 @@ export async function evaluateSymbol(symbol: string): Promise<Evaluation> {
 
     return {
       symbol, name: profile?.name ?? null, price, verdict, score, confidence, pillars, risks,
-      closes: closes.slice(-126), generatedAt: new Date().toISOString(),
+      closes: closes.slice(-126), dividend: dividendFrom(m), generatedAt: new Date().toISOString(),
     };
   }
 
@@ -261,7 +287,7 @@ export const AU_ETF_UNIVERSE = [
 const ETF_SET = new Set([...XM_ETF_UNIVERSE, ...AU_ETF_UNIVERSE, ...CA_ETF_UNIVERSE]);
 const XM_SET = new Set([...XM_UNIVERSE, ...XM_ETF_UNIVERSE]);
 
-export interface RankedStock { symbol: string; name: string | null; price: number | null; score: number; verdict: Verdict; confidence: Evaluation["confidence"]; reason: string; xm: boolean }
+export interface RankedStock { symbol: string; name: string | null; price: number | null; score: number; verdict: Verdict; confidence: Evaluation["confidence"]; reason: string; xm: boolean; dividendYield: number | null; dividendSafety: Dividend["safety"] | null }
 
 const symCache = new Map<string, { at: number; row: RankedStock | null }>();
 const RANK_TTL = 6 * 3600_000;
@@ -276,6 +302,8 @@ function toRow(e: Evaluation): RankedStock | null {
     symbol: e.symbol, name: e.name, price: e.price, score: e.score, verdict: e.verdict, confidence: e.confidence,
     reason: top ? `${e.verdict === "Sell" ? "Weakest" : "Strongest"}: ${top.title} (${Math.round(top.score ?? 0)})` : "",
     xm: XM_SET.has(e.symbol),
+    dividendYield: e.dividend?.yieldPct ?? null,
+    dividendSafety: e.dividend?.safety ?? null,
   };
 }
 
