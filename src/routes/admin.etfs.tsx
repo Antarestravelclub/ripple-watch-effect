@@ -46,14 +46,6 @@ function EtfAdminPage() {
   const verifyFn = useServerFn(verifyEtfFeeds);
   const qc = useQueryClient();
 
-  const { data } = await supabase.rpc("has_role", {
-        _user_id: session.user.id,
-        _role: "admin",
-      });
-      return data === true;
-    },
-  });
-
   const { data } = useQuery({
     queryKey: ["etf-reference"],
     queryFn: () => listFn(),
