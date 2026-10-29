@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { SiteShell } from "@/components/site-shell";
-import { supabase } from "@/integrations/supabase/client";
+import { AdminEntry } from "@/components/admin-entry";
 import {
   listEtfReference,
   setEtfActive,
@@ -34,7 +34,7 @@ export const Route = createFileRoute("/admin/etfs")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: EtfAdminPage,
+  component: () => <AdminEntry><EtfAdminPage /></AdminEntry>,
 });
 
 const CATEGORIES = Object.keys(ETF_CATEGORY_LABEL) as EtfCategory[];
@@ -46,12 +46,7 @@ function EtfAdminPage() {
   const verifyFn = useServerFn(verifyEtfFeeds);
   const qc = useQueryClient();
 
-  const { data: isAdmin } = useQuery({
-    queryKey: ["am-i-admin"],
-    queryFn: async () => {
-      const { data: session } = await supabase.auth.getUser();
-      if (!session.user) return false;
-      const { data } = await supabase.rpc("has_role", {
+  const { data } = await supabase.rpc("has_role", {
         _user_id: session.user.id,
         _role: "admin",
       });
@@ -104,17 +99,6 @@ function EtfAdminPage() {
     mutationFn: () => verifyFn(),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["etf-reference"] }),
   });
-
-  if (isAdmin === false) {
-    return (
-      <SiteShell>
-        <h1 className="text-2xl font-semibold tracking-tight">ETF universe</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          This maintenance page is limited to administrators.
-        </p>
-      </SiteShell>
-    );
-  }
 
   return (
     <SiteShell>

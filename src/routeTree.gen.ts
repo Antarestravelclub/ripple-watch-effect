@@ -25,6 +25,7 @@ import { Route as WatchlistRouteImport } from './routes/watchlist'
 import { Route as AuthenticatedBlotterRouteImport } from './routes/_authenticated/blotter'
 import { Route as AuthenticatedBridgeRouteImport } from './routes/_authenticated/bridge'
 import { Route as AuthenticatedBrokerRouteImport } from './routes/_authenticated/broker'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminBrokerSymbolsRouteImport } from './routes/admin.broker-symbols'
 import { Route as AdminEtfsRouteImport } from './routes/admin.etfs'
 import { Route as EventIdRouteImport } from './routes/event.$id'
@@ -121,6 +122,11 @@ const AuthenticatedBrokerRoute = AuthenticatedBrokerRouteImport.update({
   id: '/broker',
   path: '/broker',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminBrokerSymbolsRoute = AdminBrokerSymbolsRouteImport.update({
   id: '/admin/broker-symbols',
@@ -235,6 +241,7 @@ export interface FileRoutesByFullPath {
   '/event/$id': typeof EventIdRoute
   '/signal/$id': typeof SignalIdRoute
   '/tickers/$symbol': typeof TickersSymbolRoute
+  '/admin/': typeof AdminIndexRoute
   '/tickers/': typeof TickersIndexRoute
   '/api/public/bridge/account': typeof ApiPublicBridgeAccountRoute
   '/api/public/bridge/deals': typeof ApiPublicBridgeDealsRoute
@@ -269,6 +276,7 @@ export interface FileRoutesByTo {
   '/event/$id': typeof EventIdRoute
   '/signal/$id': typeof SignalIdRoute
   '/tickers/$symbol': typeof TickersSymbolRoute
+  '/admin': typeof AdminIndexRoute
   '/tickers': typeof TickersIndexRoute
   '/api/public/bridge/account': typeof ApiPublicBridgeAccountRoute
   '/api/public/bridge/deals': typeof ApiPublicBridgeDealsRoute
@@ -305,6 +313,7 @@ export interface FileRoutesById {
   '/event/$id': typeof EventIdRoute
   '/signal/$id': typeof SignalIdRoute
   '/tickers/$symbol': typeof TickersSymbolRoute
+  '/admin/': typeof AdminIndexRoute
   '/tickers/': typeof TickersIndexRoute
   '/api/public/bridge/account': typeof ApiPublicBridgeAccountRoute
   '/api/public/bridge/deals': typeof ApiPublicBridgeDealsRoute
@@ -341,6 +350,7 @@ export interface FileRouteTypes {
     | '/event/$id'
     | '/signal/$id'
     | '/tickers/$symbol'
+    | '/admin/'
     | '/tickers/'
     | '/api/public/bridge/account'
     | '/api/public/bridge/deals'
@@ -375,6 +385,7 @@ export interface FileRouteTypes {
     | '/event/$id'
     | '/signal/$id'
     | '/tickers/$symbol'
+    | '/admin'
     | '/tickers'
     | '/api/public/bridge/account'
     | '/api/public/bridge/deals'
@@ -410,6 +421,7 @@ export interface FileRouteTypes {
     | '/event/$id'
     | '/signal/$id'
     | '/tickers/$symbol'
+    | '/admin/'
     | '/tickers/'
     | '/api/public/bridge/account'
     | '/api/public/bridge/deals'
@@ -443,6 +455,7 @@ export interface RootRouteChildren {
   EventIdRoute: typeof EventIdRoute
   SignalIdRoute: typeof SignalIdRoute
   TickersSymbolRoute: typeof TickersSymbolRoute
+  AdminIndexRoute: typeof AdminIndexRoute
   TickersIndexRoute: typeof TickersIndexRoute
   ApiPublicBridgeAccountRoute: typeof ApiPublicBridgeAccountRoute
   ApiPublicBridgeDealsRoute: typeof ApiPublicBridgeDealsRoute
@@ -569,6 +582,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/broker'
       preLoaderRoute: typeof AuthenticatedBrokerRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/broker-symbols': {
       id: '/admin/broker-symbols'
@@ -741,6 +761,7 @@ const rootRouteChildren: RootRouteChildren = {
   EventIdRoute: EventIdRoute,
   SignalIdRoute: SignalIdRoute,
   TickersSymbolRoute: TickersSymbolRoute,
+  AdminIndexRoute: AdminIndexRoute,
   TickersIndexRoute: TickersIndexRoute,
   ApiPublicBridgeAccountRoute: ApiPublicBridgeAccountRoute,
   ApiPublicBridgeDealsRoute: ApiPublicBridgeDealsRoute,
