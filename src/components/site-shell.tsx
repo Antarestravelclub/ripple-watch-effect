@@ -42,7 +42,7 @@ function AccountMenu() {
 
   return (
     <div className="flex items-center gap-2">
-      {adminAccess?.admin && <Link to="/admin/" className="text-sm text-primary px-2 py-1">Admin</Link>}
+      {adminAccess?.admin && <Link to="/admin" className="text-sm text-primary px-2 py-1">Admin</Link>}
       <span className="hidden md:inline text-[11px] text-muted-foreground max-w-[160px] truncate">
         {user.email}
       </span>
