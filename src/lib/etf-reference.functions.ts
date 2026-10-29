@@ -1,7 +1,7 @@
 // ETF reference universe: public read + admin maintenance.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAdminAccess } from "./admin-access.functions";
 import type { EtfReferenceRow } from "./instrument";
 
 const CATEGORIES = ["sector", "country", "commodity", "broad_market", "bond", "currency"] as const;
@@ -25,7 +25,7 @@ const upsertSchema = z.object({
 });
 
 export const upsertEtfReference = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdminAccess])
   .inputValidator((d: unknown) => upsertSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { data: isAdmin } = await context.supabase.rpc("has_role", {
@@ -52,7 +52,7 @@ export const upsertEtfReference = createServerFn({ method: "POST" })
   });
 
 export const setEtfActive = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdminAccess])
   .inputValidator((d: unknown) => z.object({ ticker: z.string(), active: z.boolean() }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: isAdmin } = await context.supabase.rpc("has_role", {
@@ -75,7 +75,7 @@ export const setEtfActive = createServerFn({ method: "POST" })
  * broken symbol can never reach a signal.
  */
 export const verifyEtfFeeds = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdminAccess])
   .handler(async ({ context }) => {
     const { data: isAdmin } = await context.supabase.rpc("has_role", {
       _user_id: context.userId,

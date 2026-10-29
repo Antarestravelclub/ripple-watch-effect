@@ -3,15 +3,15 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { SiteShell } from "@/components/site-shell";
+import { AdminEntry } from "@/components/admin-entry";
 import {
   amIAdmin,
-  makeMeAdmin,
   uploadBrokerSymbols,
   listBrokerSymbolUploads,
   getBrokerSymbols,
   updateBrokerSymbolMapping,
 } from "@/lib/broker-symbols.functions";
-import { ShieldCheck, Upload, AlertCircle, Search, Save } from "lucide-react";
+import { Upload, AlertCircle, Search, Save } from "lucide-react";
 
 export const Route = createFileRoute("/admin/broker-symbols")({
   head: () => ({
@@ -30,7 +30,7 @@ export const Route = createFileRoute("/admin/broker-symbols")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: BrokerSymbolsAdminPage,
+  component: () => <AdminEntry><BrokerSymbolsAdminPage /></AdminEntry>,
 });
 
 function ago(iso: string | null | undefined) {
@@ -45,7 +45,6 @@ function ago(iso: string | null | undefined) {
 function BrokerSymbolsAdminPage() {
   const queryClient = useQueryClient();
   const checkAdmin = useServerFn(amIAdmin);
-  const promote = useServerFn(makeMeAdmin);
   const upload = useServerFn(uploadBrokerSymbols);
   const listUploads = useServerFn(listBrokerSymbolUploads);
   const listSymbols = useServerFn(getBrokerSymbols);
@@ -81,11 +80,6 @@ function BrokerSymbolsAdminPage() {
         },
       }),
     enabled: adminData?.admin,
-  });
-
-  const promoteMutation = useMutation({
-    mutationFn: () => promote(),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["am-i-admin"] }),
   });
 
   const uploadMutation = useMutation({
@@ -125,22 +119,6 @@ function BrokerSymbolsAdminPage() {
             This page is restricted to admins because it controls how app tickers are mapped to
             broker symbols.
           </p>
-          <button
-            onClick={() => promoteMutation.mutate()}
-            disabled={promoteMutation.isPending}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-          >
-            <ShieldCheck className="h-4 w-4" />
-            {promoteMutation.isPending ? "Promoting…" : "Make me admin"}
-          </button>
-          {promoteMutation.isSuccess && (
-            <p className="mt-3 text-sm text-tailwind">You are now an admin. Refresh the page.</p>
-          )}
-          {promoteMutation.isError && (
-            <p className="mt-3 text-sm text-headwind">
-              {promoteMutation.error instanceof Error ? promoteMutation.error.message : "Failed"}
-            </p>
-          )}
         </div>
       </SiteShell>
     );
@@ -202,7 +180,7 @@ function BrokerSymbolsAdminPage() {
             <p className="text-xs text-muted-foreground">No uploads yet.</p>
           ) : (
             <div className="space-y-2">
-              {uploads!.map((u) => (
+              {uploads?.map((u) => (
                 <div
                   key={u.id}
                   className={`flex items-center justify-between rounded-lg border px-3 py-2 text-xs ${
@@ -307,7 +285,7 @@ function BrokerSymbolsAdminPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {symbolsData!.rows.map((s) => (
+                  {symbolsData?.rows.map((s) => (
                     <tr key={s.id} className="border-b border-border/40 last:border-b-0">
                       <td className="p-2 font-mono">{s.broker_symbol}</td>
                       <td className="p-2 font-mono text-muted-foreground">{s.normalized_base}</td>

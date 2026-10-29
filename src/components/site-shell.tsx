@@ -8,7 +8,9 @@ import { OperonBadge } from "./operon-badge";
 import { DataRefreshStamp } from "./data-refresh-stamp";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getAdminAccess } from "@/lib/admin-access.functions";
 import { useNavigate } from "@tanstack/react-router";
 
 /** Session-driven sign-in affordance, so a successful login is visible. */
@@ -16,6 +18,8 @@ function AccountMenu() {
   const { user, loading } = useAuth();
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const checkAdmin = useServerFn(getAdminAccess);
+  const { data: adminAccess } = useQuery({ queryKey: ["admin-entry", user?.id], queryFn: () => checkAdmin(), enabled: !!user, refetchInterval: 30_000 });
 
   if (loading) return null;
   if (!user) {
@@ -38,6 +42,7 @@ function AccountMenu() {
 
   return (
     <div className="flex items-center gap-2">
+      {adminAccess?.admin && <Link to="/admin" className="text-sm text-primary px-2 py-1">Admin</Link>}
       <span className="hidden md:inline text-[11px] text-muted-foreground max-w-[160px] truncate">
         {user.email}
       </span>

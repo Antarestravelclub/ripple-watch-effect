@@ -1,6 +1,7 @@
 # Roadmap
 
 ## Done
+- Requesting account granted admin access; both admin pages and actions require a session-bound four-digit entry check.
 - Guided "Connect your demo account" panel on /broker, Mac/Windows guidance, helper startup + auth error messages, manual section.
 - Per-user bridge ownership across secrets, snapshots, positions, deals, instructions, mirror settings, heartbeats and queued orders; no workspace-wide bridge secret fallback.
 

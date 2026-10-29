@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAdminAccess } from "./admin-access.functions";
 
 const KNOWN_SUFFIXES = [".US", ".cash", "-CFD", ".m", ".r", ".cash"];
 
@@ -78,32 +79,6 @@ async function loadAppTickers(supabase: { from: (table: string) => { select: (co
   return Array.from(set);
 }
 
-export const makeMeAdmin = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    // Bootstrap guard: only the first authenticated user can self-promote.
-    const { data: existingAdmins, error: countErr } = await supabaseAdmin
-      .from("user_roles")
-      .select("id", { count: "exact", head: true })
-      .eq("role", "admin");
-    if (countErr) throw new Error(countErr.message);
-    if ((existingAdmins?.length ?? 0) > 0) {
-      return { ok: false, reason: "An admin already exists. Ask an existing admin to promote you." };
-    }
-
-    const { error } = await context.supabase
-      .from("user_roles")
-      .insert({ user_id: context.userId, role: "admin" })
-      .single();
-    if (error?.message?.includes("duplicate")) {
-      return { ok: true, already: true };
-    }
-    if (error) throw new Error(error.message);
-    return { ok: true, already: false };
-  });
-
 export const amIAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -121,7 +96,7 @@ export interface UploadBrokerSymbolsInput {
 }
 
 export const uploadBrokerSymbols = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdminAccess])
   .inputValidator((data: UploadBrokerSymbolsInput) => {
     if (!data.csv || typeof data.csv !== "string") throw new Error("csv is required");
     return data;
@@ -211,7 +186,7 @@ export const uploadBrokerSymbols = createServerFn({ method: "POST" })
   });
 
 export const listBrokerSymbolUploads = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdminAccess])
   .handler(async ({ context }) => {
     const { data: isAdmin } = await context.supabase.rpc("has_role", {
       _user_id: context.userId,
@@ -238,7 +213,7 @@ export interface BrokerSymbolFilter {
 }
 
 export const getBrokerSymbols = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdminAccess])
   .inputValidator((data: BrokerSymbolFilter) => data)
   .handler(async ({ data, context }) => {
     const { data: isAdmin } = await context.supabase.rpc("has_role", {
@@ -273,7 +248,7 @@ export interface UpdateBrokerSymbolInput {
 }
 
 export const updateBrokerSymbolMapping = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdminAccess])
   .inputValidator((data: UpdateBrokerSymbolInput) => {
     if (!data.id) throw new Error("id is required");
     return data;
