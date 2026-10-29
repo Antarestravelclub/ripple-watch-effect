@@ -1,0 +1,32 @@
+CREATE TABLE public.admin_pin_credentials (user_id uuid PRIMARY KEY, pin_hash text NOT NULL, failed_attempts integer NOT NULL DEFAULT 0, locked_until timestamptz);
+GRANT ALL ON public.admin_pin_credentials TO service_role;
+ALTER TABLE public.admin_pin_credentials ENABLE ROW LEVEL SECURITY;
+CREATE TABLE public.admin_unlock_sessions (user_id uuid NOT NULL, session_id text NOT NULL, expires_at timestamptz NOT NULL, PRIMARY KEY(user_id,session_id));
+GRANT ALL ON public.admin_unlock_sessions TO service_role;
+ALTER TABLE public.admin_unlock_sessions ENABLE ROW LEVEL SECURITY;
+CREATE OR REPLACE FUNCTION public.has_admin_access() RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$ SELECT public.has_role(auth.uid(),'admin') AND EXISTS(SELECT 1 FROM public.admin_unlock_sessions WHERE user_id=auth.uid() AND session_id=auth.jwt()->>'session_id' AND expires_at>now()); $$;
+REVOKE ALL ON FUNCTION public.has_admin_access() FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.has_admin_access() TO authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.verify_admin_pin(p_pin text) RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,extensions AS $$ DECLARE c public.admin_pin_credentials%ROWTYPE; sid text; BEGIN
+ IF auth.uid() IS NULL OR NOT public.has_role(auth.uid(),'admin') THEN RAISE EXCEPTION 'Admin account required'; END IF;
+ sid := auth.jwt()->>'session_id'; IF sid IS NULL THEN RAISE EXCEPTION 'Please sign in again'; END IF;
+ SELECT * INTO c FROM public.admin_pin_credentials WHERE user_id=auth.uid() FOR UPDATE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'Admin entry code is not configured'; END IF;
+ IF c.locked_until>now() THEN RAISE EXCEPTION 'Too many attempts. Try again in 15 minutes.'; END IF;
+ IF p_pin IS NULL OR p_pin !~ '^[0-9]{4}$' OR extensions.crypt(p_pin,c.pin_hash)<>c.pin_hash THEN
+ UPDATE public.admin_pin_credentials SET failed_attempts=CASE WHEN locked_until<=now() THEN 1 ELSE failed_attempts+1 END, locked_until=CASE WHEN (CASE WHEN locked_until<=now() THEN 1 ELSE failed_attempts+1 END)>=5 THEN now()+interval '15 minutes' ELSE NULL END WHERE user_id=auth.uid(); RETURN false; END IF;
+ UPDATE public.admin_pin_credentials SET failed_attempts=0,locked_until=NULL WHERE user_id=auth.uid();
+ INSERT INTO public.admin_unlock_sessions(user_id,session_id,expires_at) VALUES(auth.uid(),sid,now()+interval '30 minutes') ON CONFLICT(user_id,session_id) DO UPDATE SET expires_at=EXCLUDED.expires_at;
+ RETURN true; END; $$;
+REVOKE ALL ON FUNCTION public.verify_admin_pin(text) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.verify_admin_pin(text) TO authenticated;
+CREATE OR REPLACE FUNCTION public.lock_admin_access() RETURNS void LANGUAGE sql SECURITY DEFINER SET search_path=public AS $$ DELETE FROM public.admin_unlock_sessions WHERE user_id=auth.uid() AND session_id=auth.jwt()->>'session_id'; $$;
+REVOKE ALL ON FUNCTION public.lock_admin_access() FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.lock_admin_access() TO authenticated;
+ALTER POLICY "Admins can manage broker symbol uploads" ON public.broker_symbol_uploads USING(public.has_admin_access()) WITH CHECK(public.has_admin_access());
+ALTER POLICY "Admins can manage broker symbols" ON public.broker_symbols USING(public.has_admin_access()) WITH CHECK(public.has_admin_access());
+ALTER POLICY "Admins can manage user roles" ON public.user_roles USING(public.has_admin_access()) WITH CHECK(public.has_admin_access());
+ALTER POLICY "Admins can insert ETF reference" ON public.etf_reference WITH CHECK(public.has_admin_access());
+ALTER POLICY "Admins can update ETF reference" ON public.etf_reference USING(public.has_admin_access()) WITH CHECK(public.has_admin_access());
+ALTER POLICY "Admins can delete ETF reference" ON public.etf_reference USING(public.has_admin_access());
+ALTER POLICY "Admins can read ETF reference" ON public.etf_reference USING(public.has_admin_access());

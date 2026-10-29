@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_pin_credentials: {
+        Row: {
+          failed_attempts: number
+          locked_until: string | null
+          pin_hash: string
+          user_id: string
+        }
+        Insert: {
+          failed_attempts?: number
+          locked_until?: string | null
+          pin_hash: string
+          user_id: string
+        }
+        Update: {
+          failed_attempts?: number
+          locked_until?: string | null
+          pin_hash?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      admin_unlock_sessions: {
+        Row: {
+          expires_at: string
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          expires_at: string
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          expires_at?: string
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       archetype_playbooks: {
         Row: {
           archetype: Database["public"]["Enums"]["event_archetype"]
@@ -1465,6 +1504,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      has_admin_access: { Args: never; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1472,6 +1512,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      lock_admin_access: { Args: never; Returns: undefined }
       match_recent_event: {
         Args: { p_threshold?: number; p_title_norm: string }
         Returns: {
@@ -1480,6 +1521,7 @@ export type Database = {
           sim: number
         }[]
       }
+      verify_admin_pin: { Args: { p_pin: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
