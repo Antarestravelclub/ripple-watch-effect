@@ -17,7 +17,7 @@ class AdminAccessTests(unittest.TestCase):
 
     def rpc(self, name, payload=None):
         response = requests.post(self.url + name, headers=self.headers, json=payload or {}, timeout=20)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 204 if name == "lock_admin_access" else 200)
         return response.json() if response.content else None
 
     def tearDown(self):
