@@ -47,6 +47,9 @@ export interface PaperTradeRow {
   demo_fill_price: number | null;
   demo_close_price: number | null;
   demo_realized_pnl: number | null;
+  /** Personal 1-5 review of a closed trade (null = not rated yet). */
+  rating: number | null;
+  rating_note: string | null;
 }
 
 /** Signed slippage between the paper level and the demo fill. */

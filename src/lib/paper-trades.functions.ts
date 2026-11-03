@@ -473,6 +473,8 @@ export const listPaperTrades = createServerFn({ method: "GET" })
         demo_fill_price: r.demo_fill_price != null ? Number(r.demo_fill_price) : null,
         demo_close_price: r.demo_close_price != null ? Number(r.demo_close_price) : null,
         demo_realized_pnl: r.demo_realized_pnl != null ? Number(r.demo_realized_pnl) : null,
+        rating: r.rating != null ? Number(r.rating) : null,
+        rating_note: r.rating_note ?? null,
       };
     });
 
@@ -498,4 +500,50 @@ export const listPaperTrades = createServerFn({ method: "GET" })
       lastQuoteTime: newestQuote > 0 ? new Date(newestQuote).toISOString() : null,
       feedStale: openSymbols.length > 0 && (newestQuote === 0 || Date.now() - newestQuote > STALE_QUOTE_MS),
     };
+  });
+
+/**
+ * Rate a closed paper trade 1-5 with an optional short note, or clear the
+ * rating (rating = null). Owner-only, closed trades only.
+ */
+export const ratePaperTrade = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string; rating: number | null; note?: string | null }) => {
+    if (typeof d?.id !== "string" || d.id.length === 0) throw new Error("Missing trade id");
+    const rating = d.rating == null ? null : Math.round(Number(d.rating));
+    if (rating != null && !(rating >= 1 && rating <= 5)) {
+      throw new Error("Rating must be between 1 and 5");
+    }
+    const note = d.note == null ? null : String(d.note).trim().slice(0, 500) || null;
+    return { id: d.id, rating, note };
+  })
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: trade } = await supabaseAdmin
+      .from("paper_trades")
+      .select("id,status")
+      .eq("id", data.id)
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (!trade) throw new Error("Paper trade not found");
+    if (trade.status !== "closed") throw new Error("Only closed trades can be rated");
+
+    const { error } = await supabaseAdmin
+      .from("paper_trades")
+      .update({
+        rating: data.rating,
+        rating_note: data.rating == null ? null : data.note,
+        rated_at: data.rating == null ? null : new Date().toISOString(),
+      })
+      .eq("id", data.id)
+      .eq("user_id", context.userId);
+    if (error) {
+      if (/rating/.test(error.message) && /column/.test(error.message)) {
+        throw new Error(
+          "Ratings need the new database columns — apply the paper_trade_ratings migration first.",
+        );
+      }
+      throw new Error(error.message);
+    }
+    return { ok: true };
   });

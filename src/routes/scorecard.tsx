@@ -25,6 +25,11 @@ import { DEFAULT_PORTFOLIO } from "@/lib/position-sizing";
 import { useLiveEvents } from "@/hooks/use-live-events";
 import { STANCE_LABEL, STANCE_CLASS, type Stance } from "@/lib/ticker-rollup";
 import { INSTRUMENT_LABEL, type InstrumentType } from "@/lib/instrument";
+import {
+  AddSymbolSection,
+  HighConvictionCheck,
+  RateClosedPositions,
+} from "@/components/scorecard-sections";
 
 
 export const Route = createFileRoute("/scorecard")({
@@ -311,6 +316,8 @@ function Scorecard() {
       </div>
 
 
+      <AddSymbolSection />
+
       <BenchmarkSection
         signals={enriched.map((r) => ({
           signal: r.signal,
@@ -343,6 +350,8 @@ function Scorecard() {
           sub={`${resolved} resolved`}
         />
       </div>
+
+      <HighConvictionCheck signals={enriched.map((r) => r.signal)} />
 
       <div className="grid md:grid-cols-2 gap-4 mb-6">
         <PerfList
@@ -418,6 +427,8 @@ function Scorecard() {
           </tbody>
         </table>
       </div>
+
+      <RateClosedPositions />
     </SiteShell>
   );
 }
