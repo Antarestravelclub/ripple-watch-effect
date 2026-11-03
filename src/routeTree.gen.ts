@@ -18,6 +18,7 @@ import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as EvaluateRouteImport } from './routes/evaluate'
 import { Route as ManualRouteImport } from './routes/manual'
 import { Route as PlaybooksRouteImport } from './routes/playbooks'
+import { Route as ReboundRouteImport } from './routes/rebound'
 import { Route as ScorecardRouteImport } from './routes/scorecard'
 import { Route as SetupsRouteImport } from './routes/setups'
 import { Route as TrackerRouteImport } from './routes/tracker'
@@ -86,6 +87,11 @@ const ManualRoute = ManualRouteImport.update({
 const PlaybooksRoute = PlaybooksRouteImport.update({
   id: '/playbooks',
   path: '/playbooks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReboundRoute = ReboundRouteImport.update({
+  id: '/rebound',
+  path: '/rebound',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ScorecardRoute = ScorecardRouteImport.update({
@@ -229,6 +235,7 @@ export interface FileRoutesByFullPath {
   '/evaluate': typeof EvaluateRoute
   '/manual': typeof ManualRoute
   '/playbooks': typeof PlaybooksRoute
+  '/rebound': typeof ReboundRoute
   '/scorecard': typeof ScorecardRoute
   '/setups': typeof SetupsRoute
   '/tracker': typeof TrackerRoute
@@ -264,6 +271,7 @@ export interface FileRoutesByTo {
   '/evaluate': typeof EvaluateRoute
   '/manual': typeof ManualRoute
   '/playbooks': typeof PlaybooksRoute
+  '/rebound': typeof ReboundRoute
   '/scorecard': typeof ScorecardRoute
   '/setups': typeof SetupsRoute
   '/tracker': typeof TrackerRoute
@@ -301,6 +309,7 @@ export interface FileRoutesById {
   '/evaluate': typeof EvaluateRoute
   '/manual': typeof ManualRoute
   '/playbooks': typeof PlaybooksRoute
+  '/rebound': typeof ReboundRoute
   '/scorecard': typeof ScorecardRoute
   '/setups': typeof SetupsRoute
   '/tracker': typeof TrackerRoute
@@ -338,6 +347,7 @@ export interface FileRouteTypes {
     | '/evaluate'
     | '/manual'
     | '/playbooks'
+    | '/rebound'
     | '/scorecard'
     | '/setups'
     | '/tracker'
@@ -373,6 +383,7 @@ export interface FileRouteTypes {
     | '/evaluate'
     | '/manual'
     | '/playbooks'
+    | '/rebound'
     | '/scorecard'
     | '/setups'
     | '/tracker'
@@ -409,6 +420,7 @@ export interface FileRouteTypes {
     | '/evaluate'
     | '/manual'
     | '/playbooks'
+    | '/rebound'
     | '/scorecard'
     | '/setups'
     | '/tracker'
@@ -446,6 +458,7 @@ export interface RootRouteChildren {
   EvaluateRoute: typeof EvaluateRoute
   ManualRoute: typeof ManualRoute
   PlaybooksRoute: typeof PlaybooksRoute
+  ReboundRoute: typeof ReboundRoute
   ScorecardRoute: typeof ScorecardRoute
   SetupsRoute: typeof SetupsRoute
   TrackerRoute: typeof TrackerRoute
@@ -532,6 +545,13 @@ declare module '@tanstack/react-router' {
       path: '/playbooks'
       fullPath: '/playbooks'
       preLoaderRoute: typeof PlaybooksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rebound': {
+      id: '/rebound'
+      path: '/rebound'
+      fullPath: '/rebound'
+      preLoaderRoute: typeof ReboundRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/scorecard': {
@@ -752,6 +772,7 @@ const rootRouteChildren: RootRouteChildren = {
   EvaluateRoute: EvaluateRoute,
   ManualRoute: ManualRoute,
   PlaybooksRoute: PlaybooksRoute,
+  ReboundRoute: ReboundRoute,
   ScorecardRoute: ScorecardRoute,
   SetupsRoute: SetupsRoute,
   TrackerRoute: TrackerRoute,
