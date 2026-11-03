@@ -1,6 +1,7 @@
 // The single guarded path for creating advisor-grade paper signals.
 // A signal without a score, ATR, stop, target and invalidation is rejected.
 import { atrFor } from "./atr.server";
+import { lastCloseBefore } from "./daily-bars.server";
 import { atrLevels, EXPIRY_TRADING_DAYS, STOP_ATR_MULT } from "./signal-levels";
 import { scoreConviction, CONVICTION_THRESHOLD } from "./conviction";
 import { suggestedSizePct, DEFAULT_PORTFOLIO, type PortfolioSettings } from "./position-sizing";
@@ -83,12 +84,21 @@ export async function createSignal(
   const ageHours =
     (Date.now() - new Date(input.eventPublishedAt).getTime()) / 3_600_000;
   const hitRate = await analogueHitRate(input.ticker, input.direction, input.category);
+
+  // Priced-in check: how far has price already run our way since the event?
+  const preEventClose = await lastCloseBefore(input.quoteSymbol, input.eventPublishedAt);
+  const moveSinceEventAtr =
+    preEventClose != null && preEventClose > 0
+      ? ((input.entryPrice - preEventClose) / atr) * (input.direction === "long" ? 1 : -1)
+      : null;
+
   const breakdown = scoreConviction({
     strength: input.strength,
     confidence: input.confidence,
     named: namedInEvent(input.eventText, input.ticker, input.companyName),
     analogueHitRate: hitRate,
     eventAgeHours: ageHours,
+    moveSinceEventAtr,
   });
   const belowThreshold = breakdown.total < CONVICTION_THRESHOLD;
 

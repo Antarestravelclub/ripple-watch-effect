@@ -73,3 +73,24 @@ export async function closeOnOrBefore(
   }
   return (pick ?? bars[0]!).close;
 }
+
+// A daily bar's timestamp is the session open; a regular session runs ~6.5h.
+const SESSION_MS = 6.5 * 3_600_000;
+
+/**
+ * Last closing price that was already final before an instant — the
+ * "pre-event" reference for the priced-in check. A bar only counts once its
+ * session has ended, so an intraday event uses the prior session's close.
+ * Null when history is unavailable or doesn't reach back that far.
+ */
+export async function lastCloseBefore(symbol: string, atISO: string): Promise<number | null> {
+  const t = new Date(atISO).getTime();
+  if (!Number.isFinite(t)) return null;
+  const bars = await dailyBars(symbol, "6mo");
+  let pick: DailyBar | null = null;
+  for (const b of bars) {
+    if (b.time + SESSION_MS <= t) pick = b;
+    else break;
+  }
+  return pick?.close ?? null;
+}

@@ -1,4 +1,9 @@
-import { convictionBand, CONVICTION_THRESHOLD, type ConvictionBreakdown } from "@/lib/conviction";
+import {
+  convictionBand,
+  CONVICTION_THRESHOLD,
+  PRICED_IN_MAX_PENALTY,
+  type ConvictionBreakdown,
+} from "@/lib/conviction";
 
 const TONE: Record<string, string> = {
   high: "border-tailwind/50 text-tailwind bg-tailwind/10",
@@ -6,6 +11,13 @@ const TONE: Record<string, string> = {
   low: "border-border/70 text-muted-foreground bg-background/60",
   below: "border-headwind/40 text-headwind bg-headwind/10",
 };
+
+function pricedInNote(b: ConvictionBreakdown): string {
+  if (b.pricedIn == null) return "";
+  const mv = b.moveSinceEventAtr;
+  if (mv == null) return ", priced-in n/a";
+  return `, priced-in ${b.pricedIn} (moved ${mv.toFixed(1)}× ATR since event)`;
+}
 
 /** Compact conviction score chip (0–100 rubric). */
 export function ConvictionChip({
@@ -18,7 +30,7 @@ export function ConvictionChip({
   if (score == null) return null;
   const band = convictionBand(score);
   const title = breakdown
-    ? `Conviction ${score}/100 — severity ${breakdown.severity}, directness ${breakdown.directness}, analogues ${breakdown.analogues}${breakdown.analoguesEstimated ? " (no comparable history)" : ""}, freshness ${breakdown.freshness}`
+    ? `Conviction ${score}/100 — severity ${breakdown.severity}, directness ${breakdown.directness}, analogues ${breakdown.analogues}${breakdown.analoguesEstimated ? " (no comparable history)" : ""}, freshness ${breakdown.freshness}${pricedInNote(breakdown)}`
     : `Conviction ${score}/100`;
   return (
     <span
@@ -50,6 +62,17 @@ export function ConvictionBreakdownList({
     ],
     ["Freshness", breakdown.freshness, 10, "10 points under 24h, decaying to 0 at 72h"],
   ];
+  const showPricedIn = breakdown.pricedIn != null;
+  const mv = breakdown.moveSinceEventAtr;
+  const pricedInText =
+    mv == null
+      ? "No pre-event price available — no deduction"
+      : mv <= 0
+        ? `Price moved ${Math.abs(mv).toFixed(1)}× ATR against the signal since the event — not priced in`
+        : mv <= 0.5
+          ? `Price moved ${mv.toFixed(1)}× ATR our way since the event — still fresh`
+          : `Price already moved ${mv.toFixed(1)}× ATR our way since the event — part of the move is priced in`;
+  const penalty = breakdown.pricedIn ?? 0;
   return (
     <ul className="space-y-2">
       {rows.map(([label, value, max, note]) => (
@@ -69,6 +92,23 @@ export function ConvictionBreakdownList({
           <p className="mt-1 text-[11px] text-muted-foreground">{note}</p>
         </li>
       ))}
+      {showPricedIn && (
+        <li>
+          <div className="flex items-baseline justify-between gap-3 text-xs">
+            <span>Priced-in check</span>
+            <span className={"font-mono tabular-nums " + (penalty < 0 ? "text-headwind" : "text-muted-foreground")}>
+              {penalty === 0 ? "0" : penalty}/−{PRICED_IN_MAX_PENALTY}
+            </span>
+          </div>
+          <div className="mt-1 h-1.5 rounded-full bg-background/70 overflow-hidden">
+            <div
+              className="h-full bg-headwind/70"
+              style={{ width: `${Math.min(100, (Math.abs(penalty) / PRICED_IN_MAX_PENALTY) * 100)}%` }}
+            />
+          </div>
+          <p className="mt-1 text-[11px] text-muted-foreground">{pricedInText}</p>
+        </li>
+      )}
     </ul>
   );
 }

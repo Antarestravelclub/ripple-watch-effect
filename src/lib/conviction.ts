@@ -14,6 +14,12 @@ export interface ConvictionInput {
   analogueHitRate: number | null;
   /** Age of the driving event in hours at signal creation. */
   eventAgeHours: number;
+  /**
+   * How far price has already moved in the signal's direction since the event,
+   * in ATR(14) units (positive = already ran our way). Null/undefined = unknown
+   * (no penalty applied).
+   */
+  moveSinceEventAtr?: number | null;
 }
 
 export interface ConvictionBreakdown {
@@ -21,6 +27,10 @@ export interface ConvictionBreakdown {
   directness: number;
   analogues: number;
   freshness: number;
+  /** Priced-in penalty (0 to -30). Absent on signals scored before v2. */
+  pricedIn?: number;
+  /** Move since the event in ATR units, in the signal's direction. */
+  moveSinceEventAtr?: number | null;
   total: number;
   analogueHitRate: number | null;
   analoguesEstimated: boolean;
@@ -32,6 +42,25 @@ export const CONVICTION_MAX = {
   analogues: 25,
   freshness: 10,
 } as const;
+
+/** Largest priced-in deduction. */
+export const PRICED_IN_MAX_PENALTY = 30;
+
+/**
+ * Priced-in penalty — up to -30. Measures how much of the expected move has
+ * already happened since the event, in ATR units in the signal's direction.
+ *   ≤ 0.5 ATR  →   0   (normal noise; still fresh)
+ *   0.5–1.5    →   0 → -15
+ *   1.5–3      → -15 → -30
+ *   > 3 ATR    → -30  (the move is largely done)
+ * A move against the signal gets no penalty and no bonus.
+ */
+export function pricedInPenalty(moveAtr: number | null | undefined): number {
+  if (moveAtr == null || !Number.isFinite(moveAtr) || moveAtr <= 0.5) return 0;
+  if (moveAtr <= 1.5) return -+(15 * (moveAtr - 0.5)).toFixed(1);
+  if (moveAtr <= 3) return -+(15 + 10 * (moveAtr - 1.5)).toFixed(1);
+  return -PRICED_IN_MAX_PENALTY;
+}
 
 function clamp(n: number, lo: number, hi: number) {
   return Math.min(hi, Math.max(lo, n));
@@ -59,14 +88,23 @@ export function scoreConviction(input: ConvictionInput): ConvictionBreakdown {
   const freshness =
     h <= 24 ? 10 : h >= 72 ? 0 : +(10 * (1 - (h - 24) / 48)).toFixed(1);
 
+  // Priced-in — deduction for moves that already happened before entry.
+  const moveSinceEventAtr =
+    input.moveSinceEventAtr == null || !Number.isFinite(input.moveSinceEventAtr)
+      ? null
+      : +input.moveSinceEventAtr.toFixed(2);
+  const pricedIn = pricedInPenalty(moveSinceEventAtr);
+
   const total = Math.round(
-    clamp(severity + directness + analogues + freshness, 0, 100),
+    clamp(severity + directness + analogues + freshness + pricedIn, 0, 100),
   );
   return {
     severity,
     directness,
     analogues,
     freshness,
+    pricedIn,
+    moveSinceEventAtr,
     total,
     analogueHitRate: input.analogueHitRate,
     analoguesEstimated,
