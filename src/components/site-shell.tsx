@@ -123,6 +123,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
               <NavLink to="/tickers">Tickers</NavLink>
               <NavLink to="/evaluate">Evaluate</NavLink>
               <NavLink to="/rebound">Rebound</NavLink>
+              <NavLink to="/time-machine">Time Machine</NavLink>
               <NavLink to="/blotter">Trade Log</NavLink>
 
               <NavLink to="/scorecard">Scorecard</NavLink>

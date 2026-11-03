@@ -5,6 +5,7 @@ import { SiteShell } from "@/components/site-shell";
 import { StockEvaluation } from "@/components/stock-evaluation";
 import { RatingLeaderboard } from "@/components/rating-leaderboard";
 import { StockCompare, COMPARE_SLOTS } from "@/components/stock-compare";
+import { ManualPaperTradeButton } from "@/components/paper-trade-dialog";
 
 export const Route = createFileRoute("/evaluate")({
   validateSearch: (s) => z.object({ symbol: z.string().optional(), compare: z.string().optional() }).parse(s),
@@ -54,9 +55,12 @@ function EvaluatePage() {
       {symbol ? (
         <>
           <StockEvaluation ticker={symbol} />
-          <Link to="/tickers/$symbol" params={{ symbol: symbol.toUpperCase() }} className="text-xs text-primary hover:underline">
-            See {symbol.toUpperCase()} events, signals and chart →
-          </Link>
+          <div className="flex flex-wrap items-center gap-3">
+            <ManualPaperTradeButton symbol={symbol.toUpperCase()} label={`Buy ${symbol.toUpperCase()}`} compact />
+            <Link to="/tickers/$symbol" params={{ symbol: symbol.toUpperCase() }} className="text-xs text-primary hover:underline">
+              See {symbol.toUpperCase()} events, signals and chart →
+            </Link>
+          </div>
         </>
       ) : (
         <p className="text-xs text-muted-foreground mb-4">No symbol yet — pick one below.</p>

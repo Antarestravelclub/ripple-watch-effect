@@ -179,3 +179,177 @@ export const getRebounds = createServerFn({ method: "GET" })
     if (failed < list.length / 2) cache.set(key, entry);
     return { ...entry, generatedAt: new Date(entry.at).toISOString() };
   });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Time Machine: before taking a rebound trade, estimate the odds that price
+// reaches the target before the stop.
+//  1) Simulation — 10,000 paths built by resampling the stock's own daily bars
+//     from the past year (each day's high/low/close relative to the prior close).
+//  2) History — every past time this stock had a similar stretched drop, replay
+//     what actually happened using the same target/stop rule.
+// If target and stop are both touched on the same day we count the stop
+// (conservative — daily bars can't tell which came first).
+
+export interface TimeMachineResult {
+  symbol: string;
+  horizonDays: number;
+  entry: number;
+  target: number;
+  stop: number;
+  sim: { paths: number; targetPct: number; stopPct: number; openPct: number; medianDaysToTarget: number | null };
+  history: { fired: number; target: number; stop: number; neither: number; minDropAtr: number };
+  verdict: "Favourable" | "Coin flip" | "Unfavourable" | "Not enough history";
+  seed: number;
+  /** rebound = past similar selloffs; atr/custom = entered at every past close. */
+  mode: "rebound" | "atr" | "custom";
+  rewardRisk: number;
+  name?: string | null;
+}
+
+function mulberry32(seed: number) {
+  return () => {
+    seed |= 0; seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function hashSeed(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+  return h >>> 0;
+}
+
+/** Walk forward from index i (entry at close of i); returns "target" | "stop" | "open". */
+function walk(bars: DailyBar[], i: number, target: number, stop: number, horizon: number): "target" | "stop" | "open" {
+  for (let k = i + 1; k <= Math.min(bars.length - 1, i + horizon); k++) {
+    if (bars[k]!.low <= stop) return "stop";
+    if (bars[k]!.high >= target) return "target";
+  }
+  return "open";
+}
+
+export interface TimeMachineOpts {
+  days?: number;           // lookback that defined the selloff (rebound mode)
+  horizon?: number;
+  paths?: number;
+  stop?: number;           // custom levels (both required to apply)
+  target?: number;
+}
+
+export function runTimeMachine(symbol: string, raw: DailyBar[], daysOrOpts: number | TimeMachineOpts = 2, horizonArg = 10, pathsArg = 10_000): TimeMachineResult | null {
+  const o: TimeMachineOpts = typeof daysOrOpts === "number" ? { days: daysOrOpts, horizon: horizonArg, paths: pathsArg } : daysOrOpts;
+  const days = o.days ?? 2, horizon = o.horizon ?? 10, paths = o.paths ?? 10_000;
+  const bars = completed(raw);
+  if (bars.length < 80) return null;
+  const closes = bars.map((b) => b.close);
+  const entry = closes[closes.length - 1]!;
+  const atr = atr14(bars.slice(0, bars.length - days)) ?? atr14(bars);
+  if (!atr) return null;
+  const sma20 = avg(closes.slice(-20));
+  const custom = o.stop != null && o.target != null && o.stop < entry && o.target > entry;
+  // Mode: custom levels > rebound rule (price below its 20-day avg) > plain ATR rule.
+  const mode: TimeMachineResult["mode"] = custom ? "custom" : sma20 > entry ? "rebound" : "atr";
+  let stop: number, target: number;
+  if (custom) { stop = o.stop!; target = o.target!; }
+  else if (mode === "rebound") {
+    stop = Math.min(...bars.slice(-days).map((b) => b.low)) - 0.5 * atr;
+    target = sma20;
+  } else { stop = entry - 1.5 * atr; target = entry + 3 * atr; }
+
+  // ---- 1) Bootstrap simulation from the last ~250 sessions
+  const hist = bars.slice(-251);
+  const moves: { h: number; l: number; c: number }[] = [];
+  for (let i = 1; i < hist.length; i++) {
+    const p = hist[i - 1]!.close;
+    moves.push({ h: hist[i]!.high / p, l: hist[i]!.low / p, c: hist[i]!.close / p });
+  }
+  const seed = hashSeed(`${symbol}|${new Date(bars[bars.length - 1]!.time).toISOString().slice(0, 10)}|${days}`);
+  const rnd = mulberry32(seed);
+  let hitT = 0, hitS = 0;
+  const daysToT: number[] = [];
+  for (let n = 0; n < paths; n++) {
+    let p = entry;
+    let outcome: "t" | "s" | null = null;
+    for (let d = 1; d <= horizon; d++) {
+      const m = moves[Math.floor(rnd() * moves.length)]!;
+      if (p * m.l <= stop) { outcome = "s"; break; }
+      if (p * m.h >= target) { outcome = "t"; daysToT.push(d); break; }
+      p *= m.c;
+    }
+    if (outcome === "t") hitT++; else if (outcome === "s") hitS++;
+  }
+  daysToT.sort((a, b) => a - b);
+
+  // ---- 2) History replay
+  const curDropAtr = (closes[closes.length - 1 - days]! - entry) / atr;
+  const minDropAtr = Math.max(1.5, curDropAtr * 0.7);
+  let fired = 0, hT = 0, hS = 0, hN = 0;
+  if (mode !== "rebound") {
+    // Same stop/target distances (as % of price), entered at every past close.
+    const sPct = (entry - stop) / entry, tPct = (target - entry) / entry;
+    for (let i = 20; i < bars.length - 1 - horizon; i++) {
+      const c = closes[i]!;
+      const r = walk(bars, i, c * (1 + tPct), c * (1 - sPct), horizon);
+      fired++;
+      if (r === "target") hT++; else if (r === "stop") hS++; else hN++;
+    }
+  }
+  for (let i = 40; mode === "rebound" && i < bars.length - 1 - horizon; ) {
+    const pre = bars.slice(0, i + 1 - days);
+    const a = atr14(pre);
+    const start = closes[i - days]!;
+    const drop = a ? (start - closes[i]!) / a : 0;
+    const s20 = avg(closes.slice(i - 19, i + 1));
+    if (a && drop >= minDropAtr && closes[i]! < s20) {
+      const lo = Math.min(...bars.slice(i - days + 1, i + 1).map((b) => b.low));
+      const st = lo - 0.5 * a;
+      const r = walk(bars, i, s20, st, horizon);
+      fired++;
+      if (r === "target") hT++; else if (r === "stop") hS++; else hN++;
+      i += Math.max(days, 3); // don't double-count the same selloff
+    } else i++;
+  }
+
+  const tPct = (hitT / paths) * 100, sPct = (hitS / paths) * 100;
+  const histEdge = fired >= 5 ? (hT - hS) / fired : 0;
+  const simEdge = (tPct - sPct) / 100;
+  // Reward/risk matters: a 40% hit rate is fine at 2:1, bad at 0.5:1.
+  const rr = (target - entry) / (entry - stop);
+  const ev = (tPct / 100) * rr - sPct / 100;
+  let verdict: TimeMachineResult["verdict"];
+  if (fired < 5 && moves.length < 120) verdict = "Not enough history";
+  else if (ev > 0.15 && simEdge + histEdge > 0) verdict = "Favourable";
+  else if (ev < -0.15 || simEdge + histEdge < -0.2) verdict = "Unfavourable";
+  else verdict = "Coin flip";
+
+  return {
+    symbol, horizonDays: horizon, entry, target, stop, seed, mode, rewardRisk: rr,
+    sim: {
+      paths,
+      targetPct: tPct,
+      stopPct: sPct,
+      openPct: 100 - tPct - sPct,
+      medianDaysToTarget: daysToT.length ? daysToT[Math.floor(daysToT.length / 2)]! : null,
+    },
+    history: { fired, target: hT, stop: hS, neither: hN, minDropAtr },
+    verdict,
+  };
+}
+
+export const timeMachine = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z.object({
+      symbol: z.string().trim().min(1).max(15).regex(/^[A-Za-z0-9.\-^=]+$/),
+      days: z.number().int().min(1).max(3).default(2),
+      horizon: z.number().int().min(3).max(30).default(10),
+      stop: z.number().positive().optional(),
+      target: z.number().positive().optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const sym = data.symbol.toUpperCase();
+    const bars = await dailyBars(sym, "2y");
+    return runTimeMachine(sym, bars, { days: data.days, horizon: data.horizon, stop: data.stop, target: data.target });
+  });

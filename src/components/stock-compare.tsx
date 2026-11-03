@@ -1,6 +1,7 @@
 import { useQueries } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
+import { ManualPaperTradeButton } from "@/components/paper-trade-dialog";
 import { evaluateStock, type Evaluation, type Pillar } from "@/lib/stock-eval.functions";
 
 export const COMPARE_SLOTS = 5;
@@ -126,6 +127,7 @@ export function StockCompare({ initial, onChange }: { initial: string[]; onChang
                 <span className="font-mono text-lg font-semibold">{best.symbol}</span>
                 <span className={"rounded border px-1.5 py-0.5 text-[11px] " + VERDICT_CLASS[best.verdict!]}>{best.verdict}</span>
                 <span className="text-[11px] text-muted-foreground">{bestReason(best, others)}</span>
+                <span className="ml-auto"><ManualPaperTradeButton symbol={best.symbol} label={`Buy ${best.symbol}`} compact /></span>
               </div>
               {best.verdict !== "Buy" && (
                 <p className="mt-1 text-[11px] text-headwind">

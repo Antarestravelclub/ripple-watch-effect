@@ -21,6 +21,7 @@ import { Route as PlaybooksRouteImport } from './routes/playbooks'
 import { Route as ReboundRouteImport } from './routes/rebound'
 import { Route as ScorecardRouteImport } from './routes/scorecard'
 import { Route as SetupsRouteImport } from './routes/setups'
+import { Route as TimeMachineRouteImport } from './routes/time-machine'
 import { Route as TrackerRouteImport } from './routes/tracker'
 import { Route as WatchlistRouteImport } from './routes/watchlist'
 import { Route as AuthenticatedBlotterRouteImport } from './routes/_authenticated/blotter'
@@ -102,6 +103,11 @@ const ScorecardRoute = ScorecardRouteImport.update({
 const SetupsRoute = SetupsRouteImport.update({
   id: '/setups',
   path: '/setups',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TimeMachineRoute = TimeMachineRouteImport.update({
+  id: '/time-machine',
+  path: '/time-machine',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TrackerRoute = TrackerRouteImport.update({
@@ -238,6 +244,7 @@ export interface FileRoutesByFullPath {
   '/rebound': typeof ReboundRoute
   '/scorecard': typeof ScorecardRoute
   '/setups': typeof SetupsRoute
+  '/time-machine': typeof TimeMachineRoute
   '/tracker': typeof TrackerRoute
   '/watchlist': typeof WatchlistRoute
   '/blotter': typeof AuthenticatedBlotterRoute
@@ -274,6 +281,7 @@ export interface FileRoutesByTo {
   '/rebound': typeof ReboundRoute
   '/scorecard': typeof ScorecardRoute
   '/setups': typeof SetupsRoute
+  '/time-machine': typeof TimeMachineRoute
   '/tracker': typeof TrackerRoute
   '/watchlist': typeof WatchlistRoute
   '/blotter': typeof AuthenticatedBlotterRoute
@@ -312,6 +320,7 @@ export interface FileRoutesById {
   '/rebound': typeof ReboundRoute
   '/scorecard': typeof ScorecardRoute
   '/setups': typeof SetupsRoute
+  '/time-machine': typeof TimeMachineRoute
   '/tracker': typeof TrackerRoute
   '/watchlist': typeof WatchlistRoute
   '/_authenticated/blotter': typeof AuthenticatedBlotterRoute
@@ -350,6 +359,7 @@ export interface FileRouteTypes {
     | '/rebound'
     | '/scorecard'
     | '/setups'
+    | '/time-machine'
     | '/tracker'
     | '/watchlist'
     | '/blotter'
@@ -386,6 +396,7 @@ export interface FileRouteTypes {
     | '/rebound'
     | '/scorecard'
     | '/setups'
+    | '/time-machine'
     | '/tracker'
     | '/watchlist'
     | '/blotter'
@@ -423,6 +434,7 @@ export interface FileRouteTypes {
     | '/rebound'
     | '/scorecard'
     | '/setups'
+    | '/time-machine'
     | '/tracker'
     | '/watchlist'
     | '/_authenticated/blotter'
@@ -461,6 +473,7 @@ export interface RootRouteChildren {
   ReboundRoute: typeof ReboundRoute
   ScorecardRoute: typeof ScorecardRoute
   SetupsRoute: typeof SetupsRoute
+  TimeMachineRoute: typeof TimeMachineRoute
   TrackerRoute: typeof TrackerRoute
   WatchlistRoute: typeof WatchlistRoute
   AdminBrokerSymbolsRoute: typeof AdminBrokerSymbolsRoute
@@ -566,6 +579,13 @@ declare module '@tanstack/react-router' {
       path: '/setups'
       fullPath: '/setups'
       preLoaderRoute: typeof SetupsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/time-machine': {
+      id: '/time-machine'
+      path: '/time-machine'
+      fullPath: '/time-machine'
+      preLoaderRoute: typeof TimeMachineRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tracker': {
@@ -775,6 +795,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReboundRoute: ReboundRoute,
   ScorecardRoute: ScorecardRoute,
   SetupsRoute: SetupsRoute,
+  TimeMachineRoute: TimeMachineRoute,
   TrackerRoute: TrackerRoute,
   WatchlistRoute: WatchlistRoute,
   AdminBrokerSymbolsRoute: AdminBrokerSymbolsRoute,

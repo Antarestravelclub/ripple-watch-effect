@@ -4,6 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { Fragment, useState } from "react";
 import { SiteShell } from "@/components/site-shell";
 import { getRebounds, type ReboundRow, type ReboundUniverse } from "@/lib/rebound.functions";
+import { TimeMachinePanel } from "@/components/time-machine-panel";
+import { ManualPaperTradeButton } from "@/components/paper-trade-dialog";
 
 export const Route = createFileRoute("/rebound")({
   head: () => ({
@@ -119,6 +121,7 @@ function ReboundPage() {
                   <th className="p-2 font-medium text-right">Stop</th>
                   <th className="p-2 font-medium text-right">R/R</th>
                   <th className="p-2 font-medium">30d</th>
+                  <th className="p-2 font-medium"></th>
                 </tr>
               </thead>
               <tbody>
@@ -140,10 +143,14 @@ function ReboundPage() {
                       <td className="p-2 text-right font-mono tabular-nums">{money(r.stop)}</td>
                       <td className="p-2 text-right font-mono tabular-nums">{r.rewardRisk == null ? "—" : r.rewardRisk.toFixed(1)}</td>
                       <td className="p-2"><Spark closes={r.closes} /></td>
+                      <td className="p-2" onClick={(e) => e.stopPropagation()}>
+                        <BuyButton r={r} days={days} />
+                      </td>
                     </tr>
                     {open === r.symbol && (
                       <tr className="border-b border-border/40 bg-background/40">
-                        <td colSpan={11} className="p-3">
+                        <td colSpan={12} className="p-3">
+                          <div className="mb-3"><TimeMachinePanel symbol={r.symbol} days={days} showBuy /></div>
                           <div className="grid gap-3 sm:grid-cols-2 text-[11px]">
                             <div>
                               <div className="font-medium mb-1 text-tailwind">Why it could bounce</div>
@@ -158,7 +165,7 @@ function ReboundPage() {
                               ) : <p className="text-muted-foreground">No red flags from price action.</p>}
                             </div>
                           </div>
-                          <div className="mt-2 flex gap-3 text-[11px]">
+                          <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px]">
                             <Link to="/evaluate" search={{ symbol: r.symbol }} className="text-primary hover:underline">Full evaluation →</Link>
                             <Link to="/tickers/$symbol" params={{ symbol: r.symbol }} className="text-primary hover:underline">Events &amp; chart →</Link>
                           </div>
@@ -171,10 +178,26 @@ function ReboundPage() {
             </table>
           </div>
           <p className="mt-3 text-[11px] text-muted-foreground">
-            Score weighs how stretched the drop is versus the stock's normal daily range (30%), oversold RSI (25%), whether the long-term trend is still up (25%) and room back to the 20-day average (20%). Big single-day gaps and new 52-week lows are penalised — those are often news-driven and don't revert. Tap a row for details. Educational research only — not investment advice.
+            Score weighs how stretched the drop is versus the stock's normal daily range (30%), oversold RSI (25%), whether the long-term trend is still up (25%) and room back to the 20-day average (20%). Big single-day gaps and new 52-week lows are penalised — those are often news-driven and don't revert. Tap a row for details and the Time Machine odds. Buy opens a paper trade pre-filled with this stop and target; mirror it to your XM demo from the Trade Log. Educational research only — not investment advice.
           </p>
         </>
       )}
     </SiteShell>
+  );
+}
+
+function BuyButton({ r, days, label = "Buy" }: { r: ReboundRow; days: number; label?: string }) {
+  if (r.stop == null || r.sma20 == null || r.sma20 <= r.price) return null;
+  return (
+    <ManualPaperTradeButton
+      symbol={r.symbol}
+      label={label}
+      compact
+      preset={{
+        stop: r.stop,
+        target: r.sma20,
+        notes: `Rebound ${days}d: ${r.grade} ${Math.round(r.score)}, drop ${r.dropPct.toFixed(1)}%`,
+      }}
+    />
   );
 }

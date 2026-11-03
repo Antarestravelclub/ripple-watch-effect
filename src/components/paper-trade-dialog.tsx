@@ -373,14 +373,23 @@ function LotOutcome({
  * Free-form paper trade on any symbol, with no signal behind it. Pre-fills the
  * entry from the shared price store and the stop/target from ATR(14).
  */
+export interface TradePreset {
+  stop: number;
+  target: number;
+  notes?: string;
+}
+
 export function ManualPaperTradeButton({
   symbol,
   compact,
   label = "New paper trade",
+  preset,
 }: {
   symbol?: string;
   compact?: boolean;
   label?: string;
+  /** Stop/target from the page that opened the ticket (e.g. Rebound). Size is re-scaled to keep the same dollar risk. */
+  preset?: TradePreset;
 }) {
   const { signedIn } = useAuth();
   const [open, setOpen] = useState(false);
@@ -413,16 +422,18 @@ export function ManualPaperTradeButton({
         <NotebookPen className="w-3 h-3" />
         {label}
       </button>
-      {open && <ManualPaperTradeForm initialSymbol={symbol ?? ""} onClose={() => setOpen(false)} />}
+      {open && <ManualPaperTradeForm initialSymbol={symbol ?? ""} preset={preset} onClose={() => setOpen(false)} />}
     </>
   );
 }
 
 function ManualPaperTradeForm({
   initialSymbol,
+  preset,
   onClose,
 }: {
   initialSymbol: string;
+  preset?: TradePreset;
   onClose: () => void;
 }) {
   const prefillFn = useServerFn(manualTradePrefill);
@@ -435,16 +446,38 @@ function ManualPaperTradeForm({
   const [stop, setStop] = useState("");
   const [target, setTarget] = useState("");
   const [size, setSize] = useState("");
-  const [notes, setNotes] = useState("");
+  const [notes, setNotes] = useState(preset?.notes ?? "");
 
   const prefill = useMutation({
     mutationFn: (s: string) => prefillFn({ data: { symbol: s, direction } }),
     onSuccess: (p) => {
       setSymbol(p.ticker);
       setEntry(p.entryPrice != null ? String(p.entryPrice) : "");
-      setStop(p.stopPrice != null ? String(p.stopPrice) : "");
-      setTarget(p.targetPrice != null ? String(p.targetPrice) : "");
-      setSize(p.positionSize ? String(p.positionSize) : "");
+      // Use the opener's levels when they sit on the right side of the live price.
+      const usePreset =
+        preset != null &&
+        p.entryPrice != null &&
+        p.ticker === initialSymbol.trim().toUpperCase() &&
+        (direction === "long"
+          ? preset.stop < p.entryPrice && preset.target > p.entryPrice
+          : preset.stop > p.entryPrice && preset.target < p.entryPrice);
+      const stopPx = usePreset ? +preset!.stop.toFixed(2) : p.stopPrice;
+      const targetPx = usePreset ? +preset!.target.toFixed(2) : p.targetPrice;
+      setStop(stopPx != null ? String(stopPx) : "");
+      setTarget(targetPx != null ? String(targetPx) : "");
+      let sz = p.positionSize ?? 0;
+      // Keep the same dollar risk when the stop distance changes.
+      if (usePreset && sz > 0 && p.stopPrice != null && p.entryPrice != null) {
+        const atrRisk = Math.abs(p.entryPrice - p.stopPrice);
+        const newRisk = Math.abs(p.entryPrice - preset!.stop);
+        if (atrRisk > 0 && newRisk > 0) {
+          const step = p.sizing?.lotStep || 0.01;
+          sz = Math.floor(((sz * atrRisk) / newRisk) / step) * step;
+          if (sz < (p.sizing?.minLot ?? 0)) sz = 0;
+          sz = +sz.toFixed(4);
+        }
+      }
+      setSize(sz ? String(sz) : "");
     },
   });
 
