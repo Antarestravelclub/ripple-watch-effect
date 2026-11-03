@@ -75,7 +75,7 @@ function TimeMachinePage() {
 
       {q.symbol ? (
         <>
-          <TimeMachinePanel symbol={q.symbol} horizon={q.horizon ?? 10} stop={q.stop} target={q.target} showBuy />
+          <TimeMachinePanel symbol={q.symbol} horizon={q.horizon ?? 10} stop={q.stop} target={q.target} showBuy showChart />
           <div className="mt-3 flex flex-wrap items-center gap-3 text-xs">
             <Link to="/evaluate" search={{ symbol: q.symbol }} className="text-primary hover:underline">Full evaluation →</Link>
           </div>

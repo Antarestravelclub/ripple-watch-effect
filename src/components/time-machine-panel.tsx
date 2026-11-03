@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ManualPaperTradeButton } from "@/components/paper-trade-dialog";
 import { timeMachine, type TimeMachineResult } from "@/lib/rebound.functions";
+import { TimeMachineChart } from "@/components/time-machine-chart";
 
 const money = (v: number | null) => (v == null ? "—" : `$${v.toFixed(2)}`);
 
@@ -13,8 +14,8 @@ const VERDICT_TM: Record<TimeMachineResult["verdict"], string> = {
 };
 
 export function TimeMachinePanel({
-  symbol, days = 2, horizon = 10, stop, target, showBuy = false,
-}: { symbol: string; days?: number; horizon?: number; stop?: number; target?: number; showBuy?: boolean }) {
+  symbol, days = 2, horizon = 10, stop, target, showBuy = false, showChart = false,
+}: { symbol: string; days?: number; horizon?: number; stop?: number; target?: number; showBuy?: boolean; showChart?: boolean }) {
   const fn = useServerFn(timeMachine);
   const { data, isLoading, isError } = useQuery({
     queryKey: ["time-machine", symbol, days, horizon, stop ?? null, target ?? null],
@@ -27,6 +28,7 @@ export function TimeMachinePanel({
   const bar = (pct: number, cls: string) => <div className={cls} style={{ width: `${pct}%` }} />;
   return (
     <div className="rounded-lg border border-border/60 bg-card/60 p-3">
+      {showChart && <div className="mb-3"><TimeMachineChart data={data} /></div>}
       <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
         <div className="text-xs font-medium">Time Machine · next {data.horizonDays} sessions</div>
         <div className="flex items-center gap-2">

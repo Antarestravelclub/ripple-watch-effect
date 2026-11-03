@@ -196,7 +196,12 @@ export interface TimeMachineResult {
   entry: number;
   target: number;
   stop: number;
-  sim: { paths: number; targetPct: number; stopPct: number; openPct: number; medianDaysToTarget: number | null };
+  sim: {
+    paths: number; targetPct: number; stopPct: number; openPct: number; medianDaysToTarget: number | null;
+    /** First ~180 simulated paths for the replay chart: price at each day's close (last point
+     *  snapped to the target/stop level if hit), outcome, and the day it ended. */
+    sample?: { pts: number[]; o: "t" | "s" | "o"; d: number }[];
+  };
   history: { fired: number; target: number; stop: number; neither: number; minDropAtr: number };
   verdict: "Favourable" | "Coin flip" | "Unfavourable" | "Not enough history";
   seed: number;
@@ -269,16 +274,23 @@ export function runTimeMachine(symbol: string, raw: DailyBar[], daysOrOpts: numb
   const rnd = mulberry32(seed);
   let hitT = 0, hitS = 0;
   const daysToT: number[] = [];
+  const SAMPLE = 180;
+  const sample: { pts: number[]; o: "t" | "s" | "o"; d: number }[] = [];
+  const r2 = (x: number) => Math.round(x * 100) / 100;
   for (let n = 0; n < paths; n++) {
     let p = entry;
     let outcome: "t" | "s" | null = null;
+    const pts: number[] | null = n < SAMPLE ? [r2(entry)] : null;
+    let endDay = horizon;
     for (let d = 1; d <= horizon; d++) {
       const m = moves[Math.floor(rnd() * moves.length)]!;
-      if (p * m.l <= stop) { outcome = "s"; break; }
-      if (p * m.h >= target) { outcome = "t"; daysToT.push(d); break; }
+      if (p * m.l <= stop) { outcome = "s"; endDay = d; pts?.push(r2(stop)); break; }
+      if (p * m.h >= target) { outcome = "t"; daysToT.push(d); endDay = d; pts?.push(r2(target)); break; }
       p *= m.c;
+      pts?.push(r2(p));
     }
     if (outcome === "t") hitT++; else if (outcome === "s") hitS++;
+    if (pts) sample.push({ pts, o: outcome ?? "o", d: endDay });
   }
   daysToT.sort((a, b) => a - b);
 
@@ -332,6 +344,7 @@ export function runTimeMachine(symbol: string, raw: DailyBar[], daysOrOpts: numb
       stopPct: sPct,
       openPct: 100 - tPct - sPct,
       medianDaysToTarget: daysToT.length ? daysToT[Math.floor(daysToT.length / 2)]! : null,
+      sample,
     },
     history: { fired, target: hT, stop: hS, neither: hN, minDropAtr },
     verdict,
