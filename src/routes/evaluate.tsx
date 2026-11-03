@@ -4,9 +4,10 @@ import { z } from "zod";
 import { SiteShell } from "@/components/site-shell";
 import { StockEvaluation } from "@/components/stock-evaluation";
 import { RatingLeaderboard } from "@/components/rating-leaderboard";
+import { StockCompare, COMPARE_SLOTS } from "@/components/stock-compare";
 
 export const Route = createFileRoute("/evaluate")({
-  validateSearch: (s) => z.object({ symbol: z.string().optional() }).parse(s),
+  validateSearch: (s) => z.object({ symbol: z.string().optional(), compare: z.string().optional() }).parse(s),
   head: () => ({
     meta: [
       { title: "Stock Evaluator — Buy, Hold or Sell model | The Ripple Effect" },
@@ -21,7 +22,8 @@ export const Route = createFileRoute("/evaluate")({
 });
 
 function EvaluatePage() {
-  const { symbol } = Route.useSearch();
+  const { symbol, compare } = Route.useSearch();
+  const compareList = (compare ?? "").split(",").map((s) => s.trim().toUpperCase()).filter(Boolean).slice(0, COMPARE_SLOTS);
   const navigate = useNavigate({ from: "/evaluate" });
   const [text, setText] = useState(symbol ?? "");
   return (
@@ -35,7 +37,7 @@ function EvaluatePage() {
         onSubmit={(e) => {
           e.preventDefault();
           const s = text.trim().toUpperCase();
-          if (s) navigate({ search: { symbol: s } });
+          if (s) navigate({ search: (prev) => ({ ...prev, symbol: s }) });
         }}
       >
         <input
@@ -60,10 +62,16 @@ function EvaluatePage() {
         <p className="text-xs text-muted-foreground mb-4">No symbol yet — pick one below.</p>
       )}
       <div className="mt-6">
+        <StockCompare
+          initial={compareList}
+          onChange={(list) => navigate({ search: (prev) => ({ ...prev, compare: list.length ? list.join(",") : undefined }) })}
+        />
+      </div>
+      <div className="mt-6">
         <RatingLeaderboard
           onPick={(s) => {
             setText(s);
-            navigate({ search: { symbol: s } });
+            navigate({ search: (prev) => ({ ...prev, symbol: s }) });
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
         />
