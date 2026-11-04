@@ -15,6 +15,13 @@
       "when": 1793306771118,
       "tag": "0001_bind_admin_unlock_to_verified_token",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793761183844,
+      "tag": "0002_paper_trade_ratings",
+      "breakpoints": true
     }
   ]
 }
