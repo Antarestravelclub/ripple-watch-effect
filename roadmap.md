@@ -6,7 +6,7 @@
 - Per-user bridge ownership across secrets, snapshots, positions, deals, instructions, mirror settings, heartbeats and queued orders; no workspace-wide bridge secret fallback.
 
 ## Open
-- None.
+- Golden Eye Phase 1 (location gate, range-regime detector, breakout shadow module): waiting on your decision — build it here as a new gold engine, or is it for the separate Golden Eye project?
 
 ## Phase A — Demo Sync (done)
 - [x] Tables: bridge_account_snapshots, bridge_positions, bridge_deals
