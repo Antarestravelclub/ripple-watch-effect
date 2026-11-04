@@ -1102,6 +1102,9 @@ export type Database = {
           overrides_used: boolean
           position_size: number
           quote_symbol: string | null
+          rated_at: string | null
+          rating: number | null
+          rating_note: string | null
           realized_pnl: number | null
           signal_id: string | null
           source: string
@@ -1131,6 +1134,9 @@ export type Database = {
           overrides_used?: boolean
           position_size: number
           quote_symbol?: string | null
+          rated_at?: string | null
+          rating?: number | null
+          rating_note?: string | null
           realized_pnl?: number | null
           signal_id?: string | null
           source?: string
@@ -1160,6 +1166,9 @@ export type Database = {
           overrides_used?: boolean
           position_size?: number
           quote_symbol?: string | null
+          rated_at?: string | null
+          rating?: number | null
+          rating_note?: string | null
           realized_pnl?: number | null
           signal_id?: string | null
           source?: string
