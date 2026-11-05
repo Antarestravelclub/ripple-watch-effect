@@ -3,6 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { evaluateStock, type Evaluation } from "@/lib/stock-eval.functions";
 
 const VERDICT_CLASS: Record<string, string> = {
+  "Strong Buy": "bg-tailwind/30 text-tailwind border-tailwind ring-1 ring-tailwind/60 font-bold",
+  "Strong Sell": "bg-headwind/30 text-headwind border-headwind ring-1 ring-headwind/60 font-bold",
   Buy: "bg-tailwind/15 text-tailwind border-tailwind/40",
   Hold: "bg-muted/40 text-foreground border-border",
   Sell: "bg-headwind/15 text-headwind border-headwind/40",
@@ -68,6 +70,12 @@ function Body({ e }: { e: Evaluation }) {
         <div>
           <div className="font-mono text-2xl tabular-nums">{e.score == null ? "—" : Math.round(e.score)}<span className="text-sm text-muted-foreground">/100</span></div>
           <div className="text-[11px] text-muted-foreground">Confidence: {e.confidence}</div>
+          {e.percentile != null && (
+            <div className="text-[11px] text-muted-foreground">
+              Ranks above {Math.round(e.percentile)}% of scored names
+              {e.verdict === "Strong Buy" ? " — top 2%" : e.verdict === "Strong Sell" ? " — bottom 2%" : ""}
+            </div>
+          )}
         </div>
         <div className="ml-auto text-right">
           <div className="text-xs text-muted-foreground">{e.name ?? e.symbol}</div>

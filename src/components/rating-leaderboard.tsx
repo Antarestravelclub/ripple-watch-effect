@@ -3,8 +3,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { getRankings, type RankedStock } from "@/lib/stock-eval.functions";
 
-type Tab = "overview" | "Buy" | "Hold" | "Sell" | "div";
-const COLS: { key: "Buy" | "Hold" | "Sell"; label: string; tone: string }[] = [
+type Key = "Strong Buy" | "Buy" | "Hold" | "Sell" | "Strong Sell";
+type Tab = "overview" | "strong" | "Buy" | "Hold" | "Sell" | "div";
+const STRONG_COLS: { key: Key; label: string; tone: string }[] = [
+  { key: "Strong Buy", label: "Strong Buys — top 2%", tone: "text-emerald-300 border-emerald-400 bg-emerald-500/10" },
+  { key: "Strong Sell", label: "Strong Sells — bottom 2%", tone: "text-red-300 border-red-400 bg-red-500/10" },
+];
+const COLS: { key: Key; label: string; tone: string }[] = [
   { key: "Buy", label: "Top Buys", tone: "text-emerald-400 border-emerald-500/40" },
   { key: "Hold", label: "Holds", tone: "text-amber-400 border-amber-500/40" },
   { key: "Sell", label: "Sells / Weak", tone: "text-red-400 border-red-500/40" },
@@ -23,10 +28,46 @@ export function RatingLeaderboard({ onPick }: { onPick: (s: string) => void }) {
   const rows = q.data?.rows ?? [];
   const bucket = (v: RankedStock["verdict"]) => {
     const r = rows.filter((x) => x.verdict === v);
-    return v === "Sell" ? r.sort((a, b) => a.score - b.score) : r;
+    return v === "Sell" || v === "Strong Sell" ? r.sort((a, b) => a.score - b.score) : r;
   };
-  const cols = tab === "overview" ? COLS : COLS.filter((c) => c.key === tab);
+  const cols = tab === "overview" ? COLS : tab === "strong" ? STRONG_COLS : COLS.filter((c) => c.key === tab);
+  const showStrongStrip = tab === "overview";
   const divs = rows.filter((r) => (r.dividendYield ?? 0) > 0).sort((a, b) => (b.dividendYield ?? 0) - (a.dividendYield ?? 0));
+
+
+  function renderCol(c: { key: Key; label: string; tone: string }, list: RankedStock[], shown: RankedStock[]) {
+    return (
+              <div key={c.key} className={`rounded-lg border ${c.tone} p-3`}>
+                <h3 className={`text-sm font-semibold mb-2 ${c.tone}`}>
+                  {c.label} <span className="text-muted-foreground font-normal">({list.length})</span>
+                </h3>
+                {!shown.length && <p className="text-xs text-muted-foreground">None right now.</p>}
+                <ul className="space-y-1">
+                  {shown.map((r) => (
+                    <li key={r.symbol}>
+                      <button
+                        onClick={() => onPick(r.symbol)}
+                        className="w-full text-left rounded-md px-2 py-1.5 hover:bg-muted/50"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-mono text-sm font-semibold">
+                            {r.symbol}
+                            {(universe === "xm" || universe === "xmetf") && <span className="ml-1 text-[10px] font-normal text-muted-foreground">XM: {r.symbol.replace(".", "")}.US</span>}
+                          </span>
+                          <span className="font-mono text-xs">
+                            {r.price != null ? `$${r.price.toFixed(2)}` : "—"} · <b>{Math.round(r.score)}</b>/100
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-muted-foreground truncate">
+                          {r.name ?? ""}{r.reason ? ` — ${r.reason}` : ""}
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+  }
 
   return (
     <section className="mb-6 rounded-xl border border-border bg-card p-4">
@@ -61,13 +102,13 @@ export function RatingLeaderboard({ onPick }: { onPick: (s: string) => void }) {
           ))}
         </div>
         <div className="flex gap-1 text-xs">
-          {(["overview", "Buy", "Hold", "Sell", "div"] as Tab[]).map((t) => (
+          {(["overview", "strong", "Buy", "Hold", "Sell", "div"] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
               className={`rounded-md px-2 py-1 border ${tab === t ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground"}`}
             >
-              {t === "div" ? "Dividends" : t === "overview" ? "Overview" : t === "Sell" ? "Sells" : `${t}s`}
+              {t === "div" ? "Dividends" : t === "overview" ? "Overview" : t === "strong" ? "Strong ★" : t === "Sell" ? "Sells" : `${t}s`}
             </button>
           ))}
         </div>
@@ -95,43 +136,23 @@ export function RatingLeaderboard({ onPick }: { onPick: (s: string) => void }) {
           </ul>
         </div>
       ) : (
-        <div className={`grid gap-3 ${cols.length > 1 ? "md:grid-cols-3" : ""}`}>
+        <>
+        {showStrongStrip && (
+          <div className="grid gap-3 md:grid-cols-2 mb-3">
+            {STRONG_COLS.map((c) => renderCol(c, bucket(c.key), bucket(c.key)))}
+          </div>
+        )}
+        <p className="text-[11px] text-muted-foreground mb-2">
+          Strong tiers are reserved for the top and bottom 2% of every name the site has scored (all lists pooled), and need at least Medium data confidence.
+        </p>
+        <div className={`grid gap-3 ${cols.length > 2 ? "md:grid-cols-3" : cols.length > 1 ? "md:grid-cols-2" : ""}`}>
           {cols.map((c) => {
             const list = bucket(c.key);
             const shown = tab === "overview" ? list.slice(0, 5) : list;
-            return (
-              <div key={c.key} className={`rounded-lg border ${c.tone} p-3`}>
-                <h3 className={`text-sm font-semibold mb-2 ${c.tone}`}>
-                  {c.label} <span className="text-muted-foreground font-normal">({list.length})</span>
-                </h3>
-                {!shown.length && <p className="text-xs text-muted-foreground">None right now.</p>}
-                <ul className="space-y-1">
-                  {shown.map((r) => (
-                    <li key={r.symbol}>
-                      <button
-                        onClick={() => onPick(r.symbol)}
-                        className="w-full text-left rounded-md px-2 py-1.5 hover:bg-muted/50"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-mono text-sm font-semibold">
-                            {r.symbol}
-                            {(universe === "xm" || universe === "xmetf") && <span className="ml-1 text-[10px] font-normal text-muted-foreground">XM: {r.symbol.replace(".", "")}.US</span>}
-                          </span>
-                          <span className="font-mono text-xs">
-                            {r.price != null ? `$${r.price.toFixed(2)}` : "—"} · <b>{Math.round(r.score)}</b>/100
-                          </span>
-                        </div>
-                        <div className="text-[11px] text-muted-foreground truncate">
-                          {r.name ?? ""}{r.reason ? ` — ${r.reason}` : ""}
-                        </div>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            );
+            return renderCol(c, list, shown);
           })}
         </div>
+        </>
       )}
       {q.data && q.data.pending > 0 && (
         <p className="mt-2 text-[11px] text-muted-foreground">

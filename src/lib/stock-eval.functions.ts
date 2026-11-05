@@ -2,7 +2,15 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { dailyBars } from "./daily-bars.server";
 
-export type Verdict = "Buy" | "Hold" | "Sell";
+export type BaseVerdict = "Buy" | "Hold" | "Sell";
+export type Verdict = "Strong Buy" | BaseVerdict | "Strong Sell";
+
+/** Strong tiers are reserved for the top / bottom 2% of scores across every stock and ETF the site has scored. */
+export const STRONG_PCT = 0.02;
+/** Until enough of the universe is scored to measure percentiles, fall back to fixed cutoffs. */
+const STRONG_MIN_POOL = 50;
+const STRONG_BUY_FALLBACK = 82;
+const STRONG_SELL_FALLBACK = 25;
 
 export interface Factor {
   label: string;
@@ -23,6 +31,8 @@ export interface Evaluation {
   name: string | null;
   price: number | null;
   verdict: Verdict | null;
+  /** Where this score sits among all scored names (99 = better than 99%). Null until enough are scored. */
+  percentile?: number | null;
   score: number | null;
   confidence: "High" | "Medium" | "Low";
   pillars: Pillar[];
@@ -201,7 +211,7 @@ export async function evaluateSymbol(symbol: string): Promise<Evaluation> {
     const score = tw > 0 ? ts / tw : null;
     const filled = pillars.flatMap((p) => p.factors).filter((f) => f.score != null).length;
     const confidence = filled >= 12 ? "High" : filled >= 7 ? "Medium" : "Low";
-    const verdict: Verdict | null = score == null ? null : score >= 65 ? "Buy" : score <= 40 ? "Sell" : "Hold";
+    const verdict: BaseVerdict | null = score == null ? null : score >= 65 ? "Buy" : score <= 40 ? "Sell" : "Hold";
 
     // ---- Risk flags
     const risks: string[] = [];
@@ -225,11 +235,61 @@ export async function evaluateSymbol(symbol: string): Promise<Evaluation> {
     };
   }
 
+/** Scores of everything currently scored (all universes pooled), cached rows only. */
+function scorePool(): number[] {
+  const out: number[] = [];
+  for (const c of symCache.values()) if (c.row) out.push(c.row.score);
+  return out;
+}
+
+/** Share of the pool scoring at or above `score` (0 = best). Null when the pool is too small to measure. */
+function topShare(score: number, pool: number[]): number | null {
+  if (pool.length < STRONG_MIN_POOL) return null;
+  return pool.filter((x) => x >= score).length / pool.length;
+}
+function bottomShare(score: number, pool: number[]): number | null {
+  if (pool.length < STRONG_MIN_POOL) return null;
+  return pool.filter((x) => x <= score).length / pool.length;
+}
+
+/**
+ * Upgrade a Buy to Strong Buy only when it sits in the top 2% of all scored names,
+ * and a Sell to Strong Sell only in the bottom 2%. Low-confidence (thin data) names never get a Strong tier.
+ */
+export function tierVerdict(
+  base: Verdict | null,
+  score: number | null,
+  confidence: Evaluation["confidence"],
+  pool: number[] = scorePool(),
+): { verdict: Verdict | null; percentile: number | null } {
+  if (base == null || score == null) return { verdict: base, percentile: null };
+  const top = topShare(score, pool);
+  const percentile = top == null ? null : Math.round((1 - top) * 1000) / 10;
+  if (confidence === "Low") return { verdict: base, percentile };
+  if (base === "Buy") {
+    const strong = top == null ? score >= STRONG_BUY_FALLBACK : top <= STRONG_PCT;
+    return { verdict: strong ? "Strong Buy" : "Buy", percentile };
+  }
+  if (base === "Sell") {
+    const bot = bottomShare(score, pool);
+    const strong = bot == null ? score <= STRONG_SELL_FALLBACK : bot <= STRONG_PCT;
+    return { verdict: strong ? "Strong Sell" : "Sell", percentile };
+  }
+  return { verdict: base, percentile };
+}
+
+export const isBuy = (v: Verdict | null | undefined) => v === "Buy" || v === "Strong Buy";
+export const isSell = (v: Verdict | null | undefined) => v === "Sell" || v === "Strong Sell";
+
 const TICKER = z.string().trim().min(1).max(15).regex(/^[A-Za-z0-9.\-^=]+$/);
 
 export const evaluateStock = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ ticker: TICKER }).parse(d))
-  .handler(({ data }) => evaluateSymbol(data.ticker.toUpperCase()));
+  .handler(async ({ data }): Promise<Evaluation> => {
+    const e = await evaluateSymbol(data.ticker.toUpperCase());
+    const t = tierVerdict(e.verdict, e.score, e.confidence);
+    return { ...e, verdict: t.verdict, percentile: t.percentile };
+  });
 
 export const RANK_UNIVERSE = [
   "AAPL","MSFT","NVDA","AMZN","GOOGL","META","TSLA","AVGO","JPM","V",
@@ -287,7 +347,7 @@ export const AU_ETF_UNIVERSE = [
 const ETF_SET = new Set([...XM_ETF_UNIVERSE, ...AU_ETF_UNIVERSE, ...CA_ETF_UNIVERSE]);
 const XM_SET = new Set([...XM_UNIVERSE, ...XM_ETF_UNIVERSE]);
 
-export interface RankedStock { symbol: string; name: string | null; price: number | null; score: number; verdict: Verdict; confidence: Evaluation["confidence"]; reason: string; xm: boolean; dividendYield: number | null; dividendSafety: Dividend["safety"] | null }
+export interface RankedStock { symbol: string; name: string | null; price: number | null; score: number; verdict: Verdict; percentile: number | null; confidence: Evaluation["confidence"]; reason: string; xm: boolean; dividendYield: number | null; dividendSafety: Dividend["safety"] | null }
 
 const symCache = new Map<string, { at: number; row: RankedStock | null }>();
 const RANK_TTL = 6 * 3600_000;
@@ -299,7 +359,7 @@ function toRow(e: Evaluation): RankedStock | null {
   const best = [...e.pillars].filter((p) => p.score != null).sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
   const top = e.verdict === "Sell" ? best[best.length - 1] : best[0];
   return {
-    symbol: e.symbol, name: e.name, price: e.price, score: e.score, verdict: e.verdict, confidence: e.confidence,
+    symbol: e.symbol, name: e.name, price: e.price, score: e.score, verdict: e.verdict, percentile: null, confidence: e.confidence,
     reason: top ? `${e.verdict === "Sell" ? "Weakest" : "Strongest"}: ${top.title} (${Math.round(top.score ?? 0)})` : "",
     xm: XM_SET.has(e.symbol),
     dividendYield: e.dividend?.yieldPct ?? null,
@@ -336,6 +396,9 @@ export const getRankings = createServerFn({ method: "GET" })
       oldest = Math.min(oldest, c.at);
       if (c.row) rows.push(c.row);
     }
-    rows.sort((a, b) => b.score - a.score);
-    return { rows, total: list.length, pending, generatedAt: new Date(oldest).toISOString() };
+    // Strong tiers are measured against the whole pooled universe, so they mean the same thing on every list.
+    const pool = scorePool();
+    const tiered = rows.map((r) => ({ ...r, ...tierVerdict(r.verdict, r.score, r.confidence, pool) }) as RankedStock);
+    tiered.sort((a, b) => b.score - a.score);
+    return { rows: tiered, total: list.length, pending, generatedAt: new Date(oldest).toISOString() };
   });

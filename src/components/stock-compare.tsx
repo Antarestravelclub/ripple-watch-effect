@@ -2,7 +2,7 @@ import { useQueries } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { ManualPaperTradeButton } from "@/components/paper-trade-dialog";
-import { evaluateStock, type Evaluation, type Pillar } from "@/lib/stock-eval.functions";
+import { evaluateStock, isBuy, type Evaluation, type Pillar } from "@/lib/stock-eval.functions";
 
 export const COMPARE_SLOTS = 5;
 
@@ -14,6 +14,8 @@ const PILLARS: { key: Pillar["key"]; short: string }[] = [
 ];
 
 const VERDICT_CLASS: Record<string, string> = {
+  "Strong Buy": "border-tailwind bg-tailwind/30 text-tailwind font-semibold",
+  "Strong Sell": "border-headwind bg-headwind/30 text-headwind font-semibold",
   Buy: "border-tailwind/40 bg-tailwind/15 text-tailwind",
   Hold: "border-border bg-muted/40 text-foreground",
   Sell: "border-headwind/40 bg-headwind/15 text-headwind",
@@ -129,7 +131,7 @@ export function StockCompare({ initial, onChange }: { initial: string[]; onChang
                 <span className="text-[11px] text-muted-foreground">{bestReason(best, others)}</span>
                 <span className="ml-auto"><ManualPaperTradeButton symbol={best.symbol} label={`Buy ${best.symbol}`} compact /></span>
               </div>
-              {best.verdict !== "Buy" && (
+              {!isBuy(best.verdict) && (
                 <p className="mt-1 text-[11px] text-headwind">
                   None of these rate a Buy — {best.symbol} is only the least weak of the group.
                 </p>
